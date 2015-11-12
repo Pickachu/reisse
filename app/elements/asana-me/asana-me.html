@@ -1,0 +1,59 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/rest-resource/rest-resource.html">
+
+<dom-module id="asana-me">
+  <template>
+    <rest-resource id="tasks" url="https://app.asana.com/api/1.0/tasks" token="{{authorization}}" ></rest-resource>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'asana-me',
+
+      properties: {
+        tasks: {
+          type: Array,
+          value: () => {return []},
+          notify: true
+        },
+        authorization: {
+          type: String
+        },
+        completedSince: {
+          type: Date,
+          value: () => new Date('2012-02-22T02:06:58.158Z')
+        },
+        workspaceId: String
+      },
+      observers: [
+        '_populate(workspaceId, authorization)'
+      ],
+      _populate (id) {
+        var query = {
+          assignee: 'me',
+          limit: 50,
+          workspace: id,
+          completed_since: this.completedSince.toISOString(),
+          opt_fields: ['name', 'due_on', 'due_at', 'completed', 'completed_at', 'num_hearts', 'projects', 'assignee_status'].join(',')
+        };
+
+        this.$.tasks.index((response) => {
+          this.tasks = response.data;
+        }, () => {}, query);
+      }
+    });
+  })();
+  </script>
+</dom-module>

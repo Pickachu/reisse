@@ -1,0 +1,90 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/google-signin/google-signin-aware.html">
+<link rel="import" href="../../bower_components/google-apis/google-client-loader.html">
+
+
+<!--
+Element providing a list of Calendars for a signed in user in the provider especified
+Needs a google-signin element included somewhere on the same page
+that handles authentication.
+
+##### Example
+
+    <calendar-provider name="google" calendars="{{calendars}}"></calendar-provider>
+
+@demo
+-->
+<dom-module id="calendar-provider">
+
+  <template>
+    <template is="dom-if" if="_providerIs('google')"></template>
+      <google-client-loader id="calendar" name="calendar" version="v3"
+        on-google-api-load="fetchCalendars"></google-client-loader>
+      <google-signin-aware
+         scopes="https://www.googleapis.com/auth/calendar.readonly"
+         is-authorized="{{_signedIn}}"></google-signin-aware>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+
+    is: 'calendar-provider',
+
+    properties: {
+      _signedIn: {
+        type: Boolean,
+        value: false,
+        observer: '_signInChanged'
+      }, 
+      /**
+       * List of calendars
+       */
+      calendars: {
+        type: Array,
+        value: function() { return []; },
+        readOnly: true,
+        notify: true
+      },
+      name: {
+        type: String
+      }
+    },
+
+    _signInChanged: function(val) {
+      if (val) {
+        this.fetchCalendars();
+      }
+      else {
+        this._setCalendars([]);
+      }
+    },
+
+    _computeCalHref: function(calId, calTimeZone) {
+      return 'https://www.google.com/calendar/embed?src=' + calId + '&ctz=' + calTimeZone;
+    },
+    /**
+     * Displays the calendar list if the user is signed in to Google.
+     */
+    fetchCalendars: function() {
+      if (this._signedIn && this.$.calendar.api) {
+        var request = this.$.calendar.api.calendarList.list({"key": ""});
+
+        request.execute(function(resp) {
+          if (resp.error) {
+            console.error("Error with calendarList.list", resp.message)
+          } else {
+            calendars = resp.items.map((calendar) => {
+              calendar.feed = `https://calendar.google.com/calendar/ical/${calendar.id}/public/basic.ics`
+              return calendar;
+            })
+            this._setCalendars(calendars);
+        }
+                       }.bind(this));
+    }
+  },
+    providerIs: function (other) {
+      return this.provider == other;
+    }
+  });
+</script>

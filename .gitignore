@@ -1,0 +1,13 @@
+.uploads
+.deployrc
+.DS_Store
+.gulp/node_modules/**/*
+
+dist
+node_modules/**/*
+bower_components/**/*
+
+# Emacs Temporary Files
+*~
+*#
+.#*

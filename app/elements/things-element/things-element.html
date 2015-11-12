@@ -1,0 +1,76 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="things-element">
+  <template>
+    <iron-ajax id="api" auto url="{{src}}" handle-as="json" on-response="responded"></iron-ajax>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'things-element',
+
+      properties: {
+        src: {
+          type: String,
+          notify: true
+        },
+        tasks: {
+          type: Array,
+          notify: true
+        }
+      },
+      responded (event) {
+        var source = event.target.lastResponse,
+            listName, projectId, todoId,
+            areaId, list, project, todo, area,
+            relation, areas = {};
+
+        var createArea = (relation) => {
+          return areas[relation.id] = {
+            id: relation.id,
+            name: relation.name,
+            todos: [],
+            projects: []
+          };
+        }
+
+        for (listName in source.data) {
+          list = source.data[listName];
+          for (projectId in list.projects) {
+            project = list.projects[projectId];
+            relation = project.area || {id: null, name: null}
+            area = areas[relation.id] || createArea(relation);
+            area.projects.push(project);
+          }
+
+          for (todoId in list.todos) {
+            todo = list.todos[todoId];
+            relation = todo.area || {id: null, name: null}
+            area = areas[relation.id] || createArea(relation);
+            area.todos.push(todo);
+          }
+        }
+
+        var result = []
+        for (areaId in areas) {
+          result.push(areas[areaId]);
+        }
+        this.areas = result;
+      }
+    });
+  })();
+  </script>
+</dom-module>

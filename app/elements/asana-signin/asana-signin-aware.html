@@ -1,0 +1,149 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/oauth-v2/oauth-v2.html">
+<link rel="import" href="../../bower_components/rest-resource/rest-resource.html">
+
+<dom-module id="asana-signin-aware">
+
+  <script>
+  (function() {
+    'use strict';
+
+    var AuthEngine = {
+      /**
+        * oauth2 argument, set by google-signin-aware
+        */
+      _clientId: null,
+
+      get clientId() {
+        return this._clientId;
+      },
+
+      set clientId(id) {
+        if (this._clientId && id && id != this._clientId) {
+          throw new Error('clientId cannot change. Values do not match. New: ' + id + ' Old:' + this._clientId);
+        }
+
+        if (id) {
+          this._clientId = id;
+          this.oauth.clientId = id;
+        }
+      },
+
+      init: function () {
+        oauth = document.createElement('oauth-v2');
+        oauth.endpoint      = "https://app.asana.com/-/oauth_authorize"
+        oauth.exchange_url  = "https://app.asana.com/-/oauth_token"
+        oauth.response_type = "token"
+        oauth.urlParams     = {}
+        oauth.redirect_uri  = document.location.origin;
+        oauth.addEventListener('response', AuthEngine.responded)
+        this.oauth = oauth;
+      },
+
+      /**
+        * array of <asana-signin-aware>
+        * state changes are broadcast to them
+        */
+      signinAwares: [],
+
+      /** Is user signed in? */
+      _signedIn: false,
+
+      attachSigninAware: function(aware) {
+        if (this.signinAwares.indexOf(aware) == -1) {
+          this.signinAwares.push(aware);
+          // Initialize aware properties
+          aware._setSignedIn(this._signedIn);
+        } else {
+          console.warn('signinAware attached more than once', aware);
+        }
+      },
+
+      detachSigninAware: function(aware) {
+        var index = this.signinAwares.indexOf(aware);
+        if (index != -1) {
+          this.signinAwares.splice(index, 1);
+        } else {
+          console.warn('Trying to detach unattached signin-aware');
+        }
+      },
+
+      responded: function (response) {
+        this.token = response.access_token;
+        this.handleUserUpdate(true);
+      },
+      handleUserUpdate: function (isSignedIn) {
+        if (isSignedIn != this._signedIn) {
+          this._signedIn = isSignedIn;
+          for (var i = 0; i < this.signinAwares.length; i++) {
+            this.signinAwares[i]._setSignedIn(isSignedIn);
+          }
+        }
+      }
+    };
+
+    AuthEngine.init();
+
+    Polymer({
+      is: 'asana-signin-aware',
+
+      properties: {
+        /**
+          * a Asana App clientId reference
+          */
+        clientId: {
+          type: String,
+          observer: '_clientIdChanged'
+        },
+
+        /**
+          * True if user is signed in
+          */
+        signedIn: {
+          type: Boolean,
+          notify: true,
+          readOnly: true
+        },
+        token: {
+          type: String
+        },
+        authorization: {
+          type: String,
+          notify: true,
+          computed: '_computeAuthorization(token)'
+        }
+
+      },
+      attached: function() {
+        AuthEngine.attachSigninAware(this);
+      },
+
+      detached: function() {
+        AuthEngine.detachSigninAware(this);
+      },
+
+      /** pops up the authorization dialog */
+      signIn: function() {
+        AuthEngine.signIn();
+      },
+
+      /** signs user out */
+      signOut: function() {
+        throw new TypeError("Sign out not implemented yet")
+        // AuthEngine.signOut();
+      }
+
+    });
+  })();
+  </script>
+</dom-module>

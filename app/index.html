@@ -1,0 +1,191 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<html lang="">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Polymer Starter Kit" />
+    <title>Rélissë</title>
+    <!-- Place favicon.ico in the `app/` directory -->
+
+    <!-- Chrome for Android theme color -->
+    <meta name="theme-color" content="#2E3AA1">
+
+    <!-- Web Application Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Tile color for Win8 -->
+    <meta name="msapplication-TileColor" content="#3372DF">
+
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="PSK">
+    <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Polymer Starter Kit">
+    <link rel="apple-touch-icon" href="images/touch/apple-touch-icon.png">
+
+    <!-- Tile icon for Win8 (144x144) -->
+    <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+
+    <!-- build:css styles/main.css -->
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- endbuild-->
+
+    <!-- build:js bower_components/webcomponentsjs/webcomponents-lite.min.js -->
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="bower_components/stampit/stampit.js"></script>
+    <script src="bower_components/lodash/lodash.js"></script>
+    <script src="bower_components/synaptic/dist/synaptic.js"></script>
+    <!-- endbuild -->
+
+    <!-- will be replaced with elements/elements.vulcanized.html -->
+    <link rel="import" href="elements/elements.html">
+    <!-- endreplace-->
+
+    <!-- For shared styles, shared-styles.html import in elements.html -->
+    <style is="custom-style" include="shared-styles"></style>
+
+  </head>
+
+  <body unresolved class="fullbleed layout vertical">
+    <span id="browser-sync-binding"></span>
+    <template is="dom-bind" id="app">
+
+      <paper-drawer-panel id="paperDrawerPanel">
+        <!-- Drawer Scroll Header Panel -->
+        <paper-scroll-header-panel drawer fixed>
+
+          <!-- Drawer Toolbar -->
+          <paper-toolbar id="drawerToolbar">
+            <span class="paper-font-title">Menu</span>
+          </paper-toolbar>
+
+          <!-- Drawer Content -->
+          <paper-menu class="list" attr-for-selected="data-route" selected="[[route]]">
+            <a data-route="home" href="/" on-click="onDataRouteClick">
+              <iron-icon icon="home"></iron-icon>
+              <span>Home</span>
+            </a>
+          </paper-menu>
+        </paper-scroll-header-panel>
+
+        <!-- Main Area -->
+        <paper-scroll-header-panel main condenses keep-condensed-header>
+
+          <!-- Main Toolbar -->
+          <paper-toolbar id="mainToolbar" class="tall">
+            <paper-icon-button id="paperToggle" icon="menu" paper-drawer-toggle></paper-icon-button>
+            <span class="flex"></span>
+
+            <!-- Toolbar icons -->
+            <paper-icon-button icon="refresh"></paper-icon-button>
+            <paper-icon-button icon="search"></paper-icon-button>
+
+            <!-- Application name -->
+            <div class="middle middle-container center horizontal layout">
+              <div class="app-name">O Melhor Dia</div>
+            </div>
+
+            <!-- Application sub title -->
+            <div class="bottom bottom-container center horizontal layout">
+              <div class="bottom-title paper-font-subhead">Calculando seu tempo baseado no agora</div>
+            </div>
+
+          </paper-toolbar>
+
+          <!-- Main Content -->
+          <div class="content">
+            <iron-pages attr-for-selected="data-route" selected="{{route}}">
+
+              <section data-route="home">
+                <google-signin client-id="{{google.clientId}}"
+                               scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
+                <asana-signin  authorization="{{authorization}}"></asana-signin>
+
+                <template is="dom-repeat" items="{{lore.areas}}" as="area">
+                  <p>
+                    Area: <span>{{area.name}}</span>
+                    Avarage Duration: <span>{{area.avarageDuration}}</span>
+                  </p>
+                </template>
+
+                <paper-tabs selected="{{selected}}">
+                  <paper-tab>Medidas</paper-tab>
+                  <paper-tab>Previsoes</paper-tab>
+                </paper-tabs>
+
+                <iron-pages selected="{{selected}}">
+                  <div>
+                    <reisse-calendar id="calendar" calendar="{{measures}}"></reisse-calendar>
+                    <paper-button on-tap="learn">Learn from past experience</paper-button>
+                  </div>
+                  <div>
+                    <reisse-calendar id="calendar" calendar="{{prediction}}"> </reisse-calendar>
+                    <paper-button on-tap="predict">Generate the best day</paper-button>
+                  </div>
+                </iron-pages>
+              </section>
+
+            </iron-pages>
+          </div>
+        </paper-scroll-header-panel>
+      </paper-drawer-panel>
+
+      <!-- Uncomment next block to enable Service Worker support (1/2) -->
+      <!--
+          <paper-toast id="caching-complete"
+                       duration="6001"
+                       text="Caching complete! This app will work offline.">
+          </paper-toast>
+
+          <platinum-sw-register auto-register
+                                clients-claim
+                                skip-waiting
+                                on-service-worker-installed="displayInstalledToast">
+            <platinum-sw-cache default-cache-strategy="fastest"
+                               cache-config-file="cache-config.json">
+            </platinum-sw-cache>
+          </platinum-sw-register>
+          -->
+
+      <asana-me workspace-id="1434006482426" authorization="{{authorization}}"></asana-me>
+      <things-element src="sources/things.json"></things-element>
+      <!-- <calendar-provider name="google" calendars="{{calendars}}"></calendar-provider> -->
+      <template is="dom-repeat" items="{{calendars}}" as="calendar">
+        <event-cursor calendar-id="{{calendar.id}}"></event-cursor>
+        <!-- <i-calendar src="{{calendar.feed}}" calendar="{{calendar.json}}"> </i-calendar> -->
+      </template>
+      <firebase-document location="https://boiling-fire-6466.firebaseio.com/lore"
+      data="{{serializedLore}}"></firebase-document>
+    </template>
+
+
+    <!-- build:js scripts/app.!js -->
+    <script src="scripts/models/feature.js"></script>
+    <script src="scripts/models/behavior.js"></script>
+    <script src="scripts/models/ocurrence.js"></script>
+    <script src="scripts/models/task.js"></script>
+    <script src="scripts/models/area.js"></script>
+    <script src="scripts/models/lore.js"></script>
+    <script src="scripts/services/classifier.js"></script>
+    <script src="scripts/re.js"></script>
+    <script src="scripts/app.js"></script>
+  </body>
+  <!-- endbuild-->
+
+</html>
