@@ -11,6 +11,8 @@ in the day.
 So far it only lists things, with some hope i'll make it predict my future
 schedule for today.
 
+And remember: récalwa nácoina (it's a wundeful day to be alive)
+
 ### Install dependencies
 
 With Node.js installed, run the following one liner from the root folder:
