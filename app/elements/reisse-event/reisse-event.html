@@ -34,12 +34,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <p>Relative duration: <paper-input min="0" type="number" value="{{event.relativeDuration}}"></paper-input></p>
     <hr />
     <p>Computed</p>
-    <p>Estimated Chance    : <span>{{event.chance}}</span></p>
-    <p>Estimated Motivation: <span>{{event.features.motivation.estimated.value}}</span></p>
-    <p>Estimated Simplicity: <span>{{event.features.simplicity.estimated.value}}</span></p>
-    <p>Simplicity - Time   : <span>{{event.time}}</span></p>
-    <p>Value               : <span>{{event.value}}</span></p>
-    <p>Impact              : <span>{{event.chance}}</span></p>
+    <p>Estimated Chance    : <span>{{event.features.chance.estimated}}</span></p>
+    <p>Estimated Motivation: <span>{{event.features.motivation.estimated}}</span></p>
+    <p>Estimated Simplicity: <span>{{event.features.simplicity.estimated}}</span></p>
+    <p>Simplicity - Time   : <span>{{event.features.time.estimated}}</span></p>
+    <p>Value               : <span>{{event.features.value.estimated}}</span></p>
+    <p>Impact              : <span>{{event.features.impact.estimated}}</span></p>
   </template>
 
   <script>

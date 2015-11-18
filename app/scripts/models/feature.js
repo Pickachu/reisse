@@ -2,33 +2,42 @@
 
 var Feature = stampit({
     init () {
-        this.relative  = aggregable(this.relative);
-        this.estimated = aggregable(this.estimated);
-        this.actual    = aggregable(this.actual, (value) => {this.truer = value;});
-        this.truer     = aggregable(this.actual.value || this.estimated.value);
+        aggregable(this, 'relative' , this.name, this.relative);
+        aggregable(this, 'estimated', this.name, this.estimated);
+        aggregable(this, 'actual'   , this.name, this.actual, (value) => {this.truer = value;});
+        aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
         Feature.increment(this.name);
     },
     props: {
         // Value relative to features of other elements
-        relative: undefined,
+        relative: null,
         // Estimated value for this feature on other elements
-        estimated: undefined,
+        estimated: null,
         // Actual value for this feature
-        actual: undefined
+        actual: null
+    },
+    methods: {
+        toJSON () {
+            // Return serialized version of only non undefined values
+            return _.pick(_.omit(this, _.functions(this)), _.negate(_.isUndefined));
+        }
     },
     static: {
+        aggregates: {maximums: {}, minimums: {}},
         totals: {},
         many (source) {
             let names = [].slice.call(arguments, 1, arguments.length), features = {};
 
             names.map((name) => {
                 let capitalized = _.capitalize(name);
+
                 features[name] = Feature({
                     name     : name,
-                    relative : source[`relative${capitalized}` ] || null,
-                    estimated: source[`estimated${capitalized}`] || null,
-                    actual   : source[`actual${capitalized}`   ] || null
+                    relative : source[`relative${capitalized}` ],
+                    estimated: source[`estimated${capitalized}`],
+                    actual   : source[`actual${capitalized}`   ]
                 });
+
             }, this);
 
             return features;
@@ -36,24 +45,22 @@ var Feature = stampit({
         increment (name) {
             this.totals[name] = (this.totals[name] = 0);
             this.totals[name]++;
+        },
+        optimize (name, value) {
+            var maximums = this.aggregates.maximums, minimums = this.aggregates.minimums;
+            if (maximums[name] < value) {maximums[name] = value}
+            if (minimums[name] > value) {minimums[name] = value}
         }
     }
-}), aggregable = (current, callback) => {
-    let values = {value: current};
-
-    return {
-        get value () {
-            return values.value;
-        },
-        set value (value) {
-            callback && callback(value, values.value)
-            values.value = value;
-            if (this.maximum < value) {this.maximum = value}
-            if (this.minimum > value) {this.minimum = value}
-
-            return values.value;
-        },
-        maximum: null,
-        minimum: null
-    };
+}), aggregable = function (instance, property, feature, current, callback) {
+    Object.defineProperty(instance, property, {
+        enumerable: true,
+        get () {return current;},
+        set (value) {
+            callback && callback(value, current);
+            current = value;
+            Feature.optimize(feature + '_' + property, current);
+            return current;
+        }
+    });
 };

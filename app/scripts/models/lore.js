@@ -1,5 +1,6 @@
+'use strict';
+
 (() => {
-    'use strict'
 
     let Service = stampit({
         methods: {
@@ -37,30 +38,42 @@
         })
     ];
 
-    this.Lore = stampit({
+    let Lore = stampit({
         init () {
             this.areas || (this.areas = []);
             this.areas = this.areas.map(Area);
         },
         methods: {
             // Distribute data into a consistent model
-            integrate() {
+            integrations() {
                 var updates = Lore();
                 services.forEach((service) => {
                     service.populate(updates);
                 });
 
-                this.assign(updates);
+                return this.changes(updates);
             },
-            assign (attributes) {
-                attributes.areas.forEach((area) => {
-                    var matched = this.areas.find((update) => area.provider.id == update.provider.id);
-                    if (matched) {
-                        matched.assign(area);
+            changes (attributes) {
+                var changes = [];
+
+                attributes.areas.forEach((update) => {
+                    var value     = this.areas.find((value) => value.provider.id == update.provider.id),
+                        index     = this.areas.indexOf(value),
+                        updateset;
+
+                    if (value) {
+                        updateset = this._prefixChanges(index, value.changes(update));
+                        changes   = changes.concat(updateset);
                     } else {
-                        this.areas.unshift(area);
+                        changes.push({key: [], value: update, type: 'push'});
                     }
                 }, this);
+
+                this._prefixChanges('areas', changes);
+
+                changes = changes.concat(this.arrayChanges('areas', attributes.areas));
+
+                return changes;
             },
             assignArea(ocurrence) {
                 switch (ocurrence.provider.name) {
@@ -75,9 +88,10 @@
                 };
             },
             toJSON() {
-                return _.omit(this, _.functions(this));
+                return _.omit(this, 'workArea',  _.functions(this));
             }
         }
     });
 
+    this.Lore = differentiable.compose(Lore);
 })()

@@ -1,4 +1,4 @@
-var Area = stampit({
+var areable = stampit({
     init () {
         var tasks = this.tasks || [];
         tasks = tasks.map(Task.fromJSON, Task);
@@ -21,15 +21,13 @@ var Area = stampit({
             this.ocurrences.avarageDuration = (this.tasks.avarageDuration + this.events.avarageDuration) / 2;
             this.avarageDuration = 2 * 60 * 60;
         },
-        assign(attributes) {
-            this.ocurrences.forEach((ocurrence) => {
-                var result = attributes.ocurrences.find((update) => ocurrence.provider.id == update.provider.id);
-                if (result) {
-                    _.merge(result, ocurrence);
-                } else {
-                    this.ocurrences.unshift(ocurrence);
-                }
-            });
+        changes(attributes) {
+            var changes;
+
+            changes = this.arrayChanges('tasks' , attributes.tasks);
+            changes = changes.concat(this.arrayChanges('events', attributes.events));
+
+            return changes;
         },
         // Render one calendar for area
         toICALString () {
@@ -44,6 +42,9 @@ var Area = stampit({
             string += `UID:${this.uid}`;
             string += "END:VEVENT";
             return ICAL.Component.fromString(string);
+        },
+        toJSON () {
+            return _.omit(this, 'ocurrences', _.functions(this));
         }
     },
     static: {
@@ -60,4 +61,5 @@ var Area = stampit({
             return Area(json);
         }
     }
-});
+}),
+    Area = differentiable.compose(areable);

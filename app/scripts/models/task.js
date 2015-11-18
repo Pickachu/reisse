@@ -12,11 +12,11 @@ Date.prototype.toICALDate = function () {
 var taskable = stampit({
     init() {
         this.area || (this.area = {name: 'no area', id: null});
-        Object.assign(this.features, Feature.many(this, 'duration', 'modality'));
+        Object.assign(this.features, Feature.many(this, 'duration', 'chance'));
     },
     static: {
-        _modalityFromStatus(status) {
-            // On open state there is no modality
+        _chanceFromStatus(status) {
+            // On open state there is no chance
             switch (status) {
             case 'completed': return 1;
             case 'canceled' : return 0;
@@ -32,7 +32,7 @@ var taskable = stampit({
                 id: json.id
             };
 
-            json.actualModality = this._modalityFromStatus(json.status);
+            json.actualChance = this._chanceFromStatus(json.status);
 
             // Renamings
             json.dueDate     && (json.start       = new Date(json.dueDate));
@@ -64,7 +64,7 @@ var taskable = stampit({
             };
 
             json.status = (json.completed) ? 'completed' : 'open'
-            json.actualModality = this._modalityFromStatus(json.status);
+            json.actualChance = this._chanceFromStatus(json.status);
 
             // Renaming
             json.due_at          && (json.start          = new Date(json.due_at));

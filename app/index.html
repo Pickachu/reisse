@@ -51,6 +51,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="bower_components/stampit/stampit.js"></script>
     <script src="bower_components/lodash/lodash.js"></script>
     <script src="bower_components/synaptic/dist/synaptic.js"></script>
+    <script src="bower_components/changeset/index.js"></script>
     <!-- endbuild -->
 
     <!-- will be replaced with elements/elements.vulcanized.html -->
@@ -117,6 +118,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                                scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
                 <asana-signin  authorization="{{authorization}}"></asana-signin>
 
+                <span initialized="{{initialize(lore)}}"></span>
+
+                <template is="dom-if" if="{{lore}}">
+                  <paper-button on-tap="integrate" title="click to commit
+                  current data to firebase">Firebase Ready</paper-button>
+                </template>
+
                 <template is="dom-repeat" items="{{lore.areas}}" as="area">
                   <p>
                     Area: <span>{{area.name}}</span>
@@ -131,12 +139,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 <iron-pages selected="{{selected}}">
                   <div>
-                    <reisse-calendar id="calendar" calendar="{{measures}}"></reisse-calendar>
-                    <paper-button on-tap="learn">Learn from past experience</paper-button>
+                    <template is="dom-if" if="{{measures}}">
+                      <p>Leraned from {{measures.amount}} past experiences.</p>
+                    </template>
+                    <paper-button disabled="{{!app.lore}}" on-tap="learn">Learn from past experience</paper-button>
                   </div>
                   <div>
                     <reisse-calendar id="calendar" calendar="{{prediction}}"> </reisse-calendar>
-                    <paper-button on-tap="predict">Generate the best day</paper-button>
+                    <paper-button disabled="{{!app.lore}}" on-tap="predict">Generate the best day</paper-button>
                   </div>
                 </iron-pages>
               </section>
@@ -171,11 +181,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <!-- <i-calendar src="{{calendar.feed}}" calendar="{{calendar.json}}"> </i-calendar> -->
       </template>
       <firebase-document location="https://boiling-fire-6466.firebaseio.com/lore"
-      data="{{serializedLore}}"></firebase-document>
+      data="{{lore}}"></firebase-document>
     </template>
 
 
     <!-- build:js scripts/app.!js -->
+    <script src="scripts/models/differentiable.js"></script>
     <script src="scripts/models/feature.js"></script>
     <script src="scripts/models/behavior.js"></script>
     <script src="scripts/models/ocurrence.js"></script>

@@ -2,6 +2,9 @@
 
 var ocurrenceable = stampit({
     methods: {
+        incorporate () {
+            this.chance = this.features.chance.estimated;
+        },
         toICALString () {
             var string = "BEGIN:VEVENT";
             string += `DTSTART;VALUE=${this.start.toICALDate()}`;
@@ -25,7 +28,7 @@ var ocurrenceable = stampit({
             };
 
             // Every event in the past ocurred, so they are true!
-            json.actualModality = 1;
+            json.actualChance = 1;
 
             delete json.uid
 

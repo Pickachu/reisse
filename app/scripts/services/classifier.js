@@ -19,8 +19,10 @@ var Classifier = stampit({
                 simplicity: []
             };
 
+            console.log('learning');
+
             ocurrences.forEach( (ocurrence) => {
-                throw new TypeError("No modality provided for ocurrence.", ocurrence);
+                if (ocurrence.features.chance.actual === null) throw new TypeError("No chance provided for ocurrence.", ocurrence);
 
                 let inputs = [
                     this.simplicity.activate(ocurrence.simplicity(true, 'actual')),
@@ -28,17 +30,18 @@ var Classifier = stampit({
                 ];
 
                 sets.chance.push({
-                    inputs: inputs,
-                    outputs: [ocurrence.modality]
+                    input: inputs,
+                    output: [ocurrence.features.chance.actual]
                 });
             }, this);
 
+            console.log('training');
             this.chance.trainer.train(sets.chance);
         },
 
         predict (ocurrences) {
             ocurrences.forEach( (ocurrence) => {
-                ocurrence.features.estimated.modality = this.chance.activate([
+                ocurrence.features.chance.estimated = this.chance.activate([
                     this.simplicity.activate(ocurrence.simplicity(true, 'truer')),
                     this.motivation.activate(ocurrence.motivation(true, 'truer'))
                 ]);

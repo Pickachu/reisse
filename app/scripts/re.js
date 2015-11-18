@@ -18,11 +18,11 @@ var Re = stampit({
             });
 
             // Only learn from past ocurrences that actualiy happened
-            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start.getTime() < now && ocurrence.actualModality);
+            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start.getTime() < now && ocurrence.actualChance);
 
             Classifier.initialize();
             Classifier.learn(past);
-            return past;
+            return {amount: past.length};
         },
 
         predict(areas) {
@@ -32,6 +32,8 @@ var Re = stampit({
             // Only try to predict future ocurrences
             future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start.getTime() > now);
             Classifier.predict(future);
+
+            future.map((ocurrence) => ocurrence.features.incorporate())
             return future;
         },
 
@@ -51,7 +53,7 @@ var Re = stampit({
             available  = this._computeAvailableTime();
 
             lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
-                available -= ocurrence.features.duration.estimated.value || 25 * 60 // a pomodoro of duration
+                available -= ocurrence.features.duration.estimated || 25 * 60 // a pomodoro of duration
                 return available >= 0;
             }));
 
