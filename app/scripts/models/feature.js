@@ -2,19 +2,19 @@
 
 var Feature = stampit({
     init () {
-        aggregable(this, 'relative' , this.name, this.relative);
-        aggregable(this, 'estimated', this.name, this.estimated);
-        aggregable(this, 'actual'   , this.name, this.actual, (value) => {this.truer = value;});
-        aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
-        Feature.increment(this.name);
-    },
-    props: {
         // Value relative to features of other elements
-        relative: null,
+        aggregable(this, 'relative' , this.name, this.relative);
         // Estimated value for this feature on other elements
-        estimated: null,
+        aggregable(this, 'estimated', this.name, this.estimated);
         // Actual value for this feature
-        actual: null
+        aggregable(this, 'actual'   , this.name, this.actual, (value) => {this.truer = value;});
+        // Value more close to the truth for this feature
+        aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
+
+        // Clean feature to preserve the JSON structure accepted by firebase
+        _.forEach(this, (value, key) => {_.isUndefined(value) && delete this[key]})
+
+        Feature.increment(this.name);
     },
     methods: {
         toJSON () {
@@ -27,17 +27,13 @@ var Feature = stampit({
         totals: {},
         many (source) {
             let names = [].slice.call(arguments, 1, arguments.length), features = {};
-
+            source.features || (source.features = {});
             names.map((name) => {
-                let capitalized = _.capitalize(name);
-
-                features[name] = Feature({
-                    name     : name,
-                    relative : source[`relative${capitalized}` ],
-                    estimated: source[`estimated${capitalized}`],
-                    actual   : source[`actual${capitalized}`   ]
-                });
-
+                let feature = source.features[name] || {name: name};
+                feature.name || (feature.name = name);
+                features[name] = Feature(feature);
+                // TODO
+                // features.__proto__.incorporate = () => {source.incorporate.apply(source, arguments);};
             }, this);
 
             return features;
@@ -55,6 +51,7 @@ var Feature = stampit({
 }), aggregable = function (instance, property, feature, current, callback) {
     Object.defineProperty(instance, property, {
         enumerable: true,
+        configurable: true,
         get () {return current;},
         set (value) {
             callback && callback(value, current);

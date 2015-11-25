@@ -3,7 +3,6 @@
 var Behavior = stampit({
     init () {
         Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity'));
-        this.features.incorporate = () => {this.incorporate.apply(this, arguments);};
     },
     props: {
         features: {}

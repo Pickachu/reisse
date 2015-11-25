@@ -25,14 +25,14 @@ var taskable = stampit({
             }
         },
         fromThings (json) {
-            json = Object.assign({}, json);
+            json = Object.assign({features: {}}, json);
             // Computations
             json.provider  = {
                 name: 'things',
                 id: json.id
             };
 
-            json.actualChance = this._chanceFromStatus(json.status);
+            json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
             // Renamings
             json.dueDate     && (json.start       = new Date(json.dueDate));
@@ -55,7 +55,7 @@ var taskable = stampit({
         },
         // TODO parse due_on and project
         fromAsana (json) {
-            json = Object.assign({}, json);
+            json = Object.assign({features: {}}, json);
 
             // Computations
             json.provider = {
@@ -64,7 +64,7 @@ var taskable = stampit({
             };
 
             json.status = (json.completed) ? 'completed' : 'open'
-            json.actualChance = this._chanceFromStatus(json.status);
+            json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
             // Renaming
             json.due_at          && (json.start          = new Date(json.due_at));
@@ -81,8 +81,13 @@ var taskable = stampit({
             return Task(json);
         },
         fromJSON (json) {
-            json.start       && (json.start = new Date(json.start));
+            json.start       && (json.start       = new Date(json.start));
+
+            json.createdAt   && (json.createdAt   = new Date(json.createdAt));
+            json.updatedAt   && (json.updatedAt   = new Date(json.updatedAt));
+            json.activateAt  && (json.activateAt  = new Date(json.activateAt));
             json.completedAt && (json.completedAt = new Date(json.completedAt));
+            json.cancelledAt && (json.cancelledAt = new Date(json.cancelledAt));
 
             return Task(json);
 

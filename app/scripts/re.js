@@ -33,7 +33,8 @@ var Re = stampit({
             future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start.getTime() > now);
             Classifier.predict(future);
 
-            future.map((ocurrence) => ocurrence.features.incorporate())
+            // Incorporate features in ocurrence
+            future.map((ocurrence) => ocurrence.incorporate())
             return future;
         },
 

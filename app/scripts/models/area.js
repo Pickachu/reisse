@@ -29,7 +29,7 @@ var areable = stampit({
 
             return changes;
         },
-        // Render one calendar for area
+        // TODO Render one calendar for area
         toICALString () {
             var string = "BEGIN:VEVENT";
             string += `DTSTART;VALUE=${this.dtstart.toICALDate()}`;
@@ -49,7 +49,7 @@ var areable = stampit({
     },
     static: {
         fromThings(json) {
-            json = Object.assign({}, json);
+            json = Object.assign({features: {}}, json);
             json.provider = {
                 name: 'things',
                 id: json.id

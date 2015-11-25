@@ -25,7 +25,7 @@
     // Listen for template bound event to know when bindings
     // have resolved and content has been stamped to the page
     app.addEventListener('dom-change', function() {
-        console.log('Our app is ready to rock!');
+        // console.log('Our app is ready to rock!');
     });
 
     // See https://github.com/Polymer/polymer/issues/1381
@@ -77,92 +77,8 @@
 
     app.selected = 0;
 
-
-
-    // Ensures that a given path is created and bound through polymer
-    function ensurePath (object, path) {
-        if (object.get(path)) return;
-
-        var index  = -1,
-            length = path.length - 1, // Do not iterate on last path item
-            nested = object,
-            walked = '';
-
-        while (nested != null && ++index < length) {
-            var key = path[index];
-            walked += key;
-
-            if (isObject(nested)) {
-                if (nested[key] == null) {
-                    object.set(walked, isIndex(path[index + 1]) ? [] : {});
-                }
-            }
-
-            if (isIndex(key) && !isIndex(path[index + 1])) {
-                if (nested[key] == null) {
-                    ensureArrayElement(object, path.slice(0, index - 1), key)
-                    object.set(walked, {})
-                }
-            }
-
-            nested  = nested[key];
-            walked += '.'
-        }
-        return object;
-    };
-
-    // Creates any number of elements in a polymer bound array, to allow the use
-    // of set method
-    function ensureArrayElement (object, path, index) {
-        var array = object.get(path), i;
-        if (index >= array.length) {
-            // Number of missing elements from array
-            i = index - array.length
-            while (i--) {
-                object.push(path, undefined)
-            }
-        }
-    }
-
-    function isIndex(value, length) {
-        value = (typeof value == 'number' || /^\d+$/.test(value)) ? +value : -1;
-        length = length == null ? Infinity : length;
-        return value > -1 && value % 1 == 0 && value < length;
-    }
-
-    function isObject(value) {
-        // Avoid a V8 JIT bug in Chrome 19-20.
-        // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
-        var type = typeof value;
-        return !!value && (type == 'object' || type == 'function');
-    }
-
-
-    app.update = function (lore) {
-        console.log("computing update");
-        var changeset  = diff(this.lore, lore),
-            applier    = () => {
-                var i, changes = 1000, change;
-                // Apply only 100 changes at a time
-                i = 0;
-                change = changeset.shift();
-                while (changes-- && change) {
-                    change.key.unshift('serializedLore');
-
-                    ensurePath(this, change.key);
-                    this.set(change.key, change.value);
-                    console.log('update', change.key.slice(1, change.key.length - 1), change.value)
-                    change = changeset.shift();
-                }
-
-                if (changeset.length) setTimeout(applier, 30 * 1000);
-            }
-
-        applier();
-    };
-
     app.integrate = function () {
-        var changes = app.lore.integrations(), applier, changer;
+        var changes = app.lore.integrations(), applier, changer, serialize;
 
         if (!changes.length) console.info("app.integrate: everything is up to date.");
 
@@ -172,16 +88,23 @@
             i = 0;
             change = changes.shift();
             while (amount-- && change) {
+
+                // Firebase deletes keys that have null values, but the
+                // changeset library detects empty properties and set them to
+                // null values
+                // if (this.get(change.key) === null && change.type == 'del') {}
+                //     amount++
+                //     continue;
+                // }
+                serialize(change);
                 changer(change);
                 change = changes.shift();
             }
 
-            if (changes.length) setTimeout(() => {applier(changes, amount);}, 45 * 1000);
+            if (changes.length) setTimeout(() => {applier(changes, 1);}, 10 * 1000);
         }
 
         changer = (change) => {
-
-            change.key.unshift('lore');
 
             switch(change.type) {
             case 'put':
@@ -193,8 +116,8 @@
                 break;
 
             case 'del':
-                if (_.isNaN(+change.key[change.key.length - 1])) {
-                    return console.warn("app.integrate: don't know how to erase array items yet");
+                if (!_.isNaN(+change.key[change.key.length - 1])) {
+                    return console.warn("app.integrate: Don't know how to erase array items yet: ", change.key.join('.'));
                 }
                 change.value = null;
                 this.set(change.key, change.value);
@@ -205,13 +128,19 @@
             console.log(change.type, change.key.join('.'), change.value);
         };
 
-        applier(changes, 1000);
+        serialize = (change) => {
+            if (_.isDate(change.value)) {change.value = change.value.getTime()}
+        }
+
+        applier(changes, 1);
 
     };
 
-    app.initialize = function (data) {
-        if (data.integrations) return;
-        app.lore = Lore(data);
+    app.initialize = function (data, length) {
+        if (app.lore && app.lore.integrations) return;
+        this.debounce('initializeData', () => {
+            app.lore = Lore({areas: data});
+        }, 15000);
     };
 
     // TODO implement toJSON on Lore

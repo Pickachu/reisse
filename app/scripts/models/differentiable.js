@@ -7,13 +7,13 @@ var differentiable = stampit({
             var changes = [];
 
             updates.forEach((update) => {
-                var value  = this[name].find((value) => value.provider.id == update.provider.id),
+                var value = this[name].find((value) => value.provider.id == update.provider.id),
                     index = this[name].indexOf(value),
                     updateset,
-                    subarrays = _.keys(_.pick(value, _.isArray));
+                    omissions = _.keys(_.pick(value, (value) => _.isArray(value) || _.isUndefined(value)));
 
                 if (value) {
-                    updateset = diff(_.omit(value, subarrays), _.omit(update, subarrays));
+                    updateset = diff(_.omit(value, omissions), _.omit(update, omissions));
                     this._prefixChanges(index, updateset);
                     changes = changes.concat(updateset);
                 } else {

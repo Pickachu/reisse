@@ -114,18 +114,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <iron-pages attr-for-selected="data-route" selected="{{route}}">
 
               <section data-route="home">
+                <reisse-data areas="{{areas}}"></reisse-data>
                 <google-signin client-id="{{google.clientId}}"
                                scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
                 <asana-signin  authorization="{{authorization}}"></asana-signin>
 
-                <span initialized="{{initialize(lore)}}"></span>
+                <span initialized="{{initialize(areas, areas.length)}}"></span>
 
                 <template is="dom-if" if="{{lore}}">
                   <paper-button on-tap="integrate" title="click to commit
-                  current data to firebase">Firebase Ready</paper-button>
+                  current data to firebase">Firebase Ready ([[lore.areas.length]])</paper-button>
                 </template>
 
-                <template is="dom-repeat" items="{{lore.areas}}" as="area">
+                <template is="dom-repeat" items="{{areas}}" as="area">
                   <p>
                     Area: <span>{{area.name}}</span>
                     Avarage Duration: <span>{{area.avarageDuration}}</span>
@@ -180,8 +181,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <event-cursor calendar-id="{{calendar.id}}"></event-cursor>
         <!-- <i-calendar src="{{calendar.feed}}" calendar="{{calendar.json}}"> </i-calendar> -->
       </template>
-      <firebase-document location="https://boiling-fire-6466.firebaseio.com/lore"
-      data="{{lore}}"></firebase-document>
+
     </template>
 
 

@@ -1,0 +1,28 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/firebase-element/firebase-document.html">
+
+<dom-module id="reisse-area-source">
+  <style>
+    :host {display: none;}
+  </style>
+  <template>
+    <firebase-document location="{{location}}" data="{{area}}"></firebase-document>
+  </template>
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'reisse-area-source',
+
+        properties: {
+          location: String,
+          area: {
+            type: Object,
+            notify: true
+          }
+        }
+      });
+    })();
+  </script>
+</dom-module>
