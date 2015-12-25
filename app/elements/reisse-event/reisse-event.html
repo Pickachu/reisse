@@ -8,7 +8,7 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-buttom/paper-buttom.html">
 
 <dom-module id="reisse-event">
   <style>
@@ -31,7 +31,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <h3>{{event.name}}</h3>
     <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
     <p>Area  : <span>{{event.area.name}}</span></p>
-    <p>Relative duration: <paper-input min="0" type="number" value="{{event.relativeDuration}}"></paper-input></p>
+    <p>Relative duration: {{event.features.duration.relative}} <br/>
+      <paper-button on-tap="_promote" data-name="duration">Promote</paper-button>
+      <paper-button on-tap="_demote"  data-name="duration">Demote</paper-button>
+    </p>
     <hr />
     <p>Computed</p>
     <p>Estimated Chance    : <span>{{event.features.chance.estimated}}</span></p>
@@ -49,8 +52,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'reisse-event',
         properties: {
-          event: Object
+          event: {
+            type: Object,
+            notify: true
+          }
+        },
+        observers: [
+          '_updateTruer(event.features.*)'
+        ],
+
+        // TODO do this on the model layer
+        _updateTruer (change) {
+          let path = change.path
+          if (path.indexOf('estimated') >= 0) {
+            path = path.replace('estimated', 'truer');
+            if (!this.get(path)) this.set(path, change.value);
+
+          } else if (path.indexOf('actual') >= 0) {
+            path = path.replace('actual', 'truer');
+            this.set(path, change.value);
+          }
+        },
+
+        _promote (event) {
+          let feature = event.target.getAttribute('data-name'),
+              demoted = this.event.features[feature].promote();
+
+          this.notifyPath(['event', 'features', feature, 'relative'], this.event.features[feature].relative);
+          demoted && this.fire('demoted-event', demoted);
+        },
+        _demote (event) {
+          var feature = event.target.getAttribute('data-name');
         }
+
+
       });
     })();
   </script>

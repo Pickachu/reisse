@@ -9,6 +9,7 @@ var byChance = (a, b) => {
 var Re = stampit({
     static: {
         span: 24 * 60 * 60,
+        chance: Classifiers.Chance,
 
         learn(areas) {
             let ocurrences = [], past, now = Date.now();
@@ -17,11 +18,13 @@ var Re = stampit({
                 ocurrences = ocurrences.concat(area.ocurrences);
             });
 
-            // Only learn from past ocurrences that actualiy happened
-            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start.getTime() < now && ocurrence.actualChance);
+            Feature.featurables = _.pluck(ocurrences, 'features');
 
-            Classifier.initialize();
-            Classifier.learn(past);
+            // Only learn from past ocurrences that actualiy happened
+            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start.getTime() < now && ocurrence.features.chance.actual);
+
+            Classifiers.Chance.initialize();
+            Classifiers.Chance.learn(past);
             return {amount: past.length};
         },
 
@@ -31,7 +34,7 @@ var Re = stampit({
 
             // Only try to predict future ocurrences
             future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start.getTime() > now);
-            Classifier.predict(future);
+            Classifiers.Chance.predict(future);
 
             // Incorporate features in ocurrence
             future.map((ocurrence) => ocurrence.incorporate())

@@ -11,7 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="reisse-calendar">
   <template>
-    <div>
+    <div on-demoted-event="_eventDemoted">
       <template is="dom-repeat" items="{{calendar.events}}" as="event" filter="filter">
         <reisse-event event="{{event}}"></reisse-event>
         <hr />
@@ -26,15 +26,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'reisse-calendar',
         properties: {
-          calendar: Object,
+          ! Save promotions and demotions to firebase
+          calendar: {type: Object, notify: true},
           from: Date,
           to: Date
         },
-        created: function () {
-          this.today = new Date().getDate();
-        },
-        filter: function (event) {
-          return event;
+        filter (event) {return event;},
+        // TODO move event demotion to polymer bindings
+        // FIXME do not assume feature index as the same of event index
+        _eventDemoted (event, demoted) {
+          let index = this.calendar.events.indexOf(demoted.featured())
+          if (index >= 0) {
+            this.notifyPath(['calendar', 'events', index, 'features', demoted.name, 'relative'], demoted.relative)
+          }
         }
       });
     })();

@@ -9,17 +9,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="./reisse-area-source.html">
 
 <dom-module id="reisse-data">
   <style>
     :host {display: none;}
   </style>
-  <template>
-    <template is="dom-repeat" items="{{sources}}" as="source">
-      <reisse-area-source location="{{source.url}}" area="{{source.area}}"></reisse-area-source>
-    </template>
-  </template>
   <script>
     (function() {
       'use strict';
@@ -47,88 +41,108 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'reisse-data',
 
-        properties: {
-          base: {
-            type: String,
-            value: 'https://boiling-fire-6466.firebaseio.com/lore/areas',
-            readOnly: true
-          },
-          sources: {
-            type: Array,
-            notify: true
-          },
-          areas: {
-            type: Array,
-            value: () => [],
-            notify: true
-          }
-        },
-        observers: [
-          '_handleSplices(areas.splices)',
-          '_setupSources(sources.*)'
+        behaviors: [
+          Polymer.FirebaseQueryBehavior
         ],
-        attached () {
-          var i = 7, j = 0, sources = [];
-          while (i--) {
-            sources.push({
-              url: this.base + "/" + j
-            });
-            j++;
+
+        properties: {
+
+          /**
+           * Firebase Query object corresponding to `location`.
+           */
+          query: {
+            type: Object,
+            notify: true,
+            computed: '_computeQuery(location)',
+            observer: '_queryChanged'
+          },
+
+          /**
+           * The `data` object mapped to `location`.
+           */
+          data: {
+            type: Object,
+            notify: true
+          }
+        },
+
+        listeners: {
+          'firebase-value': '_onFirebaseValue'
+        },
+
+        _updatingChildren: 0,
+
+        _localDataChanged: function(change) {
+          var pathFragments = change.path.split('.');
+
+          if (pathFragments.length === 1) {
+            this._updateRemoteDocument();
+            return;
           }
 
-          this.sources = sources;
+          // remove beginning from data binding
+          pathFragments.shift();
+
+          this._setRemoteDocumentChild(
+            pathFragments,
+            change.value
+          );
         },
-        _setupSources (change) {
-          var setuping = /^sources\.#?(\d+)\.area$/, index;
-          if (!setuping.test(change.path) || !change.value || !change.value.provider) return;
-          index = +setuping.exec(change.path)[1]
 
-          this.setuping = true;
-          this.linkPaths(`sources.${index}.area`, `areas.${index}`);
-
-          // Initialize polymer collection item
-          if (!this.get(['areas', index])) this.push('areas', {})
-
-          this.set(['areas', index], change.value);
-          this.notifyPath('areas', this.areas);
-          this.notifyPath('areas.length', this.areas.length);
-
-          this.setuping = false
-        },
-        _handleSplices (change) {
-          if (!change || this.setuping) return;
-          var added =  change.indexSplices.reduce((additions, splice) => {
-            let object   = splice.object,
-                index      = splice.index,
-                addedCount = splice.addedCount;
-
-            return additions.concat(object.slice(index, index + addedCount));
-          }, []);
-
-          added.forEach((area) => {
-            let i = 0, j = this.sources.length;
-
-            for (let i = 0, j = this.sources.length; i < j; i++) {
-              var source = this.sources[i];
-
-              if (!source.area) {
-                this.set(['sources', i, 'area'], area);
-                this.linkPaths(`sources.${i}.area`, `areas.${i}`);
-                break;
-              }
-            }
+        _onFirebaseValue: function(event) {
+          this._applyRemoteDataChange(function() {
+            this.set('data', event.detail.val());
           });
 
-          change.indexSplices.forEach((splice) => {
-            let removedCount = splice.removed.length, removed, property;
-            while (removedCount--) {
-              removed = splice.removed[removedCount];
+          this.unlisten(this, 'firebase-value', '_onFirebaseValue');
+        },
 
-              for (property in removed) {
-                this.set(['sources', splice.index + removedCount, 'area', property], null);
-              }
-            }
+        _computeQuery: function(location) {
+          if (!location) {
+            return;
+          }
+
+          return new Firebase(location);
+        },
+
+        _updateRemoteDocument: function() {
+          this._log('Updating remote document');
+          this.query.update(this.dataAsObject);
+        },
+
+        _setRemoteDocumentChild: function(path, value) {
+          path = this._convertPath(path);
+
+          this.debounce('set-' + path, function() {
+            this._log('Setting child "' + path + '" to', value);
+            var subquery = this.query.child(path);
+            subquery.once('value', this._onRemoteDocumentChildSet, this._onFailure, this);
+            subquery.set(value);
           });
+        },
+
+        _onRemoteDocumentChildSet: function(snapshot) {
+          this._applyRemoteDataChange(function() {
+            var key = snapshot.ref().path.toString(), path;
+
+            path = key.replace(this.query.path.toString() + '/', '').split('/');
+            path.unshift('data');
+
+            this._log('Updating local child "' + path.join('.') + '" to', snapshot.val());
+            this.set(path, snapshot.val());
+          });
+        },
+
+        _removeRemoteDocumentChild: function(key) {
+          this._log('Removing child "' + key + '"');
+          this.query.child(key).remove();
+        },
+
+        _convertPath(path) {
+          return path.join('/').replace(/\#/g, '');
+        },
+        _onFailure (error) {
+          console.log(this.is, error);
         }
       });
     })();

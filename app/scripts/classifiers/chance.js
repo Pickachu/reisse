@@ -1,13 +1,16 @@
 // Implementation of https://workflowy.com/#/1866981390e0
 'use strict';
+var Classifiers = Classifiers || (Classifiers = {})
 
-var Classifier = stampit({
+Classifiers.Chance = stampit({
     static: {
         initialize () {
             let Architect   = synaptic.Architect
             this.chance     = new Architect.Perceptron(2, 3, 1);
             this.motivation = new Architect.Perceptron(3, 3, 1);
             this.simplicity = new Architect.Perceptron(6, 3, 1);
+            
+            this.simplicity.time = Classifiers.Time()
 
             this.motivation.project(this.chance);
             this.simplicity.project(this.chance);
@@ -20,7 +23,8 @@ var Classifier = stampit({
             };
 
             console.log('classifier: learning');
-
+            this.simplicity.time.learn(ocurrences);
+            
             ocurrences.forEach( (ocurrence) => {
                 if (ocurrence.features.chance.actual === null) throw new TypeError("No chance provided for ocurrence.", ocurrence);
 
@@ -46,7 +50,7 @@ var Classifier = stampit({
                 features.simplicity.estimated = this.simplicity.activate(behavior.simplicity(true, 'truer'));
                 features.motivation.estimated = this.motivation.activate(behavior.motivation(true, 'truer'));
 
-                behavior.features.chance.estimated = this.chance.activate([
+                features.chance.estimated = this.chance.activate([
                     features.simplicity.estimated,
                     features.motivation.estimated
                 ]);

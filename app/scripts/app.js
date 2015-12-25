@@ -97,11 +97,12 @@
                 //     continue;
                 // }
                 serialize(change);
+                change.key.unshift('lore');
                 changer(change);
                 change = changes.shift();
             }
 
-            if (changes.length) setTimeout(() => {applier(changes, 1);}, 10 * 1000);
+            if (changes.length) setTimeout(() => {applier(changes, 8);}, 30 * 1000);
         }
 
         changer = (change) => {
@@ -132,15 +133,13 @@
             if (_.isDate(change.value)) {change.value = change.value.getTime()}
         }
 
-        applier(changes, 1);
+        applier(changes, 8);
 
     };
 
     app.initialize = function (data, length) {
         if (app.lore && app.lore.integrations) return;
-        this.debounce('initializeData', () => {
-            app.lore = Lore({areas: data});
-        }, 15000);
+        app.lore = Lore(data);
     };
 
     // TODO implement toJSON on Lore
