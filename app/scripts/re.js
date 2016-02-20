@@ -11,29 +11,27 @@ var Re = stampit({
         span: 24 * 60 * 60,
         chance: Classifiers.Chance,
 
-        learn(areas) {
-            let ocurrences = [], past, now = Date.now();
-            areas.forEach((area) => {
-                area.estimate();
-                ocurrences = ocurrences.concat(area.ocurrences);
-            });
+        estimate (ocurrences) {
+            let estimator = Estimator({ocurrences: ocurrences});
+            estimator.estimate()
+        },
 
-            Feature.featurables = _.pluck(ocurrences, 'features');
+        learn(ocurrences) {
+            let past, now = Date.now();
 
             // Only learn from past ocurrences that actualiy happened
-            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start.getTime() < now && ocurrence.features.chance.actual);
+            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual);
 
             Classifiers.Chance.initialize();
             Classifiers.Chance.learn(past);
             return {amount: past.length};
         },
 
-        predict(areas) {
-            let ocurrences = areas.map((area) => area.ocurrences).reduce(((ocurrences, total) => total.concat(ocurrences)), []),
-                future, now = Date.now();
+        predict(ocurrences) {
+            let future, now = Date.now();
 
             // Only try to predict future ocurrences
-            future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start.getTime() > now);
+            future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start > now);
             Classifiers.Chance.predict(future);
 
             // Incorporate features in ocurrence
@@ -50,10 +48,10 @@ var Re = stampit({
 
             return available;
         },
-        lisse(areas) {
+        lisse(ocurrences) {
             let lisse = [], ocurrences, available;
 
-            ocurrences = this.predict(areas).sort(byChance);
+            ocurrences = this.predict(ocurrences).sort(byChance);
             available  = this._computeAvailableTime();
 
             lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
@@ -70,6 +68,10 @@ var Re = stampit({
             //     }));
             // });
 
+            if (lisse.length > 50) {
+                console.error("app: Your prediction probably failed and was handicapped to only 30 results.");
+                lisse = lisse.splice(0, 30);
+            }
             return lisse;
         }
     }

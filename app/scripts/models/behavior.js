@@ -1,6 +1,6 @@
 'use strict';
 
-var Behavior = stampit({
+var behavioral = stampit({
     init () {
         Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity'));
     },
@@ -33,4 +33,4 @@ var Behavior = stampit({
         }
 
     }
-});
+}), Behavior = behavioral;

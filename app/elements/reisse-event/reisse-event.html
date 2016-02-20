@@ -8,7 +8,8 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-buttom/paper-buttom.html">
+
+<!-- TODO <link rel="import" href="../components/reisse-feature/reisse-feature.html"> -->
 
 <dom-module id="reisse-event">
   <style>
@@ -26,23 +27,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     paper-input {
       display: inline-block;
     }
+
+    .emoji {
+      font-family: "Apple Color Emoji","Segoe UI Emoji","NotoColorEmoji","Segoe UI Symbol","Android Emoji","EmojiSymbols"
+    }
+
   </style>
   <template>
     <h3>{{event.name}}</h3>
     <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
-    <p>Area  : <span>{{event.area.name}}</span></p>
-    <p>Relative duration: {{event.features.duration.relative}} <br/>
-      <paper-button on-tap="_promote" data-name="duration">Promote</paper-button>
-      <paper-button on-tap="_demote"  data-name="duration">Demote</paper-button>
-    </p>
+    <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
+    <p>Notes              : <span>{{event.notes}}</span></p>
+    <p>Area               : <span>{{event.area.name}}</span></p>
+    <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
+    <section>
+      <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature>
+    </section>
+
     <hr />
-    <p>Computed</p>
-    <p>Estimated Chance    : <span>{{event.features.chance.estimated}}</span></p>
-    <p>Estimated Motivation: <span>{{event.features.motivation.estimated}}</span></p>
-    <p>Estimated Simplicity: <span>{{event.features.simplicity.estimated}}</span></p>
-    <p>Simplicity - Time   : <span>{{event.features.time.estimated}}</span></p>
-    <p>Value               : <span>{{event.features.value.estimated}}</span></p>
+
+    <h2>Measures (actual / assumed)</h2>
+    <p>Duration: {{event.features.duration.actual}}s</p>
+
+    <h2>Estimations</h2>
+
+    <p>Chance    : <span>{{event.features.chance.estimated}}</span></p>
+
+    <p>Duration  : <span>{{event.features.duration.estimated}}s</span></p>
+
+    <p>Motivation: <span>{{event.features.motivation.estimated}}</span></p>
+    <p>Motivation - Value: <span>{{event.features.value.estimated}}</span></p>
+
+    <p>Simplicity: <span>{{event.features.simplicity.estimated}}</span></p>
+    <p title="depends on: duration">Simplicity - Time: <span>{{event.features.time.estimated}}</span></p>
+
     <p>Impact              : <span>{{event.features.impact.estimated}}</span></p>
+
   </template>
 
   <script>
@@ -56,36 +76,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             notify: true
           }
-        },
-        observers: [
-          '_updateTruer(event.features.*)'
-        ],
-
-        // TODO do this on the model layer
-        _updateTruer (change) {
-          let path = change.path
-          if (path.indexOf('estimated') >= 0) {
-            path = path.replace('estimated', 'truer');
-            if (!this.get(path)) this.set(path, change.value);
-
-          } else if (path.indexOf('actual') >= 0) {
-            path = path.replace('actual', 'truer');
-            this.set(path, change.value);
-          }
-        },
-
-        _promote (event) {
-          let feature = event.target.getAttribute('data-name'),
-              demoted = this.event.features[feature].promote();
-
-          this.notifyPath(['event', 'features', feature, 'relative'], this.event.features[feature].relative);
-          demoted && this.fire('demoted-event', demoted);
-        },
-        _demote (event) {
-          var feature = event.target.getAttribute('data-name');
         }
-
-
       });
     })();
   </script>

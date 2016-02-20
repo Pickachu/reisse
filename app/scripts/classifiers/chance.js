@@ -9,7 +9,7 @@ Classifiers.Chance = stampit({
             this.chance     = new Architect.Perceptron(2, 3, 1);
             this.motivation = new Architect.Perceptron(3, 3, 1);
             this.simplicity = new Architect.Perceptron(6, 3, 1);
-            
+
             this.simplicity.time = Classifiers.Time()
 
             this.motivation.project(this.chance);
@@ -24,9 +24,10 @@ Classifiers.Chance = stampit({
 
             console.log('classifier: learning');
             this.simplicity.time.learn(ocurrences);
-            
+
             ocurrences.forEach( (ocurrence) => {
                 if (ocurrence.features.chance.actual === null) throw new TypeError("No chance provided for ocurrence.", ocurrence);
+                ocurrence = Ocurrence.fromJSON(ocurrence);
 
                 let inputs = [
                     this.simplicity.activate(ocurrence.simplicity(true, 'actual')),
@@ -44,6 +45,8 @@ Classifiers.Chance = stampit({
         },
 
         predict (behaviors) {
+            this.simplicity.time.predict(behaviors);
+
             behaviors.forEach( (behavior) => {
                 let features = behavior.features;
 

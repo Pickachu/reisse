@@ -1,7 +1,7 @@
 // Implementation of https://workflowy.com/#/1866981390e0
 'use strict';
 
-var Classifier = stampit({
+const Classifier = stampit({
     static: {
         initialize () {
             let Architect   = synaptic.Architect

@@ -9,16 +9,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+  <!-- todo firebase import -->
+
 
 <dom-module id="reisse-feature">
+  <style>
+    :host { display: block; }
+  </style>
+
   <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
-    <div>Hello from <span>{{foo}}</span></div>
+
+   <template is="dom-if" if="{{_relativeValue}}">
+     <firebase-collection data="{{relatives}}" order-by-child="features/duration/relative" start-at="{{previousRelativeIndex}}" end-at="{{nextRelativeIndex}}" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" order-value-type="number"></firebase-cfirebase-collection>
+    </template>
+
+    <p>
+      Previous: ({{_previous.features.duration.relative}}) {{_previous.name}}, {{_previous.features.duration.actual}}s <br />
+      Relative duration: <paper-input value="{{_relativeValue}}"></paper-input><br />
+      Next: ({{_next.features.duration.relative}}) {{_next.name}}, {{_next.features.duration.actual}}s <br />
+    </p>
+
+    <paper-button on-tap="_save">Salvar</paper-button>
+
   </template>
+
+  <!-- TODO move feature manager behavior to a import -->
+  <script src="/scripts/services/feature-manager.js"></script>
+
   <script>
   (function() {
     'use strict';
@@ -27,12 +46,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       is: 'reisse-feature',
 
       properties: {
-        foo: {
-          type: String,
-          value: 'reisse-feature',
-          notify: true
+        name: String,
+        key: String,
+        feature: Object,
+        features: Object,
+        relatives: Array,
+        _next: Object,
+        _previous: Object,
+        _relativeValue: {
+          type: Number,
+          value (config) {
+            let feature = config.features[config.name];
+            return Number.isFinite(feature) && feature.relative || undefined;
+          }
         }
+      },
+
+      behaviors: [Reisse.FeatureManagerBehavior],
+
+      observers: [
+//        '_featureChanged(features.*)',
+        '_recomputeIndexes(_relativeValue)',
+        '_recomputeReferences(relatives.splices)'
+      ],
+
+      _recomputeReferences() {
+        this._next     = this.relatives[1];
+        this._previous = this.relatives[0];
+      },
+      _recomputeIndexes(index) {
+        this.nextRelativeIndex     = +index
+        this.previousRelativeIndex = +index - 1
+      },
+      _save () {
+        this._relativize(this.key, +this._relativeValue, +1, 'duration');
       }
+
+      // TODO do this on the model layer
+      //_featureChanged (change) {
+      //  let path = change.path
+//
+      //  // Update truer
+      //  if (path.indexOf('estimated') >= 0) {
+      //    path = path.replace('estimated', 'truer');
+      //    if (!this.get(path)) this.set(path, change.value);
+//
+      //  } else if (path.indexOf('actual') >= 0) {
+      //    path = path.replace('actual', 'truer');
+      //    this.set(path, change.value);
+      //  }
+      //}
     });
   })();
   </script>

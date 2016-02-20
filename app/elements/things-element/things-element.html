@@ -27,16 +27,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           notify: true
         },
-        tasks: {
+        areas: {
+          type: Array,
+          notify: true
+        },
+        todos: {
+          type: Array,
+          notify: true
+        },
+        projects: {
           type: Array,
           notify: true
         }
       },
       responded (event) {
-        var source = event.target.lastResponse,
+        let source = event.target.lastResponse,
             listName, projectId, todoId,
             areaId, list, project, todo, area,
-            relation, areas = {}, uncategorized = [];
+            relation, areas = {}, uncategorized = [],
+            todos = [], projects = [];
 
         var createArea = (relation) => {
           return areas[relation.id] = {
@@ -58,7 +67,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             relation = project.area
             if (!relation) {uncategorize(project); continue;}
             area     = areas[relation.id] || createArea(relation);
-            area.projects.push(project);
+            area.projects.push(projectId);
+            projects.push(project)
           }
 
           for (todoId in list.todos) {
@@ -66,16 +76,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             relation = todo.area
             if (!relation) {uncategorize(todo); continue;}
             area     = areas[relation.id] || createArea(relation);
-            area.todos.push(todo);
+            area.todos.push(todoId);
+            todos.push(todo);
           }
         }
 
-        var result = []
-        for (areaId in areas) {
-          result.push(areas[areaId]);
-        }
-        this.areas = result;
-
+        this.areas    = _.values(areas);
+        this.todos    = todos;
+        this.projects = projects;
       }
     });
   })();

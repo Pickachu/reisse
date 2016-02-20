@@ -67,6 +67,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <body unresolved class="fullbleed layout vertical">
     <span id="browser-sync-binding"></span>
     <template is="dom-bind" id="app">
+      <iron-signals id="signaler"></iron-signals>
 
       <paper-drawer-panel id="paperDrawerPanel">
         <!-- Drawer Scroll Header Panel -->
@@ -115,26 +116,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <iron-pages attr-for-selected="data-route" selected="{{route}}">
 
               <section data-route="home">
-                <reisse-data log location="https://boiling-fire-6466.firebaseio.com/lore" data="{{lore}}"></reisse-data>
-                <google-signin client-id="{{google.clientId}}"
-                               scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
+                <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
+                <firebase-collection limit-to-last="2000" order-by-child="start" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection>
+                <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
+
+                <google-signin client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
                 <asana-signin  authorization="{{authorization}}"></asana-signin>
 
-                <span initialized="{{initialize(lore)}}"></span>
-
-                <template is="dom-if" if="{{lore}}">
+                <template is="dom-if" if="{{ocurrences}}">
                   <paper-button on-tap="integrate" title="click to commit current data to firebase">
-                    Firebase Ready ([[lore.areas.length]])
+                    Firebase Ready ([[areas.length]] - [[ocurrences.length]])
                   </paper-button>
                 </template>
 
-                <template is="dom-repeat" items="{{lore.areas}}" as="area">
+                <template is="dom-repeat" items="{{areas}}" as="area">
                   <p>
                     Area: <span>{{area.name}}</span>
                     Avarage Duration: <span>{{area.avarageDuration}}</span>
                   </p>
                 </template>
-                <template is="dom-if" if="{{lore}}">
+                <template is="dom-if" if="{{ocurrences.length}}">
                   <paper-button on-tap="learn">Learn from past experience</paper-button>
                   <paper-button on-tap="predict">Generate the best day</paper-button>
                 </template>
@@ -145,14 +146,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 <iron-pages selected="{{selected}}">
                   <div>
-                    <template is="dom-if" if="{{measures}}">
-                      <p>Leraned from {{measures.amount}} past experiences.</p>
-                    </template>
-
+                    <reisse-calendar id="calendar" calendar="{{prediction}}"> </reisse-calendar>
                   </div>
                   <div>
+                    <template is="dom-if" if="{{measures}}">
+                      <h2>Learning Summary</h2>
+                      <p>Leraned from {{measures.amount}} past experiences.</p>
+                      <h2>Unclassified Ocurrences</h2>
 
-                    <reisse-calendar id="calendar" calendar="{{prediction}}"> </reisse-calendar>
+                      <div id="classifier">
+                        <firebase-collection limit-to-last="20"
+                                             order-by-child="features/duration/relative"
+                                             equal-to="{{_unclassifiedCrieteria}}"
+                                             location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences"
+                                             data="{{unclassified}}"
+                                             allow-equal-to-null></firebase-collection>
+
+                        <template is="dom-repeat" items="{{unclassified}}" as="event">
+                          <reisse-event event="{{event}}"></reisse-event>
+                          <hr />
+                        </template>
+                      </div>
+                    </template>
                   </div>
                 </iron-pages>
               </section>
@@ -190,7 +205,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
 
 
-    <!-- build:js scripts/app.!js -->
+    <!-- build:js scripts/app.js -->
+    <script src="scripts/stamps/awarable.js"></script>
+
     <script src="scripts/models/differentiable.js"></script>
     <script src="scripts/models/feature.js"></script>
     <script src="scripts/models/behavior.js"></script>
@@ -201,6 +218,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="scripts/classifiers/time.js"></script>
     <script src="scripts/classifiers/chance.js"></script>
+
+    <script src="scripts/services/estimator.js"></script>
+    <script src="scripts/services/estimators/duration.js"></script>
+
+    <script src="scripts/services/feature-manager.js"></script>
 
     <script src="scripts/re.js"></script>
     <script src="scripts/app.js"></script>

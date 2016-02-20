@@ -35,6 +35,7 @@ var ocurrenceable = stampit({
             return Ocurrence(json);
         },
         fromJSON (json) {
+            json = Object.assign({}, json);
             json.start       && (json.start = new Date(json.start));
             return Ocurrence(json);
         }

@@ -46,7 +46,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           limit: 50,
           workspace: id,
           completed_since: this.completedSince.toISOString(),
-          opt_fields: ['name', 'due_on', 'due_at', 'completed', 'completed_at', 'num_hearts', 'projects', 'assignee_status'].join(',')
+          opt_fields: ['name', 'due_on', 'due_at', 'completed', 'completed_at', 'created_at', 'num_hearts', 'projects', 'assignee_status'].join(',')
         };
 
         this.$.tasks.index((response) => {

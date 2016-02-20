@@ -35,20 +35,22 @@ var taskable = stampit({
             json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
             // Renamings
-            json.dueDate     && (json.start       = new Date(json.dueDate));
-            json.createdAt   && (json.createdAt   = new Date(json.creationDate));
-            json.updatedAt   && (json.updatedAt   = new Date(json.modificationDate));
-            json.activatedAt && (json.activatedAt = new Date(json.activationDate));
-            json.completedAt && (json.completedAt = new Date(json.completionDate));
-            json.cancelledAt && (json.cancelledAt = new Date(json.cancellationDate));
-            json.description && (json.description = json.notes);
+            json.dueDate            && (json.start       = new Date(json.dueDate));
+            json.creationDate       && (json.createdAt   = new Date(json.creationDate));
+            json.modificationDate   && (json.updatedAt   = new Date(json.modificationDate));
+            json.activationDate     && (json.activatedAt = new Date(json.activationDate));
+            json.completionDate     && (json.completedAt = new Date(json.completionDate));
+            json.cancellationDate   && (json.cancelledAt = new Date(json.cancellationDate));
+            json.description        && (json.description = json.notes);
 
             // Cleanup
             delete json.id;
             delete json.dueDate;
-            delete json.activationDate;
             delete json.creationDate;
             delete json.modificationDate;
+            delete json.activationDate;
+            delete json.completionDate;
+            delete json.cancellationDate;
             delete json.notes;
 
             return Task(json);
@@ -69,6 +71,7 @@ var taskable = stampit({
             // Renaming
             json.due_at          && (json.start          = new Date(json.due_at));
             json.completed_at    && (json.completedAt    = new Date(json.completed_at));
+          json.created_at      && (json.createdAt      = new Date(json.created_at));
             json.assignee_status && (json.assigneeStatus = json.assignee_status);
             json.num_hearts      && (json.num_hearts     = json.num_hearts);
 
@@ -90,9 +93,8 @@ var taskable = stampit({
             json.cancelledAt && (json.cancelledAt = new Date(json.cancelledAt));
 
             return Task(json);
-
         }
     }
 });
 
-var Task = stampit.compose(Ocurrence, taskable);
+var Task = stampit.compose(Ocurrence, taskable, awarable);

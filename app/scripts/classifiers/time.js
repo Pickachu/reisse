@@ -8,23 +8,14 @@ var timeable = stampit({
 
 Classifiers.Time = stampit({
     init() {
-        let Architect    = synaptic.Architect;
-        this.time        = new Architect.Perceptron(2, 3, 1);
+        // let Architect    = synaptic.Architect;
+        // this.time        = new Architect.Perceptron(2, 3, 1);
         this.durationMap = new Map();
+        this.durationMap.set('unknowns', []);
     },
     methods: {
         learn(behaviors) {
-            let set = [];
-
-            behaviors.forEach((behavior) => {
-                let duration = behavior.features.duration;
-
-                if (duration.relative && duration.actual) {
-                    let value = this.durationMap.get(duration.relative) || [];
-                    value.push(duration.actual);
-                    this.durationMap.set(duration.relative, value);
-                }
-            });
+            let set = [], finite = Number.isFinite;
 
             // behaviors.forEach((behavior) => {
             //     let duration = behavior.features.duration,
@@ -44,14 +35,11 @@ Classifiers.Time = stampit({
         predict(behaviors) {
             behaviors.forEach((behavior) => {
                 let duration = behavior.features.duration,
-                    output = duration.actual || this.timeFromRelativeDuration(duration.relative)
+                    output   = duration.actual;
 
                 duration.estimated = output || -1;
             });
 
-        },
-        timeFromRelativeDuration(relativeDuration) {
-            let time = ss.mean(this.durationMap.get(relativeDuration));
         }
     }
 });

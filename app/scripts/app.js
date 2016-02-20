@@ -76,79 +76,51 @@
     };
 
     app.selected = 0;
+    app._unclassifiedCrieteria = null;
 
+    // Move to integration-manager
     app.integrate = function () {
-        var changes = app.lore.integrations(), applier, changer, serialize;
-
-        if (!changes.length) console.info("app.integrate: everything is up to date.");
-
-        applier    = (changes, amount) => {
-            // Apply only 1000 changes at a time
-            var i, change;
-            i = 0;
-            change = changes.shift();
-            while (amount-- && change) {
-
-                // Firebase deletes keys that have null values, but the
-                // changeset library detects empty properties and set them to
-                // null values
-                // if (this.get(change.key) === null && change.type == 'del') {}
-                //     amount++
-                //     continue;
-                // }
-                serialize(change);
-                change.key.unshift('lore');
-                changer(change);
-                change = changes.shift();
-            }
-
-            if (changes.length) setTimeout(() => {applier(changes, 8);}, 30 * 1000);
-        }
-
-        changer = (change) => {
-
-            switch(change.type) {
-            case 'put':
-                this.set(change.key, change.value);
-                break;
-
-            case 'push':
-                this.push(change.key, change.value);
-                break;
-
-            case 'del':
-                if (!_.isNaN(+change.key[change.key.length - 1])) {
-                    return console.warn("app.integrate: Don't know how to erase array items yet: ", change.key.join('.'));
-                }
-                change.value = null;
-                this.set(change.key, change.value);
-                break;
-
-            }
-
-            console.log(change.type, change.key.join('.'), change.value);
-        };
-
-        serialize = (change) => {
-            if (_.isDate(change.value)) {change.value = change.value.getTime()}
-        }
-
-        applier(changes, 8);
-
+      Lore.synchronize();
     };
 
-    app.initialize = function (data, length) {
-        if (app.lore && app.lore.integrations) return;
-        app.lore = Lore(data);
-    };
-
-    // TODO implement toJSON on Lore
+    // Move to classifier manager
     app.learn = function () {
-        this.measures = Re.learn(app.lore.areas);
+        Re.estimate(app.ocurrences);
+        this.measures = Re.learn(app.ocurrences);
+
+        // this.linkEvents(app.ocurrences, Re.unclassified, ['unclassified']);
+        // this.unclassified = {events: Re.unclassified};
     };
 
     app.predict = function () {
-        this.prediction = { events: Re.lisse(app.lore.areas) };
+        let events = Re.lisse(app.ocurrences);
+        this.linkEvents(app.ocurrences, events, ['predictions']);
+        this.prediction = { events: events };
     };
+
+    app.linkEvents = function (ocurrences, events, prefix) {
+        if (!Array.isArray(prefix)) throw new TypeError("app.linkEvents: Prefix must be an array.");
+
+        events.forEach((event) => {
+            let ocurrence     = ocurrences.find((other) => other.provider.id == event.provider.id);
+
+            if (!event.provider.id) {
+                console.log('app', 'No id found for event: `', event.name, '`. Area info: ', event.area);
+                return;
+            }
+
+            let ocurrenceKey = Polymer.Collection.get(ocurrences).getKey(ocurrence),
+                eventKey     = Polymer.Collection.get(events).getKey(event);
+
+            this.linkPaths(prefix.concat(['events', eventKey]).join('.'), ['ocurrences', ocurrenceKey].join('.'));
+        });
+    };
+
+    // Manage event features
+    FeatureManager(app);
+    /// IntegrationManager(app);
+
+    // Allow offline firebase suport
+    // Firebase.getDefaultConfig().setPersistenceEnabled(true);
 
 })(document);
