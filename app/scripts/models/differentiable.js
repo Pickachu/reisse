@@ -7,7 +7,7 @@ var differentiable = stampit({
         },
         changeset (value, update) {
             let omissions = _.keys(_.pick(value, _.isArray));
-            return this._omitChanges(diff(_.omit(value, omissions), _.omit(update, omissions)));
+            return this._normalizeChanges(diff(_.omit(value, omissions), _.omit(update, omissions)));
         },
         arrayChanges (name, updates) {
             var changes = [];
@@ -33,14 +33,26 @@ var differentiable = stampit({
             changes.forEach((change) => change.key.unshift(name));
             return changes;
         },
-        _omitChanges (changes) {
+        _normalizeChanges (changes) {
             let i = changes.length, change;
             while (i--) {
                 change = changes[i];
-
-                if (_.isUndefined(change.value) || _.isFunction(change.value) || change.key[change.key.length - 1].startsWith('__')) {
-                    changes.splice(i, 1);
+                switch (change.type) {
+                  case 'put':
+                    if (_.isUndefined(change.value) || _.isFunction(change.value) || change.key[change.key.length - 1].startsWith('__')) {
+                        changes.splice(i, 1);
+                    }
+                    break;
+                  case 'del':
+                    change.value = null;
+                    break;
+                  case 'push':
+                    break;
+                  default:
+                    throw new TypeError(`InvalidChangeType: Expected either put or del found ${change.type}`)
+                    break;
                 }
+
             }
 
             return changes;

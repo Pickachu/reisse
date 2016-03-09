@@ -1,10 +1,6 @@
-'use strict'
+'use strict';
 
-var Classifiers = Classifiers || (Classifiers = {})
-
-var timeable = stampit({
-
-});
+var Classifiers = Classifiers || (Classifiers = {});
 
 Classifiers.Time = stampit({
     init() {
@@ -37,7 +33,7 @@ Classifiers.Time = stampit({
                 let duration = behavior.features.duration,
                     output   = duration.actual;
 
-                duration.estimated = output || -1;
+                duration.estimated = output || 0;
             });
 
         }

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 estimators.duration = stampit({
     init () {

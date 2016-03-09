@@ -13,7 +13,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="things-element">
   <template>
-    <iron-ajax id="api" auto url="{{src}}" handle-as="json" on-response="responded"></iron-ajax>
+    <iron-ajax id="api" auto url="{{src}}" handle-as="json" last-response="{{source}}"></iron-ajax>
   </template>
   <script>
   (function() {
@@ -38,52 +38,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         projects: {
           type: Array,
           notify: true
+        },
+        source: {
+          type: Object,
+          observer: '_sourceChanged'
         }
       },
-      responded (event) {
-        let source = event.target.lastResponse,
-            listName, projectId, todoId,
-            areaId, list, project, todo, area,
-            relation, areas = {}, uncategorized = [],
-            todos = [], projects = [];
+      _sourceChanged (source) {
+        source.areas.forEach(this._omitUnusedAttributes);
+        source.todos.forEach(this._omitUnusedAttributes);
+        source.projects.forEach(this._omitUnusedAttributes);
 
-        var createArea = (relation) => {
-          return areas[relation.id] = {
-            id: relation.id,
-            name: relation.name,
-            todos: [],
-            projects: []
-          };
-        };
-
-        var uncategorize = (todo) => {
-          uncategorized.push(todo);
-        }
-
-        for (listName in source.data) {
-          list = source.data[listName];
-          for (projectId in list.projects) {
-            project  = list.projects[projectId];
-            relation = project.area
-            if (!relation) {uncategorize(project); continue;}
-            area     = areas[relation.id] || createArea(relation);
-            area.projects.push(projectId);
-            projects.push(project)
-          }
-
-          for (todoId in list.todos) {
-            todo     = list.todos[todoId];
-            relation = todo.area
-            if (!relation) {uncategorize(todo); continue;}
-            area     = areas[relation.id] || createArea(relation);
-            area.todos.push(todoId);
-            todos.push(todo);
-          }
-        }
-
-        this.areas    = _.values(areas);
-        this.todos    = todos;
-        this.projects = projects;
+        this.areas    = source.areas;
+        this.todos    = source.todos;
+        this.projects = source.projects;
+      },
+      _omitUnusedAttributes (object) {
+        delete object.pcls
       }
     });
   })();

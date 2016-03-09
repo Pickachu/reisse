@@ -1,78 +1,87 @@
+/* globals Estimator, Classifiers  */
+/* exports Re */
+
 'use strict';
 
-var byChance = (a, b) => {
-    if (a.chance >  b.chance) return  1;
-    if (a.chance == b.chance) return  0;
-    if (a.chance <  b.chance) return -1;
-};
+var byChance = (a, b) => b.chance - a .chance
 
 var Re = stampit({
-    static: {
-        span: 24 * 60 * 60,
-        chance: Classifiers.Chance,
+  static: {
+    DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
+    chance: Classifiers.Chance,
 
-        estimate (ocurrences) {
-            let estimator = Estimator({ocurrences: ocurrences});
-            estimator.estimate()
-        },
+    estimate (ocurrences) {
+      ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
 
-        learn(ocurrences) {
-            let past, now = Date.now();
+      let estimator = Estimator({ocurrences: ocurrences});
+      estimator.estimate();
+    },
 
-            // Only learn from past ocurrences that actualiy happened
-            past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual);
+    learn(ocurrences) {
+      let past, now = Date.now();
 
-            Classifiers.Chance.initialize();
-            Classifiers.Chance.learn(past);
-            return {amount: past.length};
-        },
+      // Only learn from past ocurrences that actualy happened
+      past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual);
 
-        predict(ocurrences) {
-            let future, now = Date.now();
+      // Clone and instantiate dataset
+      past = past.map(Ocurrence.fromJSON, Ocurrence);
 
-            // Only try to predict future ocurrences
-            future = ocurrences.filter((ocurrence) => !ocurrence.start || ocurrence.start > now);
-            Classifiers.Chance.predict(future);
+      this.chance.initialize();
+      this.chance.learn(past);
+      return {amount: past.length};
+    },
 
-            // Incorporate features in ocurrence
-            future.map((ocurrence) => ocurrence.incorporate())
-            return future;
-        },
+    predict(ocurrences) {
+        let future, now = Date.now();
 
-        _computeAvailableTime () {
-            let oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), midnight = ICAL.Time.now(), available;
+        // Only try to predict future ocurrences (do not already have a prediction attached and it is not already done)
+        future = ocurrences.filter((ocurrence) => ocurrence.status == 'open');
 
-            midnight.hour  = midnight.minute = midnight.second = 0;
-            midnight.addDuration(oneDay);
-            available      = midnight.subtractDate(ICAL.Time.now()).toSeconds();
+        // Clone and instantiate dataset
+        future = future.map(Ocurrence.fromJSON, Ocurrence);
 
-            return available;
-        },
-        lisse(ocurrences) {
-            let lisse = [], ocurrences, available;
 
-            ocurrences = this.predict(ocurrences).sort(byChance);
-            available  = this._computeAvailableTime();
+        this.chance.predict(future);
 
-            lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
-                available -= ocurrence.features.duration.estimated || 25 * 60 // a pomodoro of duration
-                return available >= 0;
-            }));
+        // Incorporate features in ocurrence
+        future.map((ocurrence) => ocurrence.incorporate());
+        return future;
+    },
 
-            // areas.forEach((area) => {
-            //     let ocurrences = area.ocurrences, available;
-            //     available = area.avarageDuration
-            //     lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
-            //         available -= ocurrence.duration || ocurrence.estimatedDuration || area.avarageDuration
-            //         return available >= 0;
-            //     }));
-            // });
+    _computeAvailableTime () {
+        let oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), midnight = ICAL.Time.now(), available;
 
-            if (lisse.length > 50) {
-                console.error("app: Your prediction probably failed and was handicapped to only 30 results.");
-                lisse = lisse.splice(0, 30);
-            }
-            return lisse;
+        midnight.hour  = midnight.minute = midnight.second = 0;
+        midnight.addDuration(oneDay);
+        available      = midnight.subtractDate(ICAL.Time.now()).toSeconds();
+
+        return available;
+    },
+    lisse(ocurrences) {
+        let lisse = [], available;
+
+        ocurrences = this.predict(ocurrences).sort(byChance);
+        available  = this._computeAvailableTime();
+
+        lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
+            available -= ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
+            return available >= 0;
+        }));
+
+        // areas.forEach((area) => {
+        //     let ocurrences = area.ocurrences, available;
+        //     available = area.avarageDuration
+        //     lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
+        //         available -= ocurrence.duration || ocurrence.estimatedDuration || area.avarageDuration
+        //         return available >= 0;
+        //     }));
+        // });
+
+        if (lisse.length > 50) {
+            console.error("app: Your prediction probably failed and was handicapped to only 30 results.");
+            lisse = lisse.splice(0, 30);
         }
+        return lisse;
     }
+  }
 });

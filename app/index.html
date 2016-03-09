@@ -206,6 +206,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     <!-- build:js scripts/app.js -->
+    <!-- move js to html imports -->
     <script src="scripts/stamps/awarable.js"></script>
 
     <script src="scripts/models/differentiable.js"></script>
@@ -214,13 +215,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/ocurrence.js"></script>
     <script src="scripts/models/task.js"></script>
     <script src="scripts/models/area.js"></script>
-    <script src="scripts/models/lore.js"></script>
 
-    <script src="scripts/classifiers/time.js"></script>
-    <script src="scripts/classifiers/chance.js"></script>
+    <script src="scripts/models/lore/deduplicator.js"></script>
+    <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/services/estimator.js"></script>
     <script src="scripts/services/estimators/duration.js"></script>
+    <script src="scripts/services/estimators/brain-cycles.js"></script>
+
+    <script src="scripts/classifiers/time.js"></script>
+    <script src="scripts/classifiers/simplicity.js"></script>
+    <script src="scripts/classifiers/chance.js"></script>
 
     <script src="scripts/services/feature-manager.js"></script>
 

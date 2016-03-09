@@ -36,8 +36,15 @@ var ocurrenceable = stampit({
         },
         fromJSON (json) {
             json = Object.assign({}, json);
-            json.start       && (json.start = new Date(json.start));
-            return Ocurrence(json);
+            let provider = json.provider ? json.provider.name : 'none'
+            switch (provider) {
+              case 'asana':
+              case 'things':
+                return Task.fromJSON(json);
+              default:
+                json.start       && (json.start = new Date(json.start));
+                return Ocurrence(json);
+            }
         }
     }
 });

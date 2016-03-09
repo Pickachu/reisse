@@ -24,12 +24,12 @@ var aggregable = function (instance, property, feature, current, callback) {
         // Actual value for this feature
         aggregable(this, 'actual'   , this.name, this.actual   , (value) => {this.truer = value;});
         // Value more close to the truth for this feature
-        aggregable(this, 'truer'    , this.name);
+        aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
 
         // Clean feature to preserve the JSON structure accepted by firebase
         _.forEach(this, (value, key) => {_.isUndefined(value) && delete this[key]})
 
-        Feature.store(this.name, this);
+        //Feature.store(this.name, this);
         Feature.summaries(this.name);
         Feature.increment(this.name);
     },
