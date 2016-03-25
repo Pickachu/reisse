@@ -7,6 +7,10 @@
     "stampit": false,
     "_": false,
     "ICAL": false,
-    "__dirname": false
+    "__dirname": false,
+    "mimir": false,
+    "synaptic": false,
+    "ss": false,
+    "emojione": false
   }
 }
