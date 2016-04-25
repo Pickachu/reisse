@@ -4,9 +4,7 @@ var Classifiers = Classifiers || (Classifiers = {});
 Classifiers.Motivation = stampit({
     init() {
       let Architect   = synaptic.Architect;
-
-      this.perceptron = new Architect.Perceptron(4, 6, 1);
-      this.perceptron.project(this.chance);
+      this.perceptron = new Architect.Perceptron(3, 6, 1);
 
       return this;
     },
@@ -23,6 +21,7 @@ Classifiers.Motivation = stampit({
             this.perceptron.propagate(0.2, [ss.average(factors)]);
           });
 
+          this.predict(behaviors);
         },
         predict(behaviors) {
           behaviors.forEach((behavior) => {

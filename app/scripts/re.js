@@ -10,25 +10,29 @@ var Re = stampit({
     DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
     chance: Classifiers.Chance,
 
-    estimate (ocurrences) {
+    estimate (ocurrences, areas) {
       ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
 
-      let estimator = Estimator({ocurrences: ocurrences});
+      let estimator = Estimator({ocurrences: ocurrences, areas: areas});
       estimator.estimate();
     },
 
     learn(ocurrences) {
-      let past, now = Date.now();
+      let learnable = this.learnableSet(ocurrences);
+      this.chance.initialize();
+      this.chance.learn(learnable);
+      return {amount: learnable.length};
+    },
+
+    learnableSet (ocurrences) {
+      let past, now = Date.now(),
+        inPast  = (ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual;
 
       // Only learn from past ocurrences that actualy happened
-      past = ocurrences.filter((ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual);
-
-      // Clone and instantiate dataset
-      past = past.map(Ocurrence.fromJSON, Ocurrence);
-
-      this.chance.initialize();
-      this.chance.learn(past);
-      return {amount: past.length};
+      return ocurrences.filter(inPast)
+      
+        // Clone and instantiate dataset
+        .map(Ocurrence.fromJSON, Ocurrence);
     },
 
     predict(ocurrences) {

@@ -24,6 +24,7 @@ var historyApiFallback = require('connect-history-api-fallback');
 var packageJson = require('./package.json');
 var crypto = require('crypto');
 var polybuild = require('polybuild');
+var proxyMiddleware = require('http-proxy-middleware');
 
 var AUTOPREFIXER_BROWSERS = [
   'ie >= 10',
@@ -228,6 +229,19 @@ gulp.task('clean', function (cb) {
 
 // Watch files for changes & reload
 gulp.task('serve', ['styles', 'elements', 'images'], function () {
+  var https = require('https');
+
+  var jawbone = proxyMiddleware('/jawbone', {
+    target: 'https://jawbone.com',
+    agent  : https.globalAgent,
+    headers: {
+      host: 'jawbone.com'
+    },
+    pathRewrite: {
+      '^/jawbone'    : ''
+    }
+  });
+
   browserSync({
     port: 5000,
     notify: false,
@@ -246,7 +260,7 @@ gulp.task('serve', ['styles', 'elements', 'images'], function () {
     // https: true,
     server: {
       baseDir: ['.tmp', 'app'],
-      middleware: [ historyApiFallback() ],
+      middleware: [ historyApiFallback(), jawbone ],
       routes: {
         '/bower_components': 'bower_components'
       }

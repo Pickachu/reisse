@@ -2,11 +2,12 @@
 
 var behavioral = stampit({
     init () {
-        Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity'));
+        Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity', 'anticipation'));
     },
 
     props: {
-        features: {}
+        features: {},
+        context : {}
     },
 
     methods: {
@@ -20,17 +21,17 @@ var behavioral = stampit({
             // console.log("name", this.name);
             // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "routine:", routine);
 
-            return [money, time, cycles, effort, routine, this._hour()];
+            return [money, time, cycles, effort, routine];
         },
 
         motivation (full, type) {
             type || (type = 'actual')
 
             // TODO change estimated hour based on task cumulative distribution for the day
-            let sensation = 0, anticipation = 0, belonging = 0;
+            let sensation = 0, anticipation = this.features.anticipation[type], belonging = 0;
 
             // console.log("sensation:", sensation, "anticipation:", anticipation, "belonging:", belonging);
-            return [sensation, anticipation, belonging, this._hour()];
+            return [sensation, anticipation, belonging];
         },
 
         // Converts feature value to an value between 0 and 1 for the neural net
@@ -45,11 +46,12 @@ var behavioral = stampit({
 
           // Convert
           return value / maximum;
-        },
-
-        _hour () {
-          return ((this.completedAt) ? this.completedAt.getHours() : Behavior.currentHour) / 23
         }
+
+        // TODO increase daytime prediction success rate
+        // _hour () {
+        //   return ((this.completedAt) ? this.completedAt.getHours() : Behavior.currentHour) / 23
+        // }
 
     }
 }), Behavior = behavioral;

@@ -7,35 +7,33 @@ The complete set of contributors may be found at http://polymer.github.io/CONTRI
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
+
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
-<dom-module id="reisse-calendar">
-  <style>
-    :host {
-      position: absolute;
-    }
-  </style>
+<dom-module id="human-signin">
   <template>
-   <div>
-     <template is="dom-repeat" items="{{calendar.events}}" as="event">
-       <reisse-event event="{{event}}"></reisse-event>
-     </template>
-    </div>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <div>Hello from <span>{{foo}}</span></div>
   </template>
-
   <script>
-    (function () {
-      'use strict';
+  (function() {
+    'use strict';
 
-      Polymer({
-        is: 'reisse-calendar',
-        properties: {
-          calendar: {type: Object, notify: true},
-          from: Date,
-          to: Date
+    Polymer({
+      is: 'human-signin',
+
+      properties: {
+        foo: {
+          type: String,
+          value: 'human-signin',
+          notify: true
         }
-      });
-    })();
+      }
+    });
+  })();
   </script>
-
 </dom-module>

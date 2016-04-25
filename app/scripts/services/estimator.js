@@ -7,24 +7,25 @@
 TODO perhaps use smarter estimators with neural nets
 */
 var estimatorable = stampit({
-    init () {
-        Object.keys(estimators).forEach((name) => {
-          this.estimators.push(estimators[name]())
-        });
-    },
-    props: {
-        areas     : [],
-        estimators: []
-    },
-    methods: {
-        estimate () {
-            this.estimators.forEach((estimator) => {
-                estimator.estimate(this.ocurrences, this.areas);
-            });
+  init () {
+    Object.keys(estimators).forEach((name) => {
+      this.estimators.push(estimators[name]({areas: this.areas, name: name}))
+    });
+  },
+  props: {
+    areas     : [],
+    estimators: []
+  },
+  methods: {
+    estimate () {
+      this.estimators.forEach((estimator) => {
+          console.log("estimating", estimator.name);
+          estimator.estimate(this.ocurrences, this.areas);
+      });
 
-            return this.ocurrences;
-        }
+      return this.ocurrences;
     }
+  }
 }),
     estimators = {},
     Estimator  = estimatorable;

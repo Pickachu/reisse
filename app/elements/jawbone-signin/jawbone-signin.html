@@ -1,0 +1,133 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/oauth-v2/oauth-v2.html">
+<link rel="import" href="../../bower_components/rest-resource/rest-resource.html">
+<link rel="import" href="../../bower_components/iron-localstorage/iron-localstorage.html">
+
+<dom-module id="jawbone-signin">
+  <style> :host { display: inline; } </style>
+  <template>
+    <oauth-v2 id="oauth"
+      endpoint="https://jawbone.com/auth/oauth2/auth"
+      exchange_url="/jawbone/auth/oauth2/token"
+      scope-delimiter=" "
+
+      url-params="{{params}}"
+      client_id="EwB3AV_2uvA"
+      scope="{{scope}}"
+
+      redirect_uri="{{_redirectUri}}"
+      on-response="_responded"></oauth-v2>
+
+    <a href="#">{{_authStatusText}}</a>
+
+    <iron-localstorage name="oauth-storage" value="{{auths}}"></iron-localstorage>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'jawbone-signin',
+
+      properties: {
+        _redirectUri: {
+          type: String,
+          value: function () { return document.location.origin; }
+        },
+        params: {
+          type: Array,
+          value: function () { return ['scope']; }
+        },
+        token: {
+          type: String
+        },
+        authorization: {
+          type: String,
+          notify: true,
+          computed: '_computeAuthorization(token)'
+        },
+        _authStatusText: {
+          type: String,
+          value: "Entrar com Jawbone"
+        },
+        // List of all options: https://jawbone.com/up/developer/authentication
+        scope: {
+          type: Array,
+          value () { return ['basic_read'] }
+        },
+
+        auths: {
+          type: Object,
+          observer: '_authsChanged'
+        }
+      },
+      attached () {
+        this.async(() => {
+          let oauth = this.$.oauth;
+
+          oauth.urlParams.forEach((name) => {
+            oauth[name] || (oauth[name] = oauth.getAttribute(name));
+          });
+
+
+          // TODO open github issue to allow exchange body modification
+          oauth.$.exchange.method = "GET"
+          oauth._exchange  = this._custom_exchange.bind(oauth);
+        });
+      },
+
+      _custom_exchange () {
+        if (this.response_type === 'token') {
+          this.response = this.response_token;
+          this.fire('response', this.response);
+          return;
+        }
+        let params = JSON.parse(this._compute_exchange_body());
+        params.grant_type = "authorization_code";
+        params.client_secret = "b2e0ad0a8b9a2fbc6d2d85ddf3ab7641fe06f684";
+        this.$.exchange.params = params;
+        this.$.exchange.generateRequest();
+      },
+
+      _responded (event, response) {
+        this.token = response.access_token;
+
+        this._storeAuth(response.access_token);
+
+        this._authStatusText = "Jawbone UP Ready";
+      },
+
+      _computeAuthorization (token) {
+        return `Bearer ${token}`;
+      },
+
+      // Previeous session restored
+      _authsChanged (current, old) {
+        // TODO store token expiration date
+        if (current && current.jawbone && current.jawbone.access_token) {
+          this.token = current.jawbone.access_token;
+          this._authStatusText = "Jawbone UP Ready";
+        } else {
+          this.$.oauth.open();
+        }
+      },
+
+      _storeAuth (token) {
+        this.auths || (this.auths = {});
+        this.set('auths.jawbone', {access_token: token});
+      }
+
+    });
+  })();
+  </script>
+</dom-module>

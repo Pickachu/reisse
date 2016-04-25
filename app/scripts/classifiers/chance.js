@@ -7,22 +7,17 @@ Classifiers.Chance = stampit({
         initialize () {
             let Architect   = synaptic.Architect;
             this.chance     = new Architect.Perceptron(2, 3, 1);
-            this.simplicity = Classifiers.Simplicity({chance: this.chance});
-            this.motivation = Classifiers.Motivation({chance: this.chance});
-
+            this.simplicity = Classifiers.Simplicity({chance: this.chance, areas: this.areas});
+            this.motivation = Classifiers.Motivation({chance: this.chance, areas: this.areas});
         },
         learn (ocurrences) {
-            let sets = {
-                chance    : [],
-                motivation: [],
-                simplicity: []
-            };
+            let set;
 
             console.log('classifier: learning');
             this.simplicity.learn(ocurrences);
             this.motivation.learn(ocurrences);
 
-            ocurrences.forEach( (ocurrence) => {
+            set = ocurrences.map( (ocurrence) => {
                 if (ocurrence.features.chance.actual === null) throw new TypeError("No chance provided for ocurrence.", ocurrence);
                 ocurrence = Ocurrence.fromJSON(ocurrence);
 
@@ -33,14 +28,15 @@ Classifiers.Chance = stampit({
 
                 // Validate actual chance distribution space
                 // (x - 1.1) ^ 2 + (y - 1.1) ^ 2 - 1 = 0
-                sets.chance.push({
+                return {
                     input: inputs,
                     output: [ocurrence.features.chance.actual]
-                });
+                };
             }, this);
 
             console.log('classifier: training');
-            this.chance.trainer.train(sets.chance);
+            this.chance.trainer.train(set);
+            console.log('classifier: trained');
         },
 
         predict (behaviors) {

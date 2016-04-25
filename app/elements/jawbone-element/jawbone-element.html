@@ -1,0 +1,89 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="jawbone-element">
+  <style> :host { display: none; } </style>
+  <template>
+    <iron-ajax id="api" auto url="{{endpoint}}" params="{{_params}}" on-response="_responded"></iron-ajax>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'jawbone-element',
+
+      properties: {
+        endpoint: {
+          type: String,
+          computed: '_computeEndPoint(collectionName)',
+        },
+        // List of available collections: https://jawbone.com/up/developer/endpoints
+        collectionName: {
+          type: String,
+          value: null
+        },
+        data: Object,
+        // TODO implement and use jawbone-signin-aware to remove this attribute
+        authorization: {
+          type: String,
+          observer: '_authorizationChanged'
+        },
+        _params: {
+          type: Object,
+          computed: '_computeParams(startDate, endDate)'
+        },
+
+        startDate: Date,
+        endDate: Date
+      },
+
+      _computeEndPoint (collection) {
+        // /jawbone is proxied to https://jawbone.com/`
+        return `/jawbone/nudge/api/v.1.1/users/@me/${collection}`
+      },
+
+      _authorizationChanged (current, old) {
+        this.$.api.headers.Authorization = current;
+      },
+
+      _computeParams (startDate, endDate) {
+        let params = {};
+        startDate && (params.start_date = this._dateToParamDate(startDate));
+        endDate   && (params.end_date   = this._dateToParamDate(endDate  ));
+        return params;
+      },
+
+      _dateToParamDate (date) {
+        let year  = date.getFullYear(),
+            month = date.getMonth() + 1,
+            day   = date.getDate() + 1;
+
+        return `${year}${month}${day}`
+      },
+
+      _responded (event, requester) {
+        event.stopPropagation();
+        let items = requester.response.items || [];
+
+        items.forEach((item) => {
+          item.type = this.collectionName.replace(/\s$/, '');
+        });
+
+        this.data = items;
+      }
+
+    });
+  })();
+  </script>
+</dom-module>

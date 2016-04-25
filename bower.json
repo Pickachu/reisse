@@ -15,7 +15,9 @@
     "rest-resource": "gazal-k/rest-resource",
     "firebase-element": "GoogleWebComponents/firebase-element#^1.0",
     "lodash": "lodash/lodash#^3.0",
-    "synaptic": "cazala/synaptic#^1.0"
+    "synaptic": "cazala/synaptic#^1.0",
+    "iron-localstorage": "^1.0.5",
+    "nvd3-elements": "^0.14.0"
   },
   "devDependencies": {
     "web-component-tester": "*",

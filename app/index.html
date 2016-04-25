@@ -84,6 +84,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <iron-icon icon="home"></iron-icon>
               <span>Home</span>
             </a>
+            <a data-route="performance" href="/performance" on-click="onDataRouteClick">
+              <iron-icon icon="chart"></iron-icon>
+              <span>Performance</span>
+            </a>
           </paper-menu>
         </paper-scroll-header-panel>
 
@@ -121,7 +125,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
                 <google-signin client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
-                <asana-signin  authorization="{{authorization}}"></asana-signin>
+                <asana-signin   authorization="{{authorization}}"></asana-signin>
+                <jawbone-signin authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read"]'></jawbone-signin>
 
                 <template is="dom-if" if="{{ocurrences}}">
                   <paper-button on-tap="integrate" title="click to commit current data to firebase">
@@ -146,7 +151,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 <iron-pages selected="{{selected}}">
                   <div>
-                    <reisse-calendar id="calendar" calendar="{{prediction}}"> </reisse-calendar>
+                    <reisse-calendar id="calendar" class="layout vertical" calendar="{{prediction}}"> </reisse-calendar>
                   </div>
                   <div>
                     <template is="dom-if" if="{{measures}}">
@@ -170,6 +175,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     </template>
                   </div>
                 </iron-pages>
+
+              </section>
+
+              <section data-route="performance">
+                <paper-button on-tap="performate" title="click to commit current data to firebase">
+                  Generate Performance
+                </paper-button>
+
+                <section>
+                  <h2>Task completion by day time</h2>
+                  <p>
+                    Total Loaded Ocurrences: {{ocurrences.length}} <br>
+                    Learnable tasks: {{perfomance.task_completion_by_daytime.learnable.length}}
+                  </p>
+                  <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+                </section>
               </section>
 
             </iron-pages>
@@ -194,7 +215,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </platinum-sw-register>
           -->
 
-      <asana-me workspace-id="1434006482426" authorization="{{authorization}}"></asana-me>
+      <asana-workspace workspace-id="1434006482426" authorization="{{authorization}}"></asana-workspace>
+      <jawbone-element collection-name="sleeps" authorization="{{upAuthorization}}"></jawbone-element>
       <things-element src="sources/things.json"></things-element>
       <!-- <calendar-provider name="google" calendars="{{calendars}}"></calendar-provider> -->
       <template is="dom-repeat" items="{{calendars}}" as="calendar">
@@ -219,12 +241,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/task.js"></script>
     <script src="scripts/models/area.js"></script>
 
+    <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
+    <script src="scripts/models/lore/synchronizerable.js"></script>
+    <script src="scripts/models/lore/integrations/all.js"></script>
     <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/services/estimator.js"></script>
     <script src="scripts/services/estimators/duration.js"></script>
-    <script src="scripts/services/estimators/brain-cycles.js"></script>
+    <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
+    <script src="scripts/services/estimators/motivation/anticipation.js"></script>
 
     <script src="scripts/classifiers/time.js"></script>
     <script src="scripts/classifiers/simplicity.js"></script>
@@ -232,6 +258,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/classifiers/motivation.js"></script>
 
     <script src="scripts/classifiers/chance/daytime.js"></script>
+
+    <script src="scripts/classifiers/motivation/anticipation/responsibility_area.js"></script>
+    <script src="scripts/classifiers/motivation/anticipation.js"></script>
 
     <script src="scripts/services/feature-manager.js"></script>
 

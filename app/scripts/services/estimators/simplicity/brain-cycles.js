@@ -17,7 +17,7 @@ estimators.brainCycles = stampit({
       inferActualBrainCycles(ocurrence) {
         // For compute the brain cycles we use:
         let outdation = ICAL.Duration.fromSeconds(((ocurrence.completedAt || this.now) - ocurrence.createdAt) / 1000),
-        cycles = 0;
+        cycles = 0, days;
 
         // Reading text expends brain cycles but it is easier to understand what
         // you was supposed to do for each additional word
@@ -26,7 +26,9 @@ estimators.brainCycles = stampit({
 
         // For each day past from this task creation it is a tiny bit harder to remember the task
         // - 0.01 brain cycle for each day past the task creation date
-        cycles += outdation.days * 0.1;
+        // TODO create function to better infer brain cycles outdation
+        days    = outdation.toSeconds() / (24 * 60 * 60)
+        cycles += days * 0.1;
 
         // You need to interpret each tag name to help understand the task
         // - 0.5 brain cycle for each tag name interpretation

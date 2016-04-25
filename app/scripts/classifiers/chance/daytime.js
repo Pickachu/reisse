@@ -3,6 +3,10 @@
 var Classifiers = Classifiers || (Classifiers = {});
 
 // TODO group task on daytime by meaning instead of by distributed frequency to infer anticipation motivation and simplicity
+// It currently yields:
+// - a 10% prediction success for random assignment
+// - a 15% prediction success for hour
+// - a 35% prediction success for day period (morning, night, afternoon, madrugada)
 Classifiers.Daytime = stampit({
     init() {
       // let Architect   = synaptic.Architect;
@@ -13,8 +17,6 @@ Classifiers.Daytime = stampit({
       return this;
     },
     methods: {
-
-        ! TODO check how whell the daytime model predicts past tasks fed to it
 
         toShortNames (text) {
           return text.replace(this.emojis, (emoji) => {
@@ -100,10 +102,6 @@ Classifiers.Daytime = stampit({
             //
             //   this.perceptrons[hour] = perceptron;
             // });
-
-
-
-
         },
         predict(behaviors) {
 
@@ -129,6 +127,7 @@ Classifiers.Daytime = stampit({
                 }
               });
 
+              behavior.predictedHour = best
               console.log(hours);
             });
         }

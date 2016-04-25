@@ -8,6 +8,8 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 
 <!-- TODO <link rel="import" href="../components/reisse-feature/reisse-feature.html"> -->
 
@@ -28,48 +30,90 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       display: inline-block;
     }
 
+    paper-button {
+      text-transform: none;
+    }
+
     .emoji {
       font-family: "Apple Color Emoji","Segoe UI Emoji","NotoColorEmoji","Segoe UI Symbol","Android Emoji","EmojiSymbols"
     }
 
   </style>
   <template>
-    <h3>{{event.name}}</h3>
-    <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
-    <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
-    <p>Notes              : <span>{{event.notes}}</span></p>
-    <p>Area               : <span>{{event.area.name}}</span></p>
-    <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
-    <section>
-      <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature>
-    </section>
+    <h3>
+      <paper-button toggles active="{{_details}}" title="clique para ver detalhes">{{event.name}}</paper-button>
+      <paper-button toggles active="{{_factors}}">Factors</paper-button>
+    </h3>
+    <div hidden="{{_details}}" class="layout vertical">
+      <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
+      <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
+      <p>Notes              : <span>{{event.notes}}</span></p>
+      <p>Area               : <span>{{event.areaId}}</span></p>
+      <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
+      <section>
+        <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature>
+      </section>
 
-    <hr />
-
-    <h2>Measures (actual / estimated) <paper-button toggles active="{{_actualMeasures}}">Toggle</paper-button></h2>
-    <div hidden="{{_actualMeasures}}">
-
-      <p>Duration: {{event.features.duration.actual}}s</p>
-
-      <h2>Estimations</h2>
-
-      <p>Chance    : <span>{{event.features.chance.estimated}}</span></p>
-
-      <p>Duration  : <span>{{event.features.duration.estimated}}s</span></p>
-
-      <p>Motivation: <span>{{event.features.motivation.estimated}}</span></p>
-      <p>Motivation - Value: <span>{{event.features.value.estimated}}</span></p>
-
-      <p>Simplicity: <span>{{event.features.simplicity.estimated}}</span></p>
-      <p title="depends on: duration">Simplicity - Time: <span>{{event.features.time.estimated}}</span></p>
-
-      <p>Impact              : <span>{{event.features.impact.estimated}}</span></p>
+      <hr />
     </div>
 
-    <h2>Measures (inferred) <paper-button toggles active="{{_inferredMeasures}}">Toggle</paper-button></h2>
-    <div hidden="{{_inferredMeasures}}">
-      <p> Brain Cycles: {{_infer(event, 'brainCycles')}}</p>
-      <p> Duration: {{_infer(event, 'duration')}}s</p>
+    <div hidden="{{_factors}}" class="layout vertical">
+      <div class="layout horizontal around-justified">
+        <p id="chance">Chance</p>
+        <paper-tooltip animation-delay="0" position="top" for="chance">
+          <p>Estimated: {{event.features.chance.estimated}}</p>
+        </paper-tooltip>
+      </div>
+
+      <div class="layout horizontal around-justified">
+        <p>
+          <p id="motivation">Motivation</p>
+          <paper-tooltip animation-delay="0" position="top" for="motivation">
+            <p>Estimated: {{event.features.motivation.estimated}}</p>
+          </paper-tooltip>
+        </p>
+        <p>
+          <p id="simplicity">Simplicity</p>
+          <paper-tooltip animation-delay="0" position="top" for="simplicity">
+            <p>Estimated: {{event.features.simplicity.estimated}}</p>
+          </paper-tooltip>
+        </p>
+      </div>
+
+      <div class="layout horizontal around-justified">
+        <p>
+          <p id="anticipation">Anticipation</p>
+          <paper-tooltip animation-delay="0" position="top" for="anticipation">
+            <p>Actual: {{event.features.anticipation.actual}}</p>
+            <p>Estimated: {{event.features.anticipation.estimated}}</p>
+          </paper-tooltip>
+        </p>
+        <p>
+          <p id="brainCycles">Brain cycles</p>
+          <paper-tooltip animation-delay="0" position="top" for="brainCycles">
+            <p>Actual   : {{event.features.brainCycles.actual}}</p>
+            <p>Estimated: {{event.features.brainCycles.estimated}}</p>
+            <p>Inferred : {{_infer(event, 'brainCycles')}}</p>
+          </paper-tooltip>
+        </p>
+        <p>
+          <p id="time">Time</p>
+          <paper-tooltip animation-delay="0" position="top" for="time">
+            <p>Estimated: {{event.features.time.estimated}}</p>
+          </paper-tooltip>
+        </p>
+      </div>
+
+      <div class="layout horizontal around-justified">
+        <p>
+          <p id="duration">Duration</p>
+          <paper-tooltip animation-delay="0" position="top" for="duration">
+            <p>Actual: {{event.features.duration.actual}}s</p>
+            <p>Estimated: {{event.features.duration.estimated}}s</p>
+          </paper-tooltip>
+        </p>
+      </div>
+
     </div>
 
   </template>
@@ -85,11 +129,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             notify: true
           },
-          _actualMeasures: {
+          _factors: {
             type: Boolean,
             value: true
           },
-          _inferredMeasures: {
+          _details: {
             type: Boolean,
             value: true
           }

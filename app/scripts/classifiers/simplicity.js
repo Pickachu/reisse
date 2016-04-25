@@ -8,8 +8,7 @@ Classifiers.Simplicity = stampit({
 
       this.time = Classifiers.Time();
 
-      this.perceptron = new Architect.Perceptron(6, 6, 6, 1);
-      this.perceptron.project(this.chance);
+      this.perceptron = new Architect.Perceptron(5, 6, 6, 1);
 
       return this;
     },
@@ -22,8 +21,12 @@ Classifiers.Simplicity = stampit({
           behaviors.forEach((behavior) => {
             let factors = behavior.simplicity(true, 'actual');
             this.perceptron.activate(factors);
-            console.error('update backpropagation to take into account predicted minimum simplicity of task relevance on fuzzy daytime')
             this.perceptron.propagate(0.2, [ss.average(factors)]);
+          });
+
+          behaviors.forEach((behavior) => {
+            let factors = behavior.simplicity(true, 'actual');
+            behavior.features.simplicity.estimated = this.perceptron.activate(factors);
           });
         },
         predict(behaviors) {
