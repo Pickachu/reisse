@@ -124,9 +124,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <firebase-collection limit-to-last="2000" order-by-child="start" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection>
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
-                <google-signin client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
-                <asana-signin   authorization="{{authorization}}"></asana-signin>
-                <jawbone-signin authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read"]'></jawbone-signin>
+                <google-signin     client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
+
+                <!-- TODO insert client ids as parameters -->
+                <asana-signin      authorization="{{authorization}}"></asana-signin>
+                <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read"]'></jawbone-signin>
+                <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
 
                 <template is="dom-if" if="{{ocurrences}}">
                   <paper-button on-tap="integrate" title="click to commit current data to firebase">
@@ -216,7 +219,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           -->
 
       <asana-workspace workspace-id="1434006482426" authorization="{{authorization}}"></asana-workspace>
-      <jawbone-element collection-name="sleeps" authorization="{{upAuthorization}}"></jawbone-element>
+      <jawbone-element collection-name="sleeps" limit="50" authorization="{{upAuthorization}}"></jawbone-element>
+      <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
       <things-element src="sources/things.json"></things-element>
       <!-- <calendar-provider name="google" calendars="{{calendars}}"></calendar-provider> -->
       <template is="dom-repeat" items="{{calendars}}" as="calendar">
@@ -238,17 +242,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/feature.js"></script>
     <script src="scripts/models/behavior.js"></script>
     <script src="scripts/models/ocurrence.js"></script>
+    <script src="scripts/models/ocurrence/jawbone-parser.js"></script>
     <script src="scripts/models/task.js"></script>
+    <script src="scripts/models/activity.js"></script>
     <script src="scripts/models/area.js"></script>
 
     <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
     <script src="scripts/models/lore/synchronizerable.js"></script>
-    <script src="scripts/models/lore/integrations/all.js"></script>
+    <script src="scripts/models/lore/integrations/index.js"></script>
+    <script src="scripts/models/lore/integrations/tasks.js"></script>
+    <script src="scripts/models/lore/integrations/jawbone.js"></script>
     <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/services/estimator.js"></script>
-    <script src="scripts/services/estimators/duration.js"></script>
+    <script src="scripts/services/estimators/location.js"></script>
+    <script src="scripts/services/estimators/duration/duration.js"></script>
     <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
     <script src="scripts/services/estimators/motivation/anticipation.js"></script>
 

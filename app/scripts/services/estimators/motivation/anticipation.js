@@ -10,6 +10,8 @@ estimators.anticipation = stampit({
     },
     methods: {
         estimate(ocurrences) {
+          console.info('estimators anticipation disabled');
+          return;
           let learnable = Re.learnableSet(ocurrences);
           this.contextualize(ocurrences);
 

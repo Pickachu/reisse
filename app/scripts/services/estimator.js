@@ -18,12 +18,14 @@ var estimatorable = stampit({
   },
   methods: {
     estimate () {
-      this.estimators.forEach((estimator) => {
+      let estimations = Promise.all(this.estimators.map((estimator) => {
           console.log("estimating", estimator.name);
-          estimator.estimate(this.ocurrences, this.areas);
-      });
+          return estimator.estimate(this.ocurrences, this.areas);
+      }));
 
-      return this.ocurrences;
+      return new Promise((resolve) =>
+        estimations.then(() => resolve(this.ocurrences))
+      );
     }
   }
 }),

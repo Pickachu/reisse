@@ -41,11 +41,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         _params: {
           type: Object,
-          computed: '_computeParams(startDate, endDate)'
+          computed: '_computeParams(startTime, endTime, limit)'
         },
 
-        startDate: Date,
-        endDate: Date
+        startTime: Date,
+        endTime: Date,
+        limit: {
+          type: Number,
+          value: 10
+        }
       },
 
       _computeEndPoint (collection) {
@@ -57,30 +61,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.$.api.headers.Authorization = current;
       },
 
-      _computeParams (startDate, endDate) {
+      _computeParams (startTime, endTime, limit) {
         let params = {};
-        startDate && (params.start_date = this._dateToParamDate(startDate));
-        endDate   && (params.end_date   = this._dateToParamDate(endDate  ));
+        // TODO validate minimun start time as new Date(2013, 8)
+        startTime && (params.start_time = Math.floor(startTime.getTime() / 1000));
+        endTime   && (params.end_time   = Math.floor(endTime.getTime()   / 1000));
+        params.limit = limit;
         return params;
-      },
-
-      _dateToParamDate (date) {
-        let year  = date.getFullYear(),
-            month = date.getMonth() + 1,
-            day   = date.getDate() + 1;
-
-        return `${year}${month}${day}`
       },
 
       _responded (event, requester) {
         event.stopPropagation();
-        let items = requester.response.items || [];
+        let items = requester.response.data.items || [];
 
         items.forEach((item) => {
           item.type = this.collectionName.replace(/\s$/, '');
         });
 
         this.data = items;
+        this.fire('populated')
       }
 
     });

@@ -29,6 +29,12 @@ Lore = Lore.static({
                   // TODO use firebase key instead of things id
                   ocurrence.areaId = this.workArea.provider.id;
                   break;
+              case 'jawbone':
+                !this.healthArea && console.error("No health area defined for assigining!");
+
+                // TODO use firebase key instead of things id
+                ocurrence.areaId = this.healthArea.provider.id;
+                break;
               case 'i-calendar':
                   break;
               default:

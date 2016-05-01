@@ -1,17 +1,8 @@
 'use strict'
 
-Date.prototype.toICALDate = function () {
-    return this.toISOString().slice(0, 10).replace(/-/g, '')
-};
-// TODO
-// Date.prototype.toICALDateTime = => {
-//     return this.toISODate().slice(0, 10).replace('-', '')
-// }
-
-
 var taskable = stampit({
     init() {
-      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
+      // Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
     },
     props: {
       tagNames: []
@@ -37,15 +28,16 @@ var taskable = stampit({
               id: json.id
           };
 
+          json.activity = { type: 'task' };
           json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
           // Renamings
-          json.dueDate            && (json.start       = new Date(json.dueDate));
-          json.creationDate       && (json.createdAt   = new Date(json.creationDate));
-          json.modificationDate   && (json.updatedAt   = new Date(json.modificationDate));
-          json.activationDate     && (json.activatedAt = new Date(json.activationDate));
-          json.completionDate     && (json.completedAt = new Date(json.completionDate));
-          json.cancellationDate   && (json.cancelledAt = new Date(json.cancellationDate));
+          json.dueDate            && (json.start       = json.dueDate);
+          json.creationDate       && (json.createdAt   = json.creationDate);
+          json.modificationDate   && (json.updatedAt   = json.modificationDate);
+          json.activationDate     && (json.activatedAt = json.activationDate);
+          json.completionDate     && (json.completedAt = json.completionDate);
+          json.cancellationDate   && (json.cancelledAt = json.cancellationDate);
           json.notes              && (json.description = json.notes);
 
           // Cleanup
@@ -58,7 +50,7 @@ var taskable = stampit({
           delete json.cancellationDate;
           delete json.notes;
 
-          return Task(json);
+          return this.fromJSON(json);
       },
       // TODO parse due_on and project
       fromAsana (json) {
@@ -70,18 +62,19 @@ var taskable = stampit({
               id: json.id
           };
 
+          json.activity = { type: 'task' };
           json.status = (json.completed) ? 'completed' : 'open'
           json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
           // Renaming
           if (json.due_at)  {
-            json.due_at          && (json.start          = new Date(json.due_at));
+            json.due_at          && (json.start        = json.due_at);
           } else {
-            json.due_on          && (json.start          = new Date(json.due_on));
+            json.due_on          && (json.start        = json.due_on);
           }
 
-          json.completed_at    && (json.completedAt    = new Date(json.completed_at));
-          json.created_at      && (json.createdAt      = new Date(json.created_at));
+          json.completed_at    && (json.completedAt    = json.completed_at);
+          json.created_at      && (json.createdAt      = json.created_at);
           json.assignee_status && (json.assigneeStatus = json.assignee_status);
           json.num_hearts      && (json.num_hearts     = json.num_hearts);
 
@@ -98,20 +91,14 @@ var taskable = stampit({
           delete json.completed;
 
 
-          return Task(json);
+          return this.fromJSON(json);
       },
       fromJSON (json) {
-          json.start       && (json.start       = new Date(json.start));
-
-          (typeof json.createdAt   != 'string') && json.createdAt   && (json.createdAt   = new Date(json.createdAt));
-          (typeof json.updatedAt   != 'string') && json.updatedAt   && (json.updatedAt   = new Date(json.updatedAt));
-          (typeof json.activatedAt != 'string') && json.activatedAt && (json.activatedAt = new Date(json.activatedAt));
-          (typeof json.completedAt != 'string') && json.completedAt && (json.completedAt = new Date(json.completedAt));
-          (typeof json.cancelledAt != 'string') && json.cancelledAt && (json.cancelledAt = new Date(json.cancelledAt));
-
-          return Task(json);
+        let activity = Activity.fromJSON(json);
+        activity.cancelledAt && (activity.cancelledAt = new Date(activity.cancelledAt));
+        return Task(activity);
       }
   }
 });
 
-var Task = stampit.compose(Ocurrence, taskable, awarable);
+var Task = Ocurrence.compose(taskable, awarable);

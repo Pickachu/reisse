@@ -85,17 +85,21 @@
 
     // Move to classifier manager
     app.learn = function () {
-        Re.estimate(app.ocurrences, app.areas.concat([]));
-        this.measures = Re.learn(app.ocurrences);
+      this.estimating = true;
+      Re.estimate(this.ocurrences, this.areas.concat([]))
+        .then((estimated) => {
+          this.measures = Re.learn(estimated);
+          this.estimating = false;
+        });
 
-        // this.linkEvents(app.ocurrences, Re.unclassified, ['unclassified']);
-        // this.unclassified = {events: Re.unclassified};
+      // this.linkEvents(app.ocurrences, Re.unclassified, ['unclassified']);
+      // this.unclassified = {events: Re.unclassified};
     };
 
     app.predict = function () {
-        let events = Re.lisse(app.ocurrences);
-        this.linkEvents(app.ocurrences, events, ['predictions']);
-        this.prediction = { events: events };
+      let events = Re.lisse(app.ocurrences);
+      this.linkEvents(app.ocurrences, events, ['predictions']);
+      this.prediction = { events: events };
     };
 
     app.linkEvents = function (ocurrences, events, prefix) {

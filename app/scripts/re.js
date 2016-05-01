@@ -14,7 +14,7 @@ var Re = stampit({
       ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
 
       let estimator = Estimator({ocurrences: ocurrences, areas: areas});
-      estimator.estimate();
+      return estimator.estimate();
     },
 
     learn(ocurrences) {
@@ -30,7 +30,7 @@ var Re = stampit({
 
       // Only learn from past ocurrences that actualy happened
       return ocurrences.filter(inPast)
-      
+
         // Clone and instantiate dataset
         .map(Ocurrence.fromJSON, Ocurrence);
     },

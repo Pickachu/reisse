@@ -1,5 +1,13 @@
 'use strict';
 
+Date.prototype.toICALDate = function () {
+    return this.toISOString().slice(0, 10).replace(/-/g, '')
+};
+// TODO
+// Date.prototype.toICALDateTime = => {
+//     return this.toISODate().slice(0, 10).replace('-', '')
+// }
+
 var ocurrenceable = stampit({
     methods: {
         incorporate () {
@@ -41,6 +49,9 @@ var ocurrenceable = stampit({
               case 'asana':
               case 'things':
                 return Task.fromJSON(json);
+              case 'jawbone':
+                // TODO implement activity types
+                return Activity.fromJSON(json);
               default:
                 json.start       && (json.start = new Date(json.start));
                 return Ocurrence(json);
@@ -49,4 +60,4 @@ var ocurrenceable = stampit({
     }
 });
 
-var Ocurrence = stampit.compose(Behavior, ocurrenceable);
+var Ocurrence = Behavior.compose(ocurrenceable);

@@ -11,6 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/rest-resource/rest-resource.html">
+<link rel="import" href="../../bower_components/resource-cursor/resource-cursor.html">
 
 <dom-module id="asana-workspace">
   <style>
@@ -98,6 +99,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       },
       _fetchedTasks (response) {
+        // TODO use this.push
         this.workspace.tasks = this.tasks = this.tasks.concat(response.data);
 
         if (this.$.tasks.hasNext()) {

@@ -2,6 +2,7 @@
 
 estimators.brainCycles = stampit({
   init() {
+    // TODO set this now to ocurrence hour context
     this.now = Date.now();
   },
   methods: {
@@ -15,14 +16,22 @@ estimators.brainCycles = stampit({
       },
 
       inferActualBrainCycles(ocurrence) {
+        let cycles = 0, activityType;
+        if (ocurrence.activity && (activityType = _.capitalize(ocurrence.activity.type))) {
+          cycles += this[`for${activityType}`](ocurrence);
+        }
+        ocurrence.features.brainCycles.actual = cycles;
+      },
+
+      forTask (task) {
         // For compute the brain cycles we use:
-        let outdation = ICAL.Duration.fromSeconds(((ocurrence.completedAt || this.now) - ocurrence.createdAt) / 1000),
+        let outdation = ICAL.Duration.fromSeconds(((task.completedAt || this.now) - task.createdAt) / 1000),
         cycles = 0, days;
 
         // Reading text expends brain cycles but it is easier to understand what
         // you was supposed to do for each additional word
         // - 5 brain cycles for having text, 0.1 less brain cycle for each additional world
-        cycles += Math.max(0, 4 - ocurrence.name.split(/W/g).length * 0.1);
+        cycles += Math.max(0, 4 - task.name.split(/W/g).length * 0.1);
 
         // For each day past from this task creation it is a tiny bit harder to remember the task
         // - 0.01 brain cycle for each day past the task creation date
@@ -32,9 +41,13 @@ estimators.brainCycles = stampit({
 
         // You need to interpret each tag name to help understand the task
         // - 0.5 brain cycle for each tag name interpretation
-        cycles += ocurrence.tagNames.length;
+        cycles += task.tagNames.length;
 
-        ocurrence.features.brainCycles.actual = cycles;
+        return cycles;
+      },
+
+      forSleep (sleep) {
+        return 0;
       },
 
       inferRelativeBrainCycles(ocurrences) {
