@@ -2,7 +2,7 @@
 
 var behavioral = stampit({
     init () {
-        Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity', 'anticipation'));
+        Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity', 'anticipation', 'belongness'));
     },
 
     props: {
@@ -28,13 +28,16 @@ var behavioral = stampit({
             type || (type = 'actual')
 
             // TODO change estimated hour based on task cumulative distribution for the day
-            let sensation = 0, anticipation = this.features.anticipation[type], belonging = 0;
+            let sensation  = 0,
+              anticipation = this.features.anticipation[type],
+              belonging    = this._neuronized('belongness', type);
 
             // console.log("sensation:", sensation, "anticipation:", anticipation, "belonging:", belonging);
             return [sensation, anticipation, belonging];
         },
 
         // Converts feature value to an value between 0 and 1 for the neural net
+        // TODO learn to use softmax
         _neuronized (feature, type) {
           let key = `${feature}_${type}`,
            value  = +this.features[feature][type] || 0,

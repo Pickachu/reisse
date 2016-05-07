@@ -3,18 +3,18 @@
 
 'use strict';
 
-var byChance = (a, b) => b.chance - a .chance
+var byChance = (a, b) => b.chance - a.chance
 
 var Re = stampit({
   static: {
     DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
+
+    // TODO refactors classifiers as esitmators and contextualizers
     chance: Classifiers.Chance,
 
     estimate (ocurrences, areas) {
       ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
-
-      let estimator = Estimator({ocurrences: ocurrences, areas: areas});
-      return estimator.estimate();
+      return Estimators({ocurrences: ocurrences, areas: areas}).estimate();
     },
 
     learn(ocurrences) {
@@ -36,22 +36,28 @@ var Re = stampit({
     },
 
     predict(ocurrences) {
-        let future, now = Date.now();
+        return Context().current().then((context) => {
+          let future = this.predictableSet(ocurrences);
 
-        // Only try to predict future ocurrences (do not already have a prediction attached and it is not already done)
-        future = ocurrences.filter((ocurrence) => ocurrence.status == 'open');
+          this.chance.context = context;
+          this.chance.predict(future);
 
-        // Clone and instantiate dataset
-        future = future.map(Ocurrence.fromJSON, Ocurrence);
+          // Incorporate features in ocurrence to save prediction on database
+          future.map((ocurrence) => ocurrence.incorporate());
 
-
-        this.chance.predict(future);
-
-        // Incorporate features in ocurrence
-        future.map((ocurrence) => ocurrence.incorporate());
-        return future;
+          return future;
+        });
     },
 
+    // Only try to predict future ocurrences (do not already have a prediction attached and it is not already done)
+    predictableSet (ocurrences) {
+      return ocurrences.filter((ocurrence) => ocurrence.status == 'open')
+
+        // Clone and instantiate dataset
+        .map(Ocurrence.fromJSON, Ocurrence);
+    },
+
+    // TODO move to context
     _computeAvailableTime () {
         let oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), midnight = ICAL.Time.now(), available;
 
@@ -62,30 +68,24 @@ var Re = stampit({
         return available;
     },
     lisse(ocurrences) {
-        let lisse = [], available;
+      return this.predict(ocurrences).then((prediction) => {
+        let available = this._computeAvailableTime(), lisse;
 
-        ocurrences = this.predict(ocurrences).sort(byChance);
-        available  = this._computeAvailableTime();
+        prediction = prediction.sort(byChance);
 
-        lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
-            available -= ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
-            return available >= 0;
-        }));
-
-        // areas.forEach((area) => {
-        //     let ocurrences = area.ocurrences, available;
-        //     available = area.avarageDuration
-        //     lisse     = lisse.concat(ocurrences.filter((ocurrence) => {
-        //         available -= ocurrence.duration || ocurrence.estimatedDuration || area.avarageDuration
-        //         return available >= 0;
-        //     }));
-        // });
+        lisse = prediction.filter((ocurrence) => {
+          // available -= ocurrence.duration || ocurrence.estimatedDuration || area.avarageDuration
+          available -= ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
+          return available >= 0;
+        });
 
         if (lisse.length > 50) {
-            console.error("app: Your prediction probably failed and was handicapped to only 30 results.");
-            lisse = lisse.splice(0, 30);
+          console.error("app: Your prediction probably failed and was handicapped to only 30 results.");
+          lisse = lisse.splice(0, 30);
         }
+
         return lisse;
+      });
     }
   }
 });

@@ -5,11 +5,12 @@ Lore.integrations.push(
     name: 'jawbone',
     minStartTime: new Date(2013, 8),
     populate (lore) {
-      console.log('service', this.name);
+      console.log('service', this.name, 'start download');
       return new Promise((served) => {
         let provider = document.querySelector('jawbone-element'), since = this.since,
           listener = (event) => {
-            let ocurrences  = provider.data.map(Ocurrence.fromJawbone, Ocurrence).map(lore.assignArea, lore);
+            console.log('service jawbone finish download');
+            let ocurrences  = provider.data.map(Activity.fromJawbone, Activity).map(lore.assignArea, lore);
             lore.ocurrences = lore.ocurrences.concat(ocurrences);
 
             provider.removeEventListener('populated', listener);

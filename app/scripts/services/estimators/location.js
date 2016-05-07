@@ -6,6 +6,7 @@ estimators.location = stampit({
   init() {
     this.provider = document.querySelector('foursquare-venues');
     this.boundStoreCertainValues = this.storeCertainValues.bind(this);
+    this._boundInferLocations    = this._inferLocations.bind(this);
   },
   refs: {
     locations: new Map()
@@ -15,37 +16,50 @@ estimators.location = stampit({
       this.limit = 200;
       return this.inferActualLocation(ocurrences).then(this.boundStoreCertainValues);
     },
+
     inferActualLocation (ocurrences) {
+      return this.populateLocations(ocurrences).then(this._boundInferLocations);
+    },
+
+    populateLocations (ocurrences) {
       return new Promise((resolve, reject) => {
-        // TODO sort by execution time
-        this._fetchLocations(ocurrences).then((searchs) => {
+        let contexts = _.map(ocurrences, 'context'),
+        fetched = (searchs) => {
           searchs.forEach((venues, index) => {
             if (!venues.length) return;
 
-            let ocurrence = ocurrences[index];
-            ocurrence.venue || (ocurrence.venue = {});
-            ocurrence.venue.name = venues[0].name;
+            let context = contexts[index];
+            context.venue || (context.venue = {});
+            context.venue.name = venues[0].name;
+            context.venue.id   = venues[0].id;
           });
 
           resolve(ocurrences);
-        }, this._fetchLocationsFailer({resolve: resolve, reject: reject}));
-      }).then(this._inferLocations);
+        };
+
+        // TODO sort by execution time
+        this._fetchLocations(contexts)
+          .then(fetched, this._fetchLocationsFailer({resolve: fetched, reject: reject}));
+
+      })
     },
 
     // TODO move to location fetcher element
     storeCertainValues(estimated) {
-        let ocurrences = app.ocurrences;
+      let ocurrences = app.ocurrences;
 
-        return _(estimated)
-          .filter((e) => e.venue.inferred === undefined)
-          .each((estimated) => {
-            let index = ocurrences.findIndex((ocurrence) => ocurrence.__firebaseKey__ === estimated.__firebaseKey__);
-            if (index < 0) {
-              return console.error(`estimators.${this.name}: failed storing certain value for`, estimated);
-            }
-            // TODO compute changes
-            app.set(['ocurrences', index, 'venue'], estimated.venue);
-          }).value();
+      _(estimated)
+        .filter((e) => e.context.venue && e.context.venue.inferred === undefined)
+        .each((estimated) => {
+          let index = ocurrences.findIndex((ocurrence) => ocurrence.__firebaseKey__ === estimated.__firebaseKey__);
+          if (index < 0) {
+            return console.error(`estimators.${this.name}: failed storing certain value for`, estimated);
+          }
+          // TODO compute changes
+          app.set(['ocurrences', index, 'context', 'venue'], estimated.context.venue);
+        }).value();
+
+      return estimated;
     },
 
     _fetchLocations (items) {
@@ -81,7 +95,7 @@ estimators.location = stampit({
           if (this.limit < 0) {return resolve([]);}
 
           if (venue && !venue.name) {
-            let provder = this.provider;
+            let provider = this.provider;
             this.limit--;
 
             if (provider.latitude != venue.latitude || provider.longitude != venue.longitude){
@@ -98,19 +112,27 @@ estimators.location = stampit({
       });
     },
     _inferLocations (ocurrences) {
-      let venue = null;
+      let venue, located, currentVenue;
 
       // TODO sort by start and end times
-      // TODO limit time of inferrement to 3 days
-      return _(ocurrences)
+      // TODO limit time of inferrement to 12 hours
+      located = _(ocurrences)
         .sortBy('completedAt')
         .each((ocurrence) => {
-          if (ocurrence.venue) {
-            venue = ocurrence.venue;
+          if (ocurrence.context.venue) {
+            venue = ocurrence.context.venue;
           } else {
-            ocurrence.venue = Object.assign({inferred: true}, venue);
+            if (ocurrence.completedAt) {
+              ocurrence.context.venue = Object.assign({inferred: true}, venue);
+            } else {
+              // TODO predict next location
+              currentVenue || (currentVenue = venue)
+            }
           }
         }).value();
+
+      this.currentVenue = currentVenue;
+      return located;
     },
     _fetchLocationsFailer (estimation) {
       return (reason) => {

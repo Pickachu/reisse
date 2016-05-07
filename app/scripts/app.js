@@ -97,9 +97,10 @@
     };
 
     app.predict = function () {
-      let events = Re.lisse(app.ocurrences);
-      this.linkEvents(app.ocurrences, events, ['predictions']);
-      this.prediction = { events: events };
+      Re.lisse(app.ocurrences).then((events) => {
+        this.linkEvents(app.ocurrences, events, ['predictions']);
+        this.prediction = { events: events };
+      });
     };
 
     app.linkEvents = function (ocurrences, events, prefix) {

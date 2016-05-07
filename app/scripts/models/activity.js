@@ -12,8 +12,6 @@ var activitable = stampit({
     },
     static: {
       fromJSON (json) {
-          json.start       && (json.start       = new Date(json.start));
-
           json.createdAt   && (json.createdAt   = new Date(json.createdAt));
           json.updatedAt   && (json.updatedAt   = new Date(json.updatedAt));
           json.activatedAt && (json.activatedAt = new Date(json.activatedAt));

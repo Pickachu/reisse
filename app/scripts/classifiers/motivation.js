@@ -16,12 +16,11 @@ Classifiers.Motivation = stampit({
           // if a task is X in simplicity, it requires at least inverseBjFoggConceptualCurve(x) motivation
 
           behaviors.forEach((behavior) => {
-            let factors = behavior.simplicity(true, 'actual');
+            let factors = behavior.motivation(true, 'actual');
             this.perceptron.activate(factors);
             this.perceptron.propagate(0.2, [ss.average(factors)]);
           });
 
-          this.predict(behaviors);
         },
         predict(behaviors) {
           behaviors.forEach((behavior) => {

@@ -163,12 +163,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       <h2>Unclassified Ocurrences</h2>
 
                       <div id="classifier">
-                        <firebase-collection limit-to-last="20"
+                        <!-- <firebase-collection limit-to-last="20"
                                              order-by-child="features/duration/relative"
                                              equal-to="{{_unclassifiedCrieteria}}"
                                              location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences"
                                              data="{{unclassified}}"
-                                             allow-equal-to-null></firebase-collection>
+                                             allow-equal-to-null></firebase-collection> -->
 
                         <template is="dom-repeat" items="{{unclassified}}" as="event">
                           <reisse-event event="{{event}}"></reisse-event>
@@ -242,10 +242,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/feature.js"></script>
     <script src="scripts/models/behavior.js"></script>
     <script src="scripts/models/ocurrence.js"></script>
-    <script src="scripts/models/ocurrence/jawbone-parser.js"></script>
     <script src="scripts/models/task.js"></script>
     <script src="scripts/models/activity.js"></script>
+    <script src="scripts/models/activity/jawbone.js"></script>
     <script src="scripts/models/area.js"></script>
+    <script src="scripts/models/concerns/parsers/jawbone.js"></script>
 
     <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
@@ -260,6 +261,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/estimators/duration/duration.js"></script>
     <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
     <script src="scripts/services/estimators/motivation/anticipation.js"></script>
+    <script src="scripts/services/estimators/motivation/belongness.js"></script>
+
+    <script src="scripts/services/context.js"></script>
+    <script src="scripts/services/contextualizers/location.js"></script>
 
     <script src="scripts/classifiers/time.js"></script>
     <script src="scripts/classifiers/simplicity.js"></script>

@@ -20,9 +20,9 @@ var ocurrenceable = stampit({
             //string += `DTSTAMP:${this.dtstamp}`; convert date to stamp
             string += `DESCRIPTION:${this.description}`;
             string += `SUMMARY:${this.summary}`;
-            string += `LAST-MODIFIED:${this['last-modified']}`;
+            string += `LAST-MODIFIED:${this.updatedAt}`;
             string += `CLASS:${this['class']}`;
-            string += `UID:${this.uid}`;
+            string += `UID:${this.provider.id}`;
             string += "END:VEVENT";
             return ICAL.Component.fromString(string);
         }
@@ -44,6 +44,10 @@ var ocurrenceable = stampit({
         },
         fromJSON (json) {
             json = Object.assign({}, json);
+
+            json.start       && (json.start       = new Date(json.start));
+            json.end         && (json.end         = new Date(json.end  ));
+
             let provider = json.provider ? json.provider.name : 'none'
             switch (provider) {
               case 'asana':
@@ -53,7 +57,6 @@ var ocurrenceable = stampit({
                 // TODO implement activity types
                 return Activity.fromJSON(json);
               default:
-                json.start       && (json.start = new Date(json.start));
                 return Ocurrence(json);
             }
         }

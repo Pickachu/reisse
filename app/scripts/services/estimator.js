@@ -6,28 +6,51 @@
 
 TODO perhaps use smarter estimators with neural nets
 */
-var estimatorable = stampit({
+var estimatorsable = stampit({
   init () {
+    this.boundWhen = this.when.bind(this);
+
     Object.keys(estimators).forEach((name) => {
-      this.estimators.push(estimators[name]({areas: this.areas, name: name}))
+      this.estimators.push(estimators[name]({
+        areas: this.areas,
+        name: name,
+        when: this.boundWhen
+      }));
     });
   },
   props: {
-    areas     : [],
-    estimators: []
+    areas      : [],
+    estimators : [],
+    estimations: []
   },
   methods: {
     estimate () {
-      let estimations = Promise.all(this.estimators.map((estimator) => {
+      this.estimators.forEach((estimator) => {
           console.log("estimating", estimator.name);
-          return estimator.estimate(this.ocurrences, this.areas);
-      }));
+          let estimation = estimator.estimate(this.ocurrences, this.areas)
+          this.estimations.push(estimation);
+          return estimation;
+      });
+
+      let estimates = Promise.all(this.estimations);
 
       return new Promise((resolve) =>
-        estimations.then(() => resolve(this.ocurrences))
+        estimates.then(() => resolve(this.ocurrences))
       );
+    },
+    when (name) {
+      let estimator = this.estimators.findIndex((estimator) => estimator.name == name);
+      if (!this.estimations[estimator]) throw new TypeError(`This estimator ${name} does not return a promise or does not exist.`);
+      return this.estimations[estimator];
     }
   }
 }),
-    estimators = {},
-    Estimator  = estimatorable;
+  estimatorable = stampit({
+    methods: {
+      estimate() {
+        throw new TypeError(`${this.name} must implement estimate method`);
+      }
+    }
+  }),
+  estimators = {},
+  Estimators  = estimatorsable;

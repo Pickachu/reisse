@@ -74,8 +74,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             throw new Error `Received invalid response code: ${meta.code}`;
         }
       },
-      _failed() {
-        debugger;
+      _failed(event, detail) {
+        let request = detail.request;
+
+        switch (request.status) {
+          // Usually happens on rate limit exceded
+          case 403:
+            this.fire('error', detail);
+            break;
+          default:
+            throw Error `Received unhandled failure status code ${request.status}.`
+            break;
+        }
       }
     });
   })();
