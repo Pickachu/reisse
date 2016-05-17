@@ -1,0 +1,101 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="task-by-daytime">
+  <style> :host { display: block; } </style>
+  <template>
+    <h2>Task completion by day time</h2>
+    <p> Learnable tasks: {{learnable.length}} </p>
+    <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'task-by-daytime',
+
+      properties: {
+        foo: {
+          type: String,
+          value: 'task-by-daytime',
+          notify: true
+        }
+      },
+      generateChart () {
+        let learnable = Re.learnableSet( this.ocurrences ), areas = this.areas.concat([{provider: {id: 'undefined'}, name: 'no area'}]);
+        // classifier = Classifiers.ResponsibilityArea({areas: this.areas});
+        // classifier.learn(learnable);
+        //
+        // let predictions = classifier.predict(learnable);
+
+        let data = _(learnable)
+          // Group behaviors by 1 of the 24 hours of the day
+          .groupBy((behavior)      => behavior.completedAt.getHours())
+          .mapValues((group) =>
+            _(group)
+              .values()
+              .groupBy('areaId')
+              .value())
+          .map((grouped, index) => {
+
+            let hour          = +index + 1;
+            let amounts       = _.map(grouped, 'length');
+            let total         = ss.sum(amounts);
+
+            let hourlines = [];
+            _.map(grouped, (behaviors, areaId) => {
+              let amount = behaviors.length, area = areas.find((a) => a.provider.id == areaId);
+              hourlines.push({key: area.name, x: hour, y: amount / total});
+            });
+
+            return hourlines;
+          })
+          .flatten()
+          .groupBy('key')
+          .map((hourlines, area) => {
+            hourlines.forEach((hourline) => delete hourline.key);
+
+            // Fill empty hours
+            let hour = 0;
+            while (hour < 24) {
+              if (!(hourlines.find((hourline) => hourline.x == (hour + 1)))) {
+                hourlines.push({x: hour + 1, y: 0})
+              }
+              hour++;
+            }
+
+            hourlines = _.sortBy(hourlines, 'x');
+
+            return {
+              key: area,
+              values: hourlines
+            };
+          }).value();
+
+        // [{
+        //   key: nome da area,
+        //   values: [{
+        //     x: hora do dia
+        //     y: % de tarefas da hora
+        //   }]
+        // }]
+        let chart = this.$.chart;
+        chart.data = data;
+        chart.generateChart();
+        chart._chart.stacked(true);
+        chart._chart.update();
+      }
+    });
+  })();
+  </script>
+</dom-module>

@@ -23,6 +23,9 @@ Classifiers.ResponsibilityArea = stampit({
 
           // Create training set
           set = _(behaviors).map((behavior) => {
+            // Only learn responsibility area timing from completed behaviors
+            if (!behavior.completedAt) return;
+
             let hour = behavior.completedAt.getHours(),
               index  = ids.indexOf(behavior.areaId),
               input  = baseInput.concat([]),
@@ -34,7 +37,7 @@ Classifiers.ResponsibilityArea = stampit({
               input : input,
               output: output
             };
-          }).value();
+          }).compact().value();
 
           // Train network
           this.perceptron.trainer.train(set, {iterations: 5000});

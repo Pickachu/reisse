@@ -182,17 +182,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               </section>
 
               <section data-route="performance">
-                <paper-button on-tap="performate" title="click to commit current data to firebase">
-                  Generate Performance
-                </paper-button>
-
                 <section>
-                  <h2>Task completion by day time</h2>
-                  <p>
-                    Total Loaded Ocurrences: {{ocurrences.length}} <br>
-                    Learnable tasks: {{perfomance.task_completion_by_daytime.learnable.length}}
-                  </p>
-                  <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+                  <reisse-auditor ocurrences="{{ocurrences}}" classifiers="{{performance.classifiers}}"></reisse-auditor>
                 </section>
               </section>
 
@@ -239,12 +230,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/stamps/awarable.js"></script>
 
     <script src="scripts/models/differentiable.js"></script>
-    <script src="scripts/models/feature.js"></script>
     <script src="scripts/models/behavior.js"></script>
-    <script src="scripts/models/ocurrence.js"></script>
-    <script src="scripts/models/task.js"></script>
-    <script src="scripts/models/activity.js"></script>
-    <script src="scripts/models/activity/jawbone.js"></script>
+    <script src="scripts/models/behavior/feature.js"></script>
+    <script src="scripts/models/behavior/ocurrence.js"></script>
+    <script src="scripts/models/behavior/ocurrence/task.js"></script>
+    <script src="scripts/models/behavior/ocurrence/activity.js"></script>
+    <script src="scripts/models/behavior/ocurrence/activity/jawbone.js"></script>
     <script src="scripts/models/area.js"></script>
     <script src="scripts/models/concerns/parsers/jawbone.js"></script>
 
@@ -265,6 +256,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="scripts/services/context.js"></script>
     <script src="scripts/services/contextualizers/location.js"></script>
+    <script src="scripts/services/contextualizers/calendar.js"></script>
+
+    <script src="scripts/services/suggester.js"></script>
+    <script src="scripts/services/suggesters/activity.js"></script>
 
     <script src="scripts/classifiers/time.js"></script>
     <script src="scripts/classifiers/simplicity.js"></script>
@@ -272,6 +267,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/classifiers/motivation.js"></script>
 
     <script src="scripts/classifiers/chance/daytime.js"></script>
+
+    <script src="scripts/classifiers/motivation/sensation/sleep.js"></script>
+    <script src="scripts/classifiers/motivation/sensation.js"></script>
 
     <script src="scripts/classifiers/motivation/anticipation/responsibility_area.js"></script>
     <script src="scripts/classifiers/motivation/anticipation.js"></script>

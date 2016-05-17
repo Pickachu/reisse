@@ -17,7 +17,7 @@ estimators.brainCycles = stampit({
 
       inferActualBrainCycles(ocurrence) {
         let cycles = 0, activityType;
-        if (ocurrence.activity && (activityType = _.capitalize(ocurrence.activity.type))) {
+        if (ocurrence.activity && (activityType = _.capitalize(ocurrence.type || ocurrence.activity.type))) {
           cycles += this[`for${activityType}`](ocurrence);
         }
         ocurrence.features.brainCycles.actual = cycles;

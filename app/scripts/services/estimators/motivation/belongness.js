@@ -20,7 +20,6 @@ estimators.belongness = stampit({
     // },
 
     inferActualBelongness (ocurrences) {
-      // Only infer actual belongness for past ocurrences
       ocurrences = Re.learnableSet(ocurrences);
 
       let venues = _(ocurrences).map('context.venue').uniq('name').flatten().cloneDeep(),
@@ -28,6 +27,8 @@ estimators.belongness = stampit({
       first  = ocurrences[0];
 
       _(ocurrences)
+        // Only infer actual belongness for past ocurrences
+        .filter('completedAt')
         .sortBy('completedAt')
         .reduce((accumulator, ocurrence) => {
           // TODO fetch venues by id

@@ -13,10 +13,12 @@ Classifiers.Chance = stampit({
     learn (ocurrences) {
       let set;
 
-      console.log('classifier: learning');
+      console.log('classifier: learning simplicity');
       this.simplicity.learn(ocurrences);
+      console.log('classifier: learning motivation');
       this.motivation.learn(ocurrences);
 
+      console.log('classifier: learning chance');
       set = ocurrences.map( (ocurrence) => {
         if (ocurrence.features.chance.actual === null) throw new TypeError("No chance provided for ocurrence.", ocurrence);
         ocurrence = Ocurrence.fromJSON(ocurrence);
@@ -34,9 +36,8 @@ Classifiers.Chance = stampit({
         };
       }, this);
 
-      console.log('classifier: training');
       this.chance.trainer.train(set);
-      console.log('classifier: trained');
+      console.log('classifier: learned');
     },
 
     predict (behaviors) {

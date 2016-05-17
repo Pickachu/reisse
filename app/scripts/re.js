@@ -9,7 +9,7 @@ var Re = stampit({
   static: {
     DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
 
-    // TODO refactors classifiers as esitmators and contextualizers
+    // TODO refactor classifiers as esitmators and contextualizers
     chance: Classifiers.Chance,
 
     estimate (ocurrences, areas) {
@@ -26,7 +26,7 @@ var Re = stampit({
 
     learnableSet (ocurrences) {
       let past, now = Date.now(),
-        inPast  = (ocurrence) => ocurrence.start && ocurrence.start < now && ocurrence.features.chance.actual;
+        inPast  = (ocurrence) => ocurrence.start && ocurrence.start < now;
 
       // Only learn from past ocurrences that actualy happened
       return ocurrences.filter(inPast)
@@ -36,8 +36,17 @@ var Re = stampit({
     },
 
     predict(ocurrences) {
-        return Context().current().then((context) => {
-          let future = this.predictableSet(ocurrences);
+      return Context().current()
+        .then((context) => {
+          return Suggester({
+            ocurrences: ocurrences,
+            context: context
+          });
+        })
+        .then((resolutions) => {
+          let ocurrences = resolutions[0],
+            context      = resolutions[1],
+            future       = this.predictableSet(ocurrences);
 
           this.chance.context = context;
           this.chance.predict(future);
@@ -51,7 +60,7 @@ var Re = stampit({
 
     // Only try to predict future ocurrences (do not already have a prediction attached and it is not already done)
     predictableSet (ocurrences) {
-      return ocurrences.filter((ocurrence) => ocurrence.status == 'open')
+      return ocurrences.filter((ocurrence) => ocurrence.status === 'open')
 
         // Clone and instantiate dataset
         .map(Ocurrence.fromJSON, Ocurrence);
@@ -68,6 +77,7 @@ var Re = stampit({
         return available;
     },
     lisse(ocurrences) {
+      // TODO create a prediction for each context
       return this.predict(ocurrences).then((prediction) => {
         let available = this._computeAvailableTime(), lisse;
 
@@ -84,8 +94,19 @@ var Re = stampit({
           lisse = lisse.splice(0, 30);
         }
 
+        // Add already completed events from today at the beginning of time
+        lisse = this._pastEventsFromToday(ocurrences).concat(lisse);
         return lisse;
       });
+    },
+
+    _pastEventsFromToday(ocurrences) {
+      let midnight = ICAL.Time.now(), comparable;
+
+      midnight.hour  = midnight.minute = midnight.second = 0;
+      comparable = midnight.toJSDate();
+
+      return ocurrences.filter((o) => o.completedAt && o.completedAt > comparable );
     }
   }
 });

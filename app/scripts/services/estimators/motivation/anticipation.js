@@ -31,20 +31,14 @@ estimators.anticipation = stampit({
     inferActualAnticipation (ocurrences) {
       let predictions = this.responsibilityArea.predict(ocurrences);
       ocurrences.forEach((ocurrence, index) => {
-        let prediction = predictions[index],
-        area = this.responsibilityArea.areaIds.indexOf(ocurrence.areaId);
-
         // Prediction is an array with estimated anticipation for each
         // responsibility area at that day time. Get the aticipation related
         // to this ocurrence responsibility area
+        let prediction = predictions[index],
+        area = this.responsibilityArea.areaIds.indexOf(ocurrence.areaId);
 
         // FIXME some ocurrences are coming without responsibility area!
         ocurrence.features.anticipation.actual = prediction[area] || 0.5;
-      });
-    },
-    predict(behaviors) {
-      behaviors.forEach((behavior) => {
-          this.responsibilityArea.perceptron.activate();
       });
     }
   }

@@ -121,76 +121,9 @@
         });
     };
 
-    app.performate = function () {
-      let learnable = Re.learnableSet( this.ocurrences ), areas = this.areas.concat([{provider: {id: 'undefined'}, name: 'no area'}]);
-      // classifier = Classifiers.ResponsibilityArea({areas: this.areas});
-      // classifier.learn(learnable);
-      //
-      // let predictions = classifier.predict(learnable);
-
-      let data = _(learnable)
-        // Group behaviors by 1 of the 24 hours of the day
-        .groupBy((behavior)      => behavior.completedAt.getHours())
-        .mapValues((group) =>
-          _(group)
-            .values()
-            .groupBy('areaId')
-            .value())
-        .map((grouped, index) => {
-
-          let hour          = +index + 1;
-          let amounts       = _.map(grouped, 'length');
-          let total         = ss.sum(amounts);
-
-          let hourlines = [];
-          _.map(grouped, (behaviors, areaId) => {
-            let amount = behaviors.length, area = areas.find((a) => a.provider.id == areaId);
-            hourlines.push({key: area.name, x: hour, y: amount / total});
-          });
-
-          return hourlines;
-        })
-        .flatten()
-        .groupBy('key')
-        .map((hourlines, area) => {
-          hourlines.forEach((hourline) => delete hourline.key);
-
-          // Fill empty hours
-          let hour = 0;
-          while (hour < 24) {
-            if (!(hourlines.find((hourline) => hourline.x == (hour + 1)))) {
-              hourlines.push({x: hour + 1, y: 0})
-            }
-            hour++;
-          }
-
-          hourlines = _.sortBy(hourlines, 'x');
-
-          return {
-            key: area,
-            values: hourlines
-          };
-        }).value();
-
-      // [{
-      //   key: nome da area,
-      //   values: [{
-      //     x: hora do dia
-      //     y: % de tarefas da hora
-      //   }]
-      // }]
-
-      let chart = document.querySelector('#chart');
-      chart.data = data;
-      chart.generateChart();
-      chart._chart.stacked(true);
-      chart._chart.update();
-      this.perfomance = {
-        task_completion_by_daytime: {
-          learnable: learnable
-        }
-      }
-    };
+    app.set('performance', {
+        classifiers: ['Sleep']
+    });
 
     // Manage event features
     FeatureManager(app);

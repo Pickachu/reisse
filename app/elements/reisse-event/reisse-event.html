@@ -41,6 +41,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </style>
   <template>
     <h3>
+      {{_dateToHour(event.start)}}
       <paper-button toggles active="{{_details}}" title="clique para ver detalhes">{{event.name}}</paper-button>
       <paper-button toggles active="{{_factors}}">Factors</paper-button>
     </h3>
@@ -143,6 +144,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           _details: {
             type: Boolean,
             value: true
+          }
+        },
+
+        _dateToHour (date) {
+          if (date) {
+            date = new Date(date);
+            return `${date.getHours()}:${date.getMinutes()}`
+          } else {
+            return ''
           }
         },
 

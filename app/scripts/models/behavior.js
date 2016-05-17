@@ -11,17 +11,18 @@ var behavioral = stampit({
     },
 
     methods: {
+        // Commonality is routine related
         simplicity (full, type) {
             type || (type = 'actual');
-            let money = 1, time = 1, cycles = 1, effort = 1, routine = 1;
+            let money = 1, time = 1, cycles = 1, effort = 1, commonality = 1;
 
             time   = 1 - this._neuronized('duration', type);
             cycles = 1 - this._neuronized('brainCycles', type);
 
             // console.log("name", this.name);
-            // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "routine:", routine);
+            // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "commonality:", commonality);
 
-            return [money, time, cycles, effort, routine];
+            return [money, time, cycles, effort, commonality];
         },
 
         motivation (full, type) {
@@ -34,6 +35,10 @@ var behavioral = stampit({
 
             // console.log("sensation:", sensation, "anticipation:", anticipation, "belonging:", belonging);
             return [sensation, anticipation, belonging];
+        },
+
+        _createSpecie () {
+          this.specie = this.name;
         },
 
         // Converts feature value to an value between 0 and 1 for the neural net
@@ -59,4 +64,4 @@ var behavioral = stampit({
     }
 }), Behavior = behavioral;
 
-Behavior.currentHour = new Date().getHours()
+// Behavior.currentHour = new Date().getHours()

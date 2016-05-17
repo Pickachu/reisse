@@ -8,7 +8,9 @@ var taskable = stampit({
       tagNames: []
     },
     methods: {
-
+      _createSpecie () {
+        this.specie = this.name + this.tagNames.join(' ');
+      }
     },
     static: {
       _chanceFromStatus(status) {

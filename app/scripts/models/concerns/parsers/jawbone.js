@@ -31,6 +31,7 @@ Jawbone = {
   },
   sleeps (json, details) {
     json.type = 'sleep';
+    json.name || (json.name = 'Sleep');
 
     details.asleep_time && (json.start = json.asleepAt = details.asleep_time          * 1000);
     details.awake_time  && (json.end   = json.awakeAt  = details.awake_time           * 1000);
