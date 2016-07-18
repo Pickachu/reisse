@@ -11,41 +11,95 @@ Lore = Lore.static({
       } else {
         this.synchronizedAt = new Date(this.synchronizedAt || 0);
       }
+
+      this.integrable = Lore.integrable();
     },
     static: {
+      location: 'https://boiling-fire-6466.firebaseio.com/lore',
       synchronize () {
         console.log('lore.<synchronizable>: start synchronization');
-        console.log('lore.<synchronizable>: fetch current version');
-        this._fetchVersion((current) => {
-          console.log('lore.<synchronizable>: fetched current version');
-          current.integrations().then((changes) => {
+        return this._createSyncTimeRanges()
+          .then((ranges) => {
+            return new Promise((synchronized) => {
+              let next = () => {
+                let range = ranges.shift();
+
+                if (!range) return synchronized();
+
+                this._synchronizeBatch(range[1]).then(next);
+              };
+
+              next();
+            });
+          });
+      },
+
+      _createSyncTimeRanges() {
+        return new Firebase(this.location)
+          .child('synchronizedAt')
+          .once('value')
+          .then((snapshot) => {
+            let from   = new Date(snapshot.val()),
+                to     = new Date(snapshot.val()),
+                now    = Date.now(),
+                ranges = [];
+
+            // advance final date to 6 months in the future
+            to.setMonth(to.getMonth() + 6);
+
+            // keep time traveling and adding ranges until we hit a point after now
+            while (to < now) {
+              ranges.push([from.getTime(), to.getTime()]);
+
+              // Advance 6 months on to and from dates
+              to.setMonth(    to.getMonth() + 6);
+              from.setMonth(from.getMonth() + 6);
+            }
+
+            ranges.push([to.getTime(), now]);
+
+            return Promise.resolve(ranges);
+          });
+      },
+
+      // TODO accept start at, to allow arbritary sync date ranges
+      _synchronizeBatch (endAt) {
+        console.log('lore.<synchronizable>: fetch version');
+        return this._fetchVersion(endAt).then((current) => {
+          this.synchronizingVersion = current;
+          endAt = new Date(endAt);
+          console.log('lore.<synchronizable>: fetched version from', current.synchronizedAt, 'to', endAt);
+          return current.integrations(endAt).then((changes) => {
             let synchronizer = this.synchronizerable({
               changes: changes,
               location: current.location
             });
 
-            console.log('lore.<synchronizable>: last sync was at', current.synchronizedAt);
-            synchronizer.synchronize();
+            console.log('lore.<synchronizable>: synchronize');
+            return synchronizer.synchronize();
           });
         });
       },
 
-      _fetchVersion (callback) {
-        let base         = new Firebase('https://boiling-fire-6466.firebaseio.com/lore'),
+      // TODO use firebase promises
+      _fetchVersion (limit) {
+        let base         = new Firebase(this.location),
           synchronizedAt = base.child('synchronizedAt'),
-          ocurrences     = base.child('ocurrences').orderByChild('createdAt'),
+          ocurrences     = base.child('ocurrences').orderByChild('updatedAt'),
           areas          = base.child('areas');
 
-        synchronizedAt.once('value', (synchronizedAtSnapshot) => {
-          ocurrences = ocurrences.startAt(synchronizedAtSnapshot.val());
+        return new Promise((resolve) => {
+          synchronizedAt.once('value', (synchronizedAtSnapshot) => {
+            ocurrences = ocurrences.startAt(synchronizedAtSnapshot.val()).endAt(limit || Date.now());
 
-          ocurrences.once('value', (ocurrencesSnapshot) => {
-            areas.once('value', (areasSnapshot) => {
-              callback(Lore.fromSnapshots({
-                areas: areasSnapshot,
-                ocurrences: ocurrencesSnapshot,
-                synchronizedAt: synchronizedAtSnapshot
-              }));
+            ocurrences.once('value', (ocurrencesSnapshot) => {
+              areas.once('value', (areasSnapshot) => {
+                resolve(Lore.fromSnapshots({
+                  areas: areasSnapshot,
+                  ocurrences: ocurrencesSnapshot,
+                  synchronizedAt: synchronizedAtSnapshot
+                }));
+              });
             });
           });
         });
@@ -55,31 +109,6 @@ Lore = Lore.static({
       location: 'https://boiling-fire-6466.firebaseio.com/lore'
     },
     methods: {
-      // Distribute data into a consistent model
-      integrations() {
-        return new Promise((integrated, failed) => {
-          let updates = Lore({synchronizedAt: this.synchronizedAt}), batch, servings = [], serve;
-
-          if (!this.synchronizedAt) throw new TypeError("Lore.integrations: Cannot run integrations without last sync date.");
-
-          Lore.integrations.forEach((integration) => {
-            integration.since = this.synchronizedAt;
-            servings.push(integration.populate(updates));
-          });
-
-          serve = Promise.all(servings);
-
-          serve.then(() => {
-            console.log('Lore.integrations: start changes computation.\n');
-
-            batch = this._computeFirebaseChanges(updates);
-            batch.synchronizedAt = Date.now();
-
-            console.log('Lore.integrations: finished changes computation');
-            integrated(batch);
-          }, failed);
-        });
-      },
       _computeFirebaseChanges(updates) {
         let batch = {}, changes, query = new Firebase('https://boiling-fire-6466.firebaseio.com/lore/ocurrences'),
         // TODO Move this function outside
@@ -98,7 +127,7 @@ Lore = Lore.static({
                 object.toJSON && (object = object.toJSON());
                 return _.mapValues(object, (value) => (_.isDate(value) && value.getTime()) || value );
               default:
-                throw new TypeError(`Lore._computeFirebaseChanges.<serialize> Unserializable type found ${change.value.constructor}!`)
+                throw new TypeError(`Lore._computeFirebaseChanges.<serialize> Unserializable type found ${change.value.constructor}!`);
             }
           } else {
             // undefined, null, false, 0, NaN

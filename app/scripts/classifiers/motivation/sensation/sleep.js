@@ -10,18 +10,18 @@ Classifiers.Sleep = stampit({
     methods: {
       stage () {
         let Architect   = synaptic.Architect;
-        this.perceptron = new Architect.Perceptron(7, 5, 5, 2);
+        this.perceptron = new Architect.LSTM(7, 5, 5, 2);
 
         let twoMothsAgo = Date.now() - 4 * 30 * 24 * 60 * 60 * 1000;
         this.timeCap = new Date(twoMothsAgo);
       },
       learn(behaviors) {
-        let baseInput = _.fill(Array(7), 0),
-          set;
+        let baseInput = _.fill(Array(7), 0), set, learning;
 
         // Create training set
         set = _(behaviors)
           .where({activity: {type: 'sleep'}})
+          .filter((behavior) => behavior.completedAt > this.timeCap)
           .map((behavior) => {
             let day = behavior.completedAt.getDay(),
               input  = baseInput.concat([]),
@@ -41,7 +41,10 @@ Classifiers.Sleep = stampit({
           }).value();
 
         // Train network
-        this.perceptron.trainer.train(set, {iterations: 5000});
+        learning = this.perceptron.trainer.train(set, {iterations: 1000, log: 100, rate: 0.3});
+        learning.set = set;
+        learning.sampleSize = set.length;
+        return learning;
       },
       predict(behaviors) {
         let now = this.context.calendar.now,
@@ -69,14 +72,16 @@ Classifiers.Sleep = stampit({
 
       },
       performate(behaviors) {
-        let baseInput  = _.fill(Array(7), 0), day = 7,
-          sleeps     = {key: 'Dormirá as' , values: []},
-          awakenings = {key: 'Acordará as', values: []},
-          data = [sleeps, awakenings],
-          input, output;
+        let baseInput   = _.fill(Array(7), 0), day = 7,
+          sleeps        = {key: 'Dormirá as' , values: []},
+          awakenings    = {key: 'Acordará as', values: []},
+          inputs        = {key: 'Entrada'    , values: []},
+          data = [sleeps, awakenings, inputs], graphs = [],
+          learning, input, output;
 
+        // Performance graphh
         this.stage();
-        this.learn(Re.learnableSet(behaviors));
+        learning = this.learn(Re.learnableSet(behaviors));
 
         // [{
         //   key: previsoes,
@@ -85,27 +90,41 @@ Classifiers.Sleep = stampit({
         //     y: hora prevista para dormir
         //   }]
         // }]
+        // TODO implement mapper
         while (day--) {
           input      = baseInput.concat([]);
           input[day] = 1;
           output     = this.perceptron.activate(input);
 
-
-          sleeps.values.push({
+          sleeps.values.unshift({
             x: day,
-            y: ((output[0] + 0.5) % 1) * 24
+            y: ((output[0] + 0.5) % 1) * 24,
+            size: 2
           });
 
-          awakenings.values.push({
+          awakenings.values.unshift({
             x: day,
-            y: output[1] * 24
+            y: output[1] * 24,
+            size: 2
           });
         }
 
-        sleeps.values.reverse();
-        awakenings.values.reverse();
+        inputs.values = _(learning.set).map((train) => {
+          return [
+            {
+              x: train.input.indexOf(1),
+              y: ((train.output[0] + 0.5) % 1) * 24
+            },
+            {
+              x: train.input.indexOf(1),
+              y: train.output[1] * 24
+            }
+          ]
+        }).flatten().value();
 
-        return {data: data};
+        graphs.push({data: data, meta: learning, type: 'scatter'});
+
+        return Promise.resolve({graphs: graphs});
       },
       quality (predictions) {
         // let grouped = _.groupBy(predictions, (p) => p[2])

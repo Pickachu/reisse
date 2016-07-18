@@ -22,9 +22,10 @@ Activity = Activity.static({
     if (json.venue) {
       json.context = {
         venue: json.venue
-      }
+      };
     }
 
+    json.status = (json.time_completed) ? 'complete' : 'open';
 
     delete json.xid;
     delete json.type;

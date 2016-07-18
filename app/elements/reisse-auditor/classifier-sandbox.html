@@ -9,11 +9,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="./classifier-performance.html">
 
 <dom-module id="classifier-sandbox">
   <style> :host { display: block; } </style>
   <template>
-    <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+    <template is="dom-repeat" items="[[performance.graphs]]" as="performance">
+      <classifier-performance type="[[performance.type]]" meta="[[performance.meta]]" data="[[performance.data]]"></classifier-performance>
+    </template>
   </template>
   <script>
   (function() {
@@ -27,21 +30,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           observer: '_nameChanged'
         },
-        classifier: Object
+        type: {
+          type: String,
+          value: 'multi-bar'
+        },
+        classifier: Object,
+        stats: Object
       },
 
       _nameChanged (current) {
         this.classifier = Classifiers[current]();
       },
 
-      perform (behaviors) {
-        let performance = this.classifier.performate(behaviors);
+      _eq (a, b) {
+        return a === b;
+      },
 
-        let chart = this.$.chart;
-        chart.data = performance.data;
-        chart.generateChart();
-        chart._chart.stacked(true);
-        chart._chart.update();
+      perform (behaviors) {
+        let draw;
+
+        this.classifier.performate(behaviors).then((performance) => {
+          if (!performance.graphs) {
+            performance.meta = performance.stats;
+            performance = {graphs: [performance]};
+          }
+
+          this.performance = performance;
+        });
       }
     });
   })();

@@ -16,7 +16,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <style> :host { display: block; } </style>
   <template>
     <template is="dom-repeat" items="{{classifiers}}" as="classifier">
-      <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit {{classifier}} </paper-button>
+      <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit [[_format(classifier)]] </paper-button>
       <classifier-sandbox name="{{classifier}}"></classifier-sandbox>
     </template>
   </template>
@@ -36,7 +36,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return console.warn(this.is, 'no ocurrences to perform on, aborting!');
         }
         Polymer.dom(event.target).nextElementSibling.perform(this.ocurrences);
-      }
+      },
+      _format: _.startCase
     });
   })();
   </script>

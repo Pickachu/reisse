@@ -9,23 +9,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/google-signin/google-signin-aware.html">
-<link rel="import" href="../../bower_components/google-apis/google-client-loader.html">
 
 <dom-module id="event-cursor">
+  <style> :host { display: none; } </style>
   <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
+    <google-client-loader id="calendar" name="calendar" version="v3" on-google-api-load="_apiLoaded"></google-client-loader>
     <google-signin-aware
        scopes="https://www.googleapis.com/auth/calendar.readonly"
-       signed-in="{{_signedIn}}"></google-signin-aware>
-    <google-client-loader id="calendar" name="calendar" version="v3"
-                          on-google-api-load="fetchEvents"></google-client-loader>
-
-    <div>Hello from <span>{{foo}}</span></div>
+       is-authorized="{{_signedIn}}"></google-signin-aware>
   </template>
   <script>
   (function() {
@@ -35,63 +26,78 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       is: 'event-cursor',
 
       properties: {
-        _signedIn: {
-          type: Boolean,
-          value: false,
-          observer: '_signInChanged'
-        },
         calendarId: String,
-        summary: {
+        completes: Object,
+        timeMaximum: {
+          type: Date,
+          value: null
+        },
+        timeMinimum: {
+          type: Date,
+          value: null
+        },
+        params: {
+          type: Object,
+          computed: '_computeParams(calendarId, timeMaximum, timeMinimum, paginationToken)'
+        },
+        paginationToken: {
           type: String,
-          // Just reflect to be easier to debug the event cursor
-          reflectToAttribute: true,
-          readOnly: true
+          value: ''
+        },
+        loaded: {
+          type: Boolean,
+          value: false
+        },
+        auto: {
+          type: Boolean,
+          value: false
         },
         events: {
           type: Array,
-          value: function () {return []},
-          notify: true,
-          readOnly: true
-        },
-        start: Date,
-        end: Date
-      },
-      created: function () {
-        var now    = new Date(Date.now());
-        now.setHours(0, 0, 0, 0);
-        this.start = now;
-      },
-      _signInChanged: function(val) {
-        if (val) {
-          this.fetchEvents();
-        }
-        else {
-          this._setEvents([]);
+          value: () => []
         }
       },
-      /**
-       * Fetch the list of events from provided calendar
-       */
-      fetchEvents: function() {
-        if (this._signedIn && this.$.calendar.api) {
-          var request = this.$.calendar.api.events.list({
-            calendarId: this.calendarId,
-            timeMax: this.start.toISOString()
-          }), i;
+      next() {
+        let promise = this.fetch(this.params);
+        promise.then((response) => {
+          let result = response.result;
+          this.paginationToken = result.nextPageToken || '';
+          if (result.items) this.events = this.events.concat(result.items);
+        });
+        return promise;
+      },
+      values () {
+        // Reset events array to prevent duplicated items preservation
+        this.events = [];
 
-          request.execute(function(response) {
-            if (response.error) {
-              console.error("Error with api.events.list", response.message);
-            } else {
-              response.items.map((item) => {
-                item.start = item.start && item.start.dateTime
-                item.end   = item.end   && item.end.dateTime
-              });
+        return new Promise((resolve) => {
+          let responded = (response) => {
+            let result = response.result;
+            if (result.nextPageToken) this.next().then(responded);
+            else resolve(this);
+          };
 
-              this._setSummary(response.summary);
-              this._setEvents(response.items);
-          }}.bind(this));
-        }
+          this.next().then(responded);
+        });
+      },
+      fetch (params) {
+        let events = this.$.calendar.api.events;
+        return events.list(params);
+      },
+      _computeParams(id, maximum, minimum, page) {
+        let params = {};
+        (maximum) && (params.timeMax   = maximum.toISOString());
+        (minimum) && (params.timeMin   = minimum.toISOString());
+        (page   ) && (params.pageToken = page);
+
+        params.calendarId = id;
+
+        return params;
+      },
+      // TODO figure out why this method is not being called
+      _apiLoaded () {
+        this.loaded = true;
+        this.api = this.$.calendar.api.events;
       }
     });
   })();

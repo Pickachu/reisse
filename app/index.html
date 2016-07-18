@@ -121,7 +121,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section data-route="home">
                 <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
-                <firebase-collection limit-to-last="2000" order-by-child="start" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection>
+                <firebase-collection id="mainData" limit-to-last="2000" order-by-child="start" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection>
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
                 <google-signin     client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
@@ -137,47 +137,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </paper-button>
                 </template>
 
-                <template is="dom-repeat" items="{{areas}}" as="area">
-                  <p>
-                    Area: <span>{{area.name}}</span>
-                    Avarage Duration: <span>{{area.avarageDuration}}</span>
-                  </p>
-                </template>
+                <p>
+                  <template is="dom-repeat" items="{{areas}}" as="area">
+                    <span>{{area.name}}</span> |
+                  </template>
+                </p>
+
                 <template is="dom-if" if="{{ocurrences.length}}">
                   <paper-button on-tap="learn">Learn from past experience</paper-button>
                   <paper-button on-tap="predict">Generate the best day</paper-button>
                 </template>
-                <paper-tabs selected="{{selected}}">
-                  <paper-tab>Previsoes</paper-tab>
-                  <paper-tab>Medidas</paper-tab>
-                </paper-tabs>
 
-                <iron-pages selected="{{selected}}">
-                  <div>
-                    <reisse-calendar id="calendar" class="layout vertical" calendar="{{prediction}}"> </reisse-calendar>
-                  </div>
-                  <div>
-                    <template is="dom-if" if="{{measures}}">
-                      <h2>Learning Summary</h2>
-                      <p>Leraned from {{measures.amount}} past experiences.</p>
-                      <h2>Unclassified Ocurrences</h2>
-
-                      <div id="classifier">
-                        <!-- <firebase-collection limit-to-last="20"
-                                             order-by-child="features/duration/relative"
-                                             equal-to="{{_unclassifiedCrieteria}}"
-                                             location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences"
-                                             data="{{unclassified}}"
-                                             allow-equal-to-null></firebase-collection> -->
-
-                        <template is="dom-repeat" items="{{unclassified}}" as="event">
-                          <reisse-event event="{{event}}"></reisse-event>
-                          <hr />
-                        </template>
-                      </div>
-                    </template>
-                  </div>
-                </iron-pages>
+                <div>
+                  <reisse-calendar id="calendar" class="layout vertical" calendar="{{prediction}}"> </reisse-calendar>
+                </div>
 
               </section>
 
@@ -213,12 +186,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <jawbone-element collection-name="sleeps" limit="50" authorization="{{upAuthorization}}"></jawbone-element>
       <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
       <things-element src="sources/things.json"></things-element>
-      <!-- <calendar-provider name="google" calendars="{{calendars}}"></calendar-provider> -->
-      <template is="dom-repeat" items="{{calendars}}" as="calendar">
-        <event-cursor calendar-id="{{calendar.id}}"></event-cursor>
-        <!-- <i-calendar src="{{calendar.feed}}" calendar="{{calendar.json}}"> </i-calendar> -->
-      </template>
 
+      <!-- consider using: http://robrez.github.io/poly-ical/components/poly-ical/index.html -->
+      <calendar-provider name="google" calendars="{{calendars}}">
+        <template is="dom-repeat" items="{{calendars}}" as="calendar">
+          <event-cursor calendar-id="{{calendar.id}}"></event-cursor>
+          <!-- <i-calendar src="{{calendar.feed}}" calendar="{{calendar.json}}"> </i-calendar> -->
+        </template>
+      </calendar-provider>
+      <calendar-search id="searcher"></calendar-search>
     </template>
 
 
@@ -242,15 +218,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
     <script src="scripts/models/lore/synchronizerable.js"></script>
+    <script src="scripts/models/lore/integrable.js"></script>
     <script src="scripts/models/lore/integrations/index.js"></script>
     <script src="scripts/models/lore/integrations/tasks.js"></script>
     <script src="scripts/models/lore/integrations/jawbone.js"></script>
+    <script src="scripts/models/lore/integrations/i-calendars.js"></script>
     <script src="scripts/models/lore.js"></script>
+
+    <script src="scripts/services/string/transliterate.js"></script>
 
     <script src="scripts/services/estimator.js"></script>
     <script src="scripts/services/estimators/location.js"></script>
     <script src="scripts/services/estimators/duration/duration.js"></script>
+
+    <!-- Domain estimators -->
     <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
+    <script src="scripts/services/estimators/simplicity/time.js"></script>
     <script src="scripts/services/estimators/motivation/anticipation.js"></script>
     <script src="scripts/services/estimators/motivation/belongness.js"></script>
 
@@ -261,7 +244,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/suggester.js"></script>
     <script src="scripts/services/suggesters/activity.js"></script>
 
-    <script src="scripts/classifiers/time.js"></script>
+    <script src="scripts/services/hash.js"></script>
+
+    <script src="scripts/classifiers/simplicity/time/duration.js"></script>
+    <script src="scripts/classifiers/simplicity/time.js"></script>
     <script src="scripts/classifiers/simplicity.js"></script>
     <script src="scripts/classifiers/chance.js"></script>
     <script src="scripts/classifiers/motivation.js"></script>

@@ -65,4 +65,4 @@ Lore = Lore.static({
   })
 });
 
-Lore = Lore.compose(differentiable, Lore.synchronizable, Lore.modelable, Lore.deduplicator);
+Lore = Lore.compose(differentiable, Lore.synchronizable, Lore.integrable, Lore.modelable, Lore.deduplicator);

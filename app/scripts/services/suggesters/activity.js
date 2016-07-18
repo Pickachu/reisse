@@ -27,10 +27,12 @@ Suggester.add(stampit({
         // TODO add this properties
         // areaId   : this.healthArea.provider.id,
         // TODO better way to generate a temporary id
-        provider    : {id: Math.random() * 10000, name: 'relisse'},
+        provider    : {id: (Math.random() * 10000).toFixed(), name: 'relisse'},
         // quality  : x,
         // TODO predict features
         // features : {},
+        name        : 'Sleep',
+        notes       : 'How about sleeping at this time today?',
         suggestion  : true,
         asleepAt    : prediction.asleepAt,
         awakeAt     : prediction.awakeAt,

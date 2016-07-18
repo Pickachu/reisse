@@ -52,7 +52,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // Query parameters for workspace tasks
         fields: {
           type: Array,
-          value: () => ['name', 'due_on', 'due_at', 'completed', 'completed_at', 'created_at', 'num_hearts', 'projects', 'assignee_status']
+          value: () => ['name', 'due_on', 'due_at', 'completed', 'completed_at', 'created_at', 'modified_at', 'num_hearts', 'projects', 'assignee_status']
         },
         completedSince: {
           type: Date,
@@ -81,31 +81,67 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         '_populate(workspaceId, modifiedSince, authorization)'
       ],
       attached () {
-        this.boundFetchedTasks = this._fetchedTasks.bind(this);
+        this.boundHandleResponse = this._handleResponse.bind(this);
+        this.boundHandleFailure  = this._handleFailure.bind(this);
       },
       _populate (workspaceId) {
-        // TODO allow parallel loading of workspace tasks and workspace
-        this.$.workspaces.show(workspaceId, (response) => {
-          this.workspace = response.data;
+        return new Promise((resolve, reject) => {
+          // TODO make population promises
 
-          this._params = {
-            assignee: 'me',
-            workspace: workspaceId,
-            modified_since: this.modifiedSince.toISOString(),
-            opt_fields: this.fields.join(',')
-          };
-          this.$.tasks.next(this.boundFetchedTasks, () => {}, this._params);
+          // reset tasks array
+          // TODO only update tasks array with parametrized data
+          this.tasks = [];
 
+          // TODO allow parallel loading of workspace tasks and workspace
+          this.$.workspaces.show(workspaceId, (response) => {
+            this.workspace = response.data;
+            this.workspace.modifiedSince = this.modifiedSince;
+
+            this._params = {
+              assignee: 'me',
+              workspace: workspaceId,
+              modified_since: this.modifiedSince.toISOString(),
+              opt_fields: this.fields.join(',')
+            };
+
+            this.$.tasks.values(this._params).then(this.boundHandleResponse, this.boundHandleFailure);
+          });
+
+          this._fetched = resolve;
+          this._failure = reject;
         });
       },
-      _fetchedTasks (response) {
+      _handleResponse (response) {
         // TODO use this.push
         this.workspace.tasks = this.tasks = this.tasks.concat(response.data);
 
-        if (this.$.tasks.hasNext()) {
-          this.$.tasks.next(this.boundFetchedTasks, () => {}, this._params);
-        } else {
-          this.fire('populated', {cursor: this._cursored});
+        if (!this.$.tasks.hasNext()) {
+          this._fetched(this.workspace);
+          this.fire('populated', {workspace: this.workspace});
+        }
+      },
+      // TODO test asana failure handling
+      _handleFailure(response) {
+        let message = `${this.is}: Error while searching for calendar event.`;
+        message    += `\n status: ${response.status}\n message: ${response.statusText}`;
+
+        switch (response.status) {
+          case -1:
+            message += '\n Will retry indefinately. Starting now.'
+            console.warn(message);
+            this.$.tasks.values(this._params).then(this.boundHandleResponse, this.boundHandleFailure);
+            break;
+          case 503:
+            message += '\n Server is overloaded! Giving 1000ms for it to breath.'
+            message += '\n Will retry indefinately. Starting now.'
+            console.warn(message);
+            setTimeout(() => {
+              this.$.tasks.values(this._params).then(this.boundHandleResponse, this.boundHandleFailure);
+            }, 1000);
+            break;
+          default:
+            this._failure({response: response});
+            break;
         }
       }
     });

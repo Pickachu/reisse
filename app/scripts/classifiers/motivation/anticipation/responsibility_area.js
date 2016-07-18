@@ -6,78 +6,103 @@ var Classifiers = Classifiers || (Classifiers = {});
 // - a 58% prediction success for hour
 Classifiers.ResponsibilityArea = stampit({
     init () {
-      let Architect   = synaptic.Architect;
-
-      this.perceptron = new Architect.Perceptron(24, this.areas.length * 2, this.areas.length);
-      this.areaIds = this.areas.map((area) => area.provider.id);
+      // FIXME forwardable properties to reisse classifiers
+      this.areas || (this.areas = app.areas);
+      this.stage();
     },
     methods: {
-        learn(behaviors) {
-          if (this.learned) return;
+      stage() {
+        let Architect   = synaptic.Architect;
 
-          let groups,
-            baseInput  = _.fill(Array(24), 0),
-            baseOutput = _.fill(Array(this.areas.length), 0),
-            ids = this.areaIds,
-            set;
+        this.perceptron = new Architect.Perceptron(24, this.areas.length * 2, this.areas.length);
+        this.areaIds = this.areas.map((area) => area.provider.id);
+      },
+      // TODO use task execution times to infer responsibility area
+      learn(behaviors) {
+        if (this.learned) return;
 
-          // Create training set
-          set = _(behaviors).map((behavior) => {
-            // Only learn responsibility area timing from completed behaviors
-            if (!behavior.completedAt) return;
+        let groups,
+          baseInput  = _.fill(Array(24), 0),
+          baseOutput = _.fill(Array(this.areas.length), 0),
+          ids = this.areaIds,
+          set;
 
-            let hour = behavior.completedAt.getHours(),
-              index  = ids.indexOf(behavior.areaId),
-              input  = baseInput.concat([]),
-              output = baseOutput.concat([]);
+        // Create training set
+        set = _(behaviors).map((behavior) => {
+          // Only learn responsibility area timing from completed behaviors
+          if (!behavior.completedAt) return;
 
-            input[hour  ] = 1;
-            output[index] = 1;
-            return {
-              input : input,
-              output: output
-            };
-          }).compact().value();
+          if (!behavior.areaId) return console.warn('Anticipation: ResponsibilityArea:', behavior.__firebaseKey__, behavior.name, 'has no area defined! skiping');
 
-          // Train network
-          this.perceptron.trainer.train(set, {iterations: 5000});
+          let hour = behavior.completedAt.getHours(),
+            index  = ids.indexOf(behavior.areaId),
+            input  = baseInput.concat([]),
+            output = baseOutput.concat([]);
 
-          this.learned = true;
-        },
-        predict(behaviors) {
-          let baseInput = _.fill(Array(24), 0), ids = this.areaIds;
-
-          return behaviors.map((behavior) => {
-            let hour    = behavior.context.startTime.getHours(),
-            input       = baseInput.concat([]), prediction;
-            input[hour] = 1;
-            prediction           = this.perceptron.activate(input);
-            prediction.predicted = prediction.indexOf(ss.max(prediction));
-            prediction.actual    = ids.indexOf(behavior.areaId);
-            return prediction;
-          });
-        },
-        performance(behaviors) {
-          let baseInput = _.fill(Array(24), 0), hour = (new Date()).getHours(), ids = this.areaIds, predictions = [];
-          behaviors = behaviors || Re.learnableSet(app.ocurrences);
-
-          behaviors.forEach((behavior) => {
-            let hour    = behavior.completedAt.getHours(),
-            input       = baseInput.concat([]), predicted, actual, prediction
-            input[hour] = 1;
-            prediction  = this.perceptron.activate(input);
-            predicted   = prediction.indexOf(ss.max(prediction));
-            actual      = ids.indexOf(behavior.areaId);
-            predictions.push([actual, predicted, actual == predicted]);
-          });
-
-          return predictions;
-        },
-        quality (predictions) {
-          let grouped = _.groupBy(predictions, (p) => p[2])
+          input[hour  ] = 1;
+          output[index] = 1;
           return {
-            success: grouped.true.length / predictions.length
-          }
+            input : input,
+            output: output
+          };
+        }).compact().value();
+
+        // Train network
+        this.perceptron.trainer.train(set, {iterations: 5000, log: 1000});
+
+        this.learned = true;
+      },
+      predict(behaviors) {
+        let baseInput = _.fill(Array(24), 0), ids = this.areaIds;
+
+        return behaviors.map((behavior) => {
+          let hour    = behavior.context.startTime.getHours(),
+          input       = baseInput.concat([]), prediction;
+          input[hour] = 1;
+          prediction           = this.perceptron.activate(input);
+          prediction.predicted = prediction.indexOf(ss.max(prediction));
+          prediction.actual    = ids.indexOf(behavior.areaId);
+          return prediction;
+        });
+      },
+      performate(behaviors) {
+        let baseInput = _.fill(Array(24), 0),
+          hour = (new Date()).getHours(),
+          hours = 24,
+          ids  = this.areaIds, predictions = [],
+          input, output, predicted, actual, prediction,
+          columns = this.areas.map((area) => {return {key: area.name, values: []}});
+
+        this.stage();
+        this.learned = false;
+        this.learn(Re.learnableSet(behaviors));
+
+        while (hours--) {
+          input       = baseInput.concat([])
+          input[hours] = 1;
+
+          output      = this.perceptron.activate(input);
+          columns.forEach((column, index) => {
+            column.values.unshift({
+              x: hours,
+              y: output[index]
+            });
+          });
         }
+
+        // TODO also audit prediction error rate
+        // output      = this.perceptron.activate(input);
+        // predicted   = prediction.indexOf(ss.max(prediction));
+        // actual      = ids.indexOf(behavior.areaId);
+        // predictions.push([actual, predicted, actual == predicted]);
+
+        return Promise.resolve({data: columns, stats: {sampleSize: behaviors.length}});
+      },
+      quality (predictions) {
+        let grouped = _.groupBy(predictions, (p) => p[2])
+        return {
+          success: grouped.true.length / predictions.length
+        }
+      }
     }
 });

@@ -23,6 +23,8 @@ that handles authentication.
       <google-signin-aware
          scopes="https://www.googleapis.com/auth/calendar.readonly"
          is-authorized="{{_signedIn}}"></google-signin-aware>
+
+      <content></content>
   </template>
 </dom-module>
 
@@ -32,11 +34,15 @@ that handles authentication.
     is: 'calendar-provider',
 
     properties: {
+      provider: {
+        type: String,
+        value: 'google'
+      },
       _signedIn: {
         type: Boolean,
         value: false,
         observer: '_signInChanged'
-      }, 
+      },
       /**
        * List of calendars
        */
@@ -80,7 +86,7 @@ that handles authentication.
             })
             this._setCalendars(calendars);
         }
-                       }.bind(this));
+      }.bind(this));
     }
   },
     providerIs: function (other) {

@@ -20,6 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       margin: 2em auto;
       padding: 1em;
       border: 1px solid gray;
+      min-height: 3em;
     }
 
     h3 {
@@ -42,7 +43,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <template>
     <h3>
       {{_dateToHour(event.start)}}
-      <paper-button toggles active="{{_details}}" title="clique para ver detalhes">{{event.name}}</paper-button>
+      <paper-button toggles active="{{_details}}" title="clique para ver detalhes">[[event.name]][[_optionalName]]</paper-button>
       <paper-button toggles active="{{_factors}}">Factors</paper-button>
     </h3>
     <div hidden="{{_details}}" class="layout vertical">
@@ -51,8 +52,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <p>Notes              : <span>{{event.notes}}</span></p>
       <p>Area               : <span>{{event.areaId}}</span></p>
       <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
+      <p>Provider           : <span>{{event.provider.name}}</span></p>
       <section>
-        <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature>
+        <!-- <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature> -->
       </section>
 
       <hr />
@@ -144,15 +146,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           _details: {
             type: Boolean,
             value: true
+          },
+
+          _optionalName: {
+            type: String,
+            computed: '_decideOptionalName(event)'
+          }
+        },
+
+        observers: [
+          '_computeHeight(event.features.duration.estimated)'
+        ],
+
+        _decideOptionalName (event) {
+          if (event) {
+            if (event.name) return '';
+            else return event.provider.name;
+          } else {
+            return 'No event defined'
           }
         },
 
         _dateToHour (date) {
           if (date) {
             date = new Date(date);
-            return `${date.getHours()}:${date.getMinutes()}`
+            return `${date.getHours()}:${date.getMinutes()}`;
           } else {
-            return ''
+            return '';
           }
         },
 
@@ -160,6 +180,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           let estimator = estimators[feature](), inferal = 'inferActual' + _.capitalize(feature);
           estimator[inferal](Ocurrence.fromJSON(event));
           return event.features[feature].actual;
+        },
+
+        _computeHeight (duration) {
+          duration || (duration = 120);
+          this.style.minHeight = Math.floor(duration / (60 * 60)) + "em";
         }
       });
     })();

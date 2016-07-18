@@ -37,8 +37,11 @@ var behavioral = stampit({
             return [sensation, anticipation, belonging];
         },
 
-        _createSpecie () {
-          this.specie = this.name;
+        // TODO Save behavior specie on database
+        createSpecie () {
+          var hasher  = Hash.Sim;
+          specie      = hasher.simhash(this.name || "");
+          return specie;
         },
 
         // Converts feature value to an value between 0 and 1 for the neural net
@@ -51,6 +54,7 @@ var behavioral = stampit({
 
           // TODO mark this feature as valueless
           if (value === -1) return 0;
+
 
           // Convert
           return value / maximum;

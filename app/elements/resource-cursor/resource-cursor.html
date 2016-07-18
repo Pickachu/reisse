@@ -33,22 +33,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return {
               page : 'page',
               limit: 'limit'
-            }
+            };
           }
         },
+
         // TODO store pagination tokens
         paginationToken: {
           type: String,
           value: ''
         },
+
         pageSize: {
           type: Number,
           value: 100
         },
+
         responseTokenPath: {
           type: String,
           value: 'pagination.token'
-        }
+        },
+
+        // Currenlty request being made
+        request: Object
       },
 
       attached () {
@@ -59,10 +65,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       // Domain
       next (succeeded, failed, params) {
-        this.for.index(succeeded, failed, params);
+        return this.for.index(succeeded, failed, params);
       },
 
       hasNext() {return !!this.paginationToken; },
+
+      values () {
+        return new Promise((resolve, reject) => {
+          let responded = (response) => {
+            if (this.hasNext()) this.next().then(responded, reject);
+            else resolve(this);
+          };
+
+          this.next().then(responded, reject);
+        });
+      },
 
       _prepareUrl(url, params, queryParams, id, action) {
         queryParams          || (queryParams = {});
@@ -80,9 +97,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         current && this._monitor(current);
         old     && this._unmonitor(old);
       },
-      _monitor(current) {
-        this._upgradeRestResource(current);
-        this.listen(current, 'response', '_responded');
+      _monitor(resource) {
+        this._upgradeRestResource(resource);
+        this.listen(resource, 'request' , '_requested');
+        this.listen(resource, 'response', '_responded');
       },
 
       // TODO downgrade rest resource
@@ -91,12 +109,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         current._prepareUrl = this._prepareUrl.bind(this);
       },
 
-      _unmonitor(old) {
-        this.unlisten(current, 'response', '_responded');
+      _unmonitor(resource) {
+        // this._downgradeRestResource(resource);
+        this.unlisten(resource, 'request' , '_requested');
+        this.unlisten(resource, 'response', '_responded');
+      },
+
+      _requested(event, detail) {
+        this.request = detail.request;
       },
 
       _responded(event, detail) {
         let response = detail.response;
+        // TODO remove lodash dependency
         this.paginationToken = _.get(response, this.responseTokenPath);
       }
     });

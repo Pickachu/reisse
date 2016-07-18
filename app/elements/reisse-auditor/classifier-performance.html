@@ -1,0 +1,87 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-multi-bar.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-line.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-line-with-focus.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-scatter.html">
+
+<dom-module id="classifier-performance">
+  <style> :host { display: block; } </style>
+  <template>
+    <p>
+      <h2>[[meta.title]]</h2>
+      Sample Size: [[meta.sampleSize]]
+      Iterations: [[meta.iterations]] <br />
+      Error: [[meta.error]]
+      Training Time: [[meta.time]]
+    </p>
+    <p>
+      <template is="dom-if" if="[[_eq(type, 'scatter')]]">
+        <nvd3-scatter id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
+      </template>
+      <template is="dom-if" if="[[_eq(type, 'multi-bar')]]">
+        <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+      </template>
+    </p>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'classifier-performance',
+
+      properties: {
+        type: {
+          type: String,
+          value: 'multi-bar'
+        },
+        meta: Object,
+        data: Object,
+        _graphReady: {
+          type: Boolean,
+          value: false
+        }
+      },
+
+      observers: ['_redraw(data, _graphReady)'],
+
+      listeners: {
+        'dom-change': '_handleGraphAttachement'
+      },
+
+      _redraw(data, graphReady) {
+        if (!graphReady) return;
+
+        let chart = this.$$('#chart'), model = chart._chart;
+        chart.data = data;
+        chart.generateChart();
+
+        if (model.stacked) { model.stacked(true); }
+
+        if (model.useInteractiveGuideline) {
+          model.useInteractiveGuideline(true);
+          model.update();
+        }
+      },
+
+      _eq (a, b) {
+        return a === b;
+      },
+
+      _handleGraphAttachement() {
+        this._graphReady = !!this.$$('#chart');
+      }
+    });
+  })();
+  </script>
+</dom-module>

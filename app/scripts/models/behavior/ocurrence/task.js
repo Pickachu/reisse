@@ -9,7 +9,10 @@ var taskable = stampit({
     },
     methods: {
       _createSpecie () {
-        this.specie = this.name + this.tagNames.join(' ');
+        this.specie = [
+          this.name,
+          this.tagNames.join(' ')
+        ]
       }
     },
     static: {
@@ -18,20 +21,25 @@ var taskable = stampit({
           switch (status) {
           case 'completed': return 1;
           case 'canceled' : return 0;
-          case 'open'     : return 0;
           default         : return null;
           }
       },
+      statusMap: new Map([
+        ['completed', 'complete'],
+        ['canceled' , 'cancel'  ],
+        ['open'     , 'open'    ]
+      ]),
       fromThings (json) {
           json = Object.assign({features: {}}, json);
+
           // Computations
           json.provider  = {
               name: 'things',
               id: json.id
           };
 
-          json.activity = { type: 'task' };
           json.features.chance = {actual: this._chanceFromStatus(json.status)};
+          json.status = this.statusMap.get(json.status);
 
           // Renamings
           json.dueDate            && (json.start       = json.dueDate);
@@ -41,6 +49,7 @@ var taskable = stampit({
           json.completionDate     && (json.completedAt = json.completionDate);
           json.cancellationDate   && (json.cancelledAt = json.cancellationDate);
           json.notes              && (json.description = json.notes);
+
 
           // Cleanup
           delete json.id;
@@ -64,8 +73,7 @@ var taskable = stampit({
               id: json.id
           };
 
-          json.activity = { type: 'task' };
-          json.status = (json.completed) ? 'completed' : 'open'
+          json.status = (json.completed) ? 'complete' : 'open';
           json.features.chance = {actual: this._chanceFromStatus(json.status)};
 
           // Renaming
@@ -77,6 +85,7 @@ var taskable = stampit({
 
           json.completed_at    && (json.completedAt    = json.completed_at);
           json.created_at      && (json.createdAt      = json.created_at);
+          json.modified_at     && (json.updatedAt      = json.modified_at);
           json.assignee_status && (json.assigneeStatus = json.assignee_status);
           json.num_hearts      && (json.num_hearts     = json.num_hearts);
 

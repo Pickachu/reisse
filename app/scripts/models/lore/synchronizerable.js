@@ -8,7 +8,7 @@ Lore = Lore.static({
       synchronize () {
         this.changeCount = Object.keys(this.changes).length;
         this.split();
-        this.process();
+        return this.process();
       },
 
       split () {
@@ -31,18 +31,18 @@ Lore = Lore.static({
         this.batches.push(batch);
       },
       process () {
-        if (!this.batches.length) return console.log('synchronizer.process: Finished synchronizing.');
+        if (!this.batches.length) return Promise.resolve(console.log('synchronizer.process: Finished synchronizing.'));
 
         // Send all batches one after another
         let current = this.batches.shift();
-        this.send(current, () => this.process());
+        return this.send(current).then(this.process.bind(this));
       },
-      send (batch, sent) {
-        this.query.update(batch, (error) => {
-          console.log('synchronizer.send: Synchronized batch.');
-          if (error) throw new Error `lore: Error synchronizing. ${error.message}`
-          sent();
-        });
+      send (batch) {
+        return this.query.update(batch).catch(this.failed.bind(this));
+      },
+      failed (error) {
+        console.log('synchronizer.send: Synchronized batch.');
+        if (error) throw new Error `lore: Error synchronizing. ${error.message}`
       }
     },
     init() {

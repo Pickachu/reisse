@@ -1,0 +1,74 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="calendar-search">
+  <style> :host { display: none; } </style>
+  <template>
+    <google-client-loader id="calendar" name="calendar" version="v3"
+      on-google-api-load="_apiLoaded"></google-client-loader>
+    <google-signin-aware
+       scopes="https://www.googleapis.com/auth/calendar.readonly"
+       is-authorized="{{_signedIn}}"></google-signin-aware>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'calendar-search',
+
+      properties: {
+        query: String,
+        calendarId: String,
+        completes: Object,
+        timeMaximum: {
+          type: Date,
+          value: null
+        },
+        timeMinimum: {
+          type: Date,
+          value: null
+        },
+        params: {
+          type: Object,
+          computed: '_computeParams(query, calendarId, timeMaximum, timeMinimum)'
+        },
+        auto: {
+          type: Boolean,
+          value: false
+        }
+      },
+      created() {
+        this._boundSearched = this.search.bind(this);
+      },
+      search (params) {
+        if (!this.loaded) return;
+        return this.api.list(params);
+      },
+      _computeParams(query, id, maximum, minimum) {
+        let params = {};
+        (maximum) && (params.timeMax = maximum.toISOString());
+        (minimum) && (params.timeMin = minimum.toISOString());
+
+        params.calendarId = id;
+        params.q = query;
+
+        return params;
+      },
+      _apiLoaded () {
+        this.loaded = true;
+        this.api = this.$.calendar.api.events;
+      }
+    });
+  })();
+  </script>
+</dom-module>

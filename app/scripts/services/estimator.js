@@ -2,9 +2,16 @@
 /*
   Ironically estimators serve to estimate Actual feature values, not Estimated ones.
   Generally it is a set of good rules that try to estimate the conditions with which the ocurrence actually happened.
+
   Eg: The duration estimator try to guess the best task duration based on it's tags.
 
-TODO perhaps use smarter estimators with neural nets
+  Also estimators estimate the BJFogg actual values entirelly, because they are manly
+  virtual values based on value judgments.
+
+  Eg: The brain cycles and time estimators estimates the actual BJFogg's simplicity brain cycles and time factors.
+
+  TODO perhaps is a great idea to move BJFogg factors estimation to the domain model?
+  TODO perhaps use smarter estimators with neural nets
 */
 var estimatorsable = stampit({
   init () {

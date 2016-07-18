@@ -167,9 +167,10 @@ Classifiers.Daytime = stampit({
           return parts.map((n) => n.toString(16)).join('-');
         };
 
-        _.each(emojione.emojioneList, (codes, shortname) => {
-          codes.forEach((code) => shortnames[keyFor(code)] = shortname.replace(/:/g, ''));
-        });
+        // FIXME emojione update breaked this code, figure out why
+        // _.each(emojione.emojioneList, (codes, shortname) => {
+        //   codes.forEach((code) => shortnames[keyFor(code)] = shortname.replace(/:/g, ''));
+        // });
 
         return {shortnames: shortnames};
       }

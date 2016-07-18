@@ -122,8 +122,15 @@
     };
 
     app.set('performance', {
-        classifiers: ['Sleep']
+        classifiers: ['Sleep', 'ResponsibilityArea', 'Duration']
     });
+
+    Object.defineProperty(app, 'limit', {
+      set (v) {
+        this.$.mainData.limitToLast = +v;
+      }
+    });
+    app
 
     // Manage event features
     FeatureManager(app);

@@ -9,17 +9,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
+<script src='../../bower_components/jquery/dist/jquery.min.js'></script>
+<script src='../../bower_components/moment/min/moment.min.js'></script>
+<script src='../../bower_components/fullcalendar/dist/fullcalendar.min.js'></script>
+<link rel='stylesheet' href='../../bower_components/fullcalendar/dist/fullcalendar.min.css'/>
+<link rel="import" href="../../bower_components/fullcalendar-calendar/fullcalendar-calendar.html">
+
 <dom-module id="reisse-calendar">
-  <style>
-    :host {
-      position: absolute;
-    }
-  </style>
+  <style> :host { display: block; } </style>
   <template>
-   <div>
-     <template is="dom-repeat" items="{{calendar.events}}" as="event">
-       <reisse-event event="{{event}}"></reisse-event>
-     </template>
+    <div>
+      <fullcalendar-calendar options="[[_options]]"></fullcalendar-calendar>
     </div>
   </template>
 
@@ -32,7 +32,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         properties: {
           calendar: {type: Object, notify: true},
           from: Date,
-          to: Date
+          to: Date,
+          _options: {
+            type: Object,
+            computed: '_computeOptions(calendar.events)'
+          }
+        },
+
+        _computeOptions(events) {
+          return {
+            defaultView: 'agendaDay',
+            events: this._retrieveEvents.bind(this),
+            eventRender: this._eventRender.bind(this)
+          };
+        },
+
+        _retrieveEvents (start, end, timezone, callback) {
+          _(this.calendar.events)
+            .map((event, index) => {
+              return {
+                id: event.provider.id,
+                start: event.features.start || event.start, // event.start is for suggested events
+                end: event.features.end || event.end,
+                title: event.name,
+                private: {index: index}
+              }
+            })
+            .tap(callback)
+            .value();
+        },
+
+        _eventRender (event, element) {
+          return this.create('reisse-event', {
+            className: element.attr('class'),
+            event: this.calendar.events[event.private.index]
+          });
         }
       });
     })();

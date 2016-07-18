@@ -33,7 +33,7 @@ var areable = stampit({
                 id: json.id
             };
 
-            json.tasks = json.todos;
+            json.tasks = json.todos || [];
 
             delete json.id;
             delete json.todos;

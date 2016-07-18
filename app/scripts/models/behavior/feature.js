@@ -7,6 +7,7 @@ var aggregable = function (instance, property, feature, current, callback) {
         get () {return current;},
         set (value) {
             callback && callback.call(this, value, current);
+            if (_.isNaN(value)) throw new TypeError("Feature.<aggregable>: Can't set feature value to NaN!");
             current = value;
             Feature.optimize(feature + '_' + property, current);
             return current;
@@ -17,11 +18,11 @@ var aggregable = function (instance, property, feature, current, callback) {
 
 }, Feature = stampit({
     init () {
-        // Value relative to features of other elements
+        // Value relative to same feature in other behavior
         aggregable(this, 'relative' , this.name, this.relative);
-        // Estimated value by the (neural network or estimator) for this feature
+        // Predicted (estimated) value for this feature (generally predicted by classifiers)
         aggregable(this, 'estimated', this.name, this.estimated, (value) => {this.truer = this.truer || value;});
-        // Actual value for this feature
+        // Actual value for this feature (generally defined by the estimators)
         aggregable(this, 'actual'   , this.name, this.actual   , (value) => {this.truer = value;});
         // Value more close to the truth for this feature
         aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
