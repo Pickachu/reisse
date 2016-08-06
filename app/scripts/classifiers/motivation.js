@@ -14,22 +14,32 @@ Classifiers.Motivation = stampit({
     methods: {
       learn(behaviors) {
         console.log('learning motivation');
-        let set = [], finite = Number.isFinite;
+        let set = [], finite = Number.isFinite, learning;
 
         // TODO use simplicity of daytime to validate minimum motivation required
         // if a task is X in simplicity, it requires at least inverseBjFoggConceptualCurve(x) motivation
 
         this.sleep.learn(behaviors);
 
-        behaviors.forEach((behavior) => {
-          let factors = behavior.motivation(true, 'actual'),
-          activation = this.perceptron.activate(factors);
+        set = behaviors.map((behavior) => {
+          let factors = behavior.motivation(true, 'actual');
 
-          if (_.isNaN(activation[0])) throw new TypeError("Classifiers.Motivation.learn: NaN activation detected!");
-
-          this.perceptron.propagate(0.2, [ss.average(factors)]);
+          return {
+            input:  factors,
+            output: [ss.average(factors)]
+          }
         });
 
+        // Train network
+        learning = this.perceptron.trainer.train(set, {log: 100, rate: 0.2, iterations: 1000});
+
+        // TODO move this code to base classifiers stamp (not created yet) and test all neural net for nan inputs
+        var activation = this.perceptron.activate([0,0,0]);
+        if (_.isNaN(activation[0])) throw new TypeError("Classifiers.Simplicity.learn: NaN activation detected!");
+
+        learning.set = set;
+        learning.sampleSize = set.length;
+        return Promise.resolve(learning);
       },
       predict(behaviors) {
         this.sleep.context = this.context;

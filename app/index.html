@@ -121,7 +121,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section data-route="home">
                 <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
-                <firebase-collection id="mainData" limit-to-last="2000" order-by-child="start" location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection>
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
                 <google-signin     client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
@@ -131,11 +130,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read"]'></jawbone-signin>
                 <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
 
-                <template is="dom-if" if="{{ocurrences}}">
-                  <paper-button on-tap="integrate" title="click to commit current data to firebase">
-                    Firebase Ready ([[areas.length]] - [[ocurrences.length]])
-                  </paper-button>
-                </template>
+                <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
+                  Firebase Ready ([[areas.length]] - [[ocurrences.length]])
+                </paper-button>
 
                 <p>
                   <template is="dom-repeat" items="{{areas}}" as="area">
@@ -143,10 +140,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </template>
                 </p>
 
-                <template is="dom-if" if="{{ocurrences.length}}">
-                  <paper-button on-tap="learn">Learn from past experience</paper-button>
-                  <paper-button on-tap="predict">Generate the best day</paper-button>
-                </template>
+                <paper-button on-tap="learn">Learn from past experience</paper-button>
+                <paper-button on-tap="predict" disabled="{{learning}}">Generate the best day</paper-button>
 
                 <div>
                   <reisse-calendar id="calendar" class="layout vertical" calendar="{{prediction}}"> </reisse-calendar>
@@ -156,6 +151,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section data-route="performance">
                 <section>
+                  <paper-button on-tap="fetch">Fetch</paper-button>
                   <reisse-auditor ocurrences="{{ocurrences}}" classifiers="{{performance.classifiers}}"></reisse-auditor>
                 </section>
               </section>

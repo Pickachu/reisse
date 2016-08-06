@@ -24,7 +24,7 @@ Classifiers.Sleep = stampit({
           .filter((behavior) => behavior.completedAt > this.timeCap)
           .map((behavior) => {
             let day = behavior.completedAt.getDay(),
-              input  = baseInput.concat([]),
+              input  = baseInput.concat(),
               asleepAt, awakeAt;
 
             input[day  ] = 1;

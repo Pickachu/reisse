@@ -17,7 +17,7 @@ var activitable = stampit({
           json.activatedAt && (json.activatedAt = new Date(json.activatedAt));
           json.completedAt && (json.completedAt = new Date(json.completedAt));
 
-          switch (json.activity.type) {
+          switch (json.activity && json.activity.type) {
             case 'sleep':
               json.awakeAt && (json.awakeAt = new Date(json.awakeAt));
               json.asleepAt && (json.asleepAt = new Date(json.asleepAt));

@@ -34,7 +34,7 @@ Classifiers.Chance = stampit({
             };
           }, this);
 
-          this.chance.trainer.train(set, {log: 1000, iterations: 5000});
+          this.chance.trainer.train(set, {log: 100, iterations: 1000});
           console.log('classifier: learned');
         });
     },

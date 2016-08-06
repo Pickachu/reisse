@@ -17,14 +17,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <style>
     :host {
       display: block;
-      margin: 2em auto;
-      padding: 1em;
-      border: 1px solid gray;
-      min-height: 3em;
+      margin-bottom: 1px;
+      padding-left: 0.5em;
     }
 
     h3 {
+      @apply(--title-theme);
       font-weight: normal;
+      margin: 0;
     }
 
     paper-input {
@@ -42,7 +42,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </style>
   <template>
     <h3>
-      {{_dateToHour(event.start)}}
       <paper-button toggles active="{{_details}}" title="clique para ver detalhes">[[event.name]][[_optionalName]]</paper-button>
       <paper-button toggles active="{{_factors}}">Factors</paper-button>
     </h3>
@@ -158,21 +157,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           '_computeHeight(event.features.duration.estimated)'
         ],
 
+        attached () {
+          this.async(() => {
+            let fontSize   = Math.min(this.offsetHeight - 2, 14),
+            lineHeight = Math.min(fontSize + 2, 16);
+            this.updateStyles({
+              '--title-theme': `font-size: ${fontSize}; line-height: ${lineHeight};`
+            });
+          });
+        },
+
         _decideOptionalName (event) {
           if (event) {
             if (event.name) return '';
             else return event.provider.name;
           } else {
             return 'No event defined'
-          }
-        },
-
-        _dateToHour (date) {
-          if (date) {
-            date = new Date(date);
-            return `${date.getHours()}:${date.getMinutes()}`;
-          } else {
-            return '';
           }
         },
 

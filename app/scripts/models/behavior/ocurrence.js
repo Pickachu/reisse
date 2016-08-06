@@ -10,28 +10,28 @@ Date.prototype.toICALDate = function () {
 
 var ocurrenceable = stampit({
   init() {
+    // FIXME this code assumes all ocurrences on a i-calendar are behaviors,
+    // reisse must learn the diference between behaviors (running, eating) and events (birthday party, rock concert, etc)!
     if (this.provider.name === 'i-calendar') {
-      // FIXME this line assumes all ocurrences on a i-calendar are behaviors,
-      // reisse must learn the diference between behaviors (running, eating) and events (birthday party, rock concert, etc)!
       if (!this.features.duration || !this.features.duration.actual) {
         this.features.duration || (this.features.duration = {});
 
         var time = ICAL.Time.fromJSDate,
         duration = time(this.end).subtractDate(time(this.start));
 
-        if (Number.isFinite(duration.toSeconds())) {
+        if (Number.isFinite(duration.toSeconds()) || duration.toSeconds() < 0) {
           this.features.duration = {actual: duration.toSeconds()};
 
           if (duration.toSeconds() == 0) {
-            console.warn('Ocurrence: ocurrence with 0 duration, probably imported incorrectly:', this.__firebaseKey__, this.name, this.start, this.end, 'will fallback to one pomodoro');
+            console.warn(this.__firebaseKey__, 'Ocurrence.init: computed i-calendar duration is 0, falling back to one pomodoro.');
             this.features.duration.actual = 25 * 60 * 60
           }
         } else {
-          console.warn('Ocurrence: failed to compute duration with dates:', this.start, this.end);
+          console.warn(this.__firebaseKey__, 'Ocurrence.init: failed to compute duration with dates:', this.start, this.end);
         }
-
-        Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
       }
+
+      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
     }
   },
 

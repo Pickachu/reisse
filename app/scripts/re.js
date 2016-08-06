@@ -24,7 +24,7 @@ var Re = stampit({
     learn(ocurrences) {
       let learnable = this.learnableSet(ocurrences);
       this.chance.stage();
-      this.chance.learn(learnable);
+      this.chance.learn(learnable).then(() => alert('learned'));
       return {amount: learnable.length};
     },
 

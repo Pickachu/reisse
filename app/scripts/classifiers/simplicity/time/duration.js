@@ -24,13 +24,16 @@ Classifiers.Duration = stampit({
 
       behaviors.forEach((behavior) => {
         let duration = behavior.features.duration, inputs,
-            seconds  = duration.actual
+            seconds  = duration.actual;
 
         // Skip behaviors without enough information to estimate
         if (!finite(seconds)) return;
         if (!behavior.areaId) return;
         // TODO identify relevante long duration behaviors! (eg: Sleep)
         if (duration.actual > 360 * 60) return;
+        if (duration.actual < 0) {
+          return console.warn('Skipping duration with negative value!', behavior.name, duration.actual)
+        };
 
         set.push({
             input : mapper.input( behavior),
@@ -38,63 +41,108 @@ Classifiers.Duration = stampit({
         });
       });
 
-      // Train network
-      return new Promise ((resolve) => {
-        this.perceptron.trainer.workerTrain(set, resolve, {iterations: 10, log: 2, rate: 0.75});
+      return new Promise((finished) => {
+        // Train network
+        let train = (learning) => {
+          if (set.length) {
+            console.log('learning duration remaining', set.length);
+            new Promise((resolve) => {
+              this.perceptron.trainer.workerTrain(set.splice(0, 500), resolve, {iterations: 10, log: 2, rate: 0.75});
+            }).then(train);
+          } else {
+            console.log('learned duration')
+            finished(learning);
+          }
+        };
+
+        train();
       });
     },
     predict(behaviors) {
-      let mapper = this._createInputMapper(behaviors);
-      behaviors.forEach((behavior) => {
-          behavior.features.duration.estimated = mapper.denormalize(this.perceptron.activate(mapper.input(behavior)));
+      let mapper = this._createInputMapper(behaviors), total = behaviors.length;
+      behaviors.forEach((behavior, index) => {
+        if (!(index % 1000)) console.log('predicting duration', index, 'of', total, 'Sample:', behavior.name, 'Predicted Duration:', mapper.denormalize(this.perceptron.activate(mapper.input(behavior))));
+        behavior.features.duration.estimated = mapper.denormalize(this.perceptron.activate(mapper.input(behavior)));
       });
     },
     performate (behaviors) {
-      let area, input, output, learning,
-        mapper, predicted = {key: 'Predicted Duration', values: []},
+      let mapper, predicted = {key: 'Predicted Duration', values: []},
         actual = {key: 'Actual Duration', values: []},
-        learnable = Re.learnableSet(behaviors);
+        estimator = estimators.duration();
 
       // TODO let duration prediction to 60% accuracy
 
       this.stage();
-      return this.learn(learnable).then((learning) => {
-        mapper = this._createInputMapper(learnable);
 
-        _(learnable)
-          .each((behavior) => {
-            if (!behavior.areaId) return;
-            if (!Number.isFinite(behavior.features.duration.actual)) return;
-            // TODO identify relevante long duration behaviors! (eg: Sleep)
-            if (behavior.features.duration.actual > 360 * 60) return;
+      estimator.estimate(behaviors.map(Ocurrence.fromJSON, Ocurrence));
 
-            input = mapper.input(behavior);
-            // TODO area  = this.areas[this.areaIds.indexOf(behavior.areaId)];
+      return estimator.estimation
+        .then((learnable) => {
+          mapper = this._createInputMapper(learnable);
+          return this.learn(learnable);
+        })
+        .then((learning ) => {
 
-            output      = this.perceptron.activate(input);
-            predicted.values.unshift({
-              x: mapper.hasher.simhash(behavior.name),
-              y: mapper.denormalize(output) / 60
-            });
+          _(behaviors)
+            .map(Ocurrence.fromJSON, Ocurrence)
+            .map((behavior, index) => {
+              let value = {}, input, output;
+              if (!behavior.areaId) return;
+              if (!(index % 1000)) console.log('predicting duration', index, 'of', behaviors.length, 'Sample:', behavior.name);
 
-            actual.values.unshift({
-              x: mapper.hasher.simhash(behavior.name),
-              y: behavior.features.duration.actual / 60
-            });
-          })
-          .value();
+              // TODO identify relevante long duration behaviors! (eg: Sleep)
+              if (behavior.features.duration.actual > 360 * 60) return;
 
-        var sort = (a, b) => a.y - b.y
-        predicted.values.sort(sort);
-        actual.values.sort(sort);
+              if (behavior.features.duration.actual < 0) return;
 
-        actual.values.forEach((v, i) => {
-          actual.values[i].x = predicted.values[i].x = i;
+              input = mapper.input(behavior);
+              // TODO area  = this.areas[this.areaIds.indexOf(behavior.areaId)];
+
+              output          = this.perceptron.activate(input);
+              value.hash      = mapper.hasher.simhash(behavior.name);
+              value.predicted = mapper.denormalize(output) / 60;
+
+              if (!Number.isFinite(behavior.features.duration.actual)) return value;
+              value.actual = behavior.features.duration.actual / 60
+
+              return value;
+            })
+            .compact()
+            .sort((a, b) => a.predicted - b.predicted)
+            .tap((values) => {
+              var index = 0;
+
+              for (var i = 0; i < values.length; i++) {
+                if (!values[i].actual) continue;
+
+                index++
+                predicted.values.push({
+                  x: index,
+                  y: values[i].predicted
+                });
+
+                actual.values.push({
+                  x: index,
+                  y: values[i].actual
+                });
+              }
+
+              for (var i = 0; i < values.length; i++) {
+                if (values[i].actual) continue;
+
+                index++;
+                predicted.values.push({
+                  x: index,
+                  y: values[i].predicted
+                });
+              }
+
+            })
+            .value()
+
+          learning.sampleSize = actual.values.length;
+          return {data: [predicted, actual], stats: learning, type: 'scatter'};
         });
-
-        learning.sampleSize = actual.values.length;
-        return {data: [predicted, actual], stats: learning, type: 'scatter'};
-      });
     },
     _createInputMapper (behaviors) {
       let classifier = this;

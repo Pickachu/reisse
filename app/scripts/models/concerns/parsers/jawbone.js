@@ -37,5 +37,11 @@ Jawbone = {
     details.awake_time  && (json.end   = json.awakeAt  = details.awake_time           * 1000);
     // duration is in seconds
     details.duration    && (json.features.duration     = {actual: details.duration});
+
+    if (json.start && json.end) {
+      json.status = 'completed'
+    } else {
+      json.status = 'open'
+    }
   }
 }

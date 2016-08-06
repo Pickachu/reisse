@@ -1,4 +1,4 @@
-i## Réissë
+## Réissë
 
 > Réissë (knowledge of the day)
 

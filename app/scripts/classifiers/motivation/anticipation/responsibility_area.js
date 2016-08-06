@@ -48,7 +48,7 @@ Classifiers.ResponsibilityArea = stampit({
         }).compact().value();
 
         // Train network
-        this.perceptron.trainer.train(set, {iterations: 5000, log: 1000});
+        this.perceptron.trainer.train(set, {iterations: 1000, log: 100});
 
         this.learned = true;
       },

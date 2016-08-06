@@ -58,7 +58,7 @@ estimators.belongness = stampit({
           venue.time.total += visit.duration / 1000;
           venue.time.visits++;
 
-          // TODO figure out what is the maximun belongness
+          // TODO figure out what is the maximum belongness
           ocurrence.features.belongness.actual = venue.time.total / (24 * 60 * 60)
 
           return [visit, ocurrence.context.venue];

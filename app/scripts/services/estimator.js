@@ -36,10 +36,17 @@ var estimatorsable = stampit({
           console.log("estimating", estimator.name);
           let estimation = estimator.estimate(this.ocurrences, this.areas)
           this.estimations.push(estimation);
+
+          Promise.resolve(estimation).then((estimated) => {
+            console.log("estimated", estimator.name);
+            return estimated;
+          });
           return estimation;
       });
 
       let estimates = Promise.all(this.estimations);
+
+      estimates.then(() => {console.log('estimation finished')});
 
       return new Promise((resolve) =>
         estimates.then(() => resolve(this.ocurrences))

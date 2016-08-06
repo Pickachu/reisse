@@ -8,132 +8,109 @@ Classifiers.Simplicity = stampit({
     stage() {
       let Architect   = synaptic.Architect;
 
-      this.time = Classifiers.Time();
       this.perceptron = new Architect.Perceptron(5, 6, 6, 1);
 
       return this;
     },
     learn(behaviors) {
       console.log('learning simplicity');
-      let set = [], finite = Number.isFinite;
+      let set = [], mapper = this._createMapper(behaviors), learning;
+
 
       set = behaviors.map((behavior) => {
-        let factors = behavior.simplicity(true, 'actual');
-
         return {
-          input : factors,
-          output: [ss.average(factors)]
+          input : mapper.input(behavior),
+          output: mapper.output(behavior)
         };
       });
 
       // Train network
-      this.perceptron.trainer.train(set, {log: 1000, rate: 0.2, iterations: 5000});
+      learning = this.perceptron.trainer.train(set, {log: 100, rate: 0.2, iterations: 1000});
 
       // TODO move this code to base classifiers stamp (not created yet) and test all neural net for nan inputs
       var activation = this.perceptron.activate([0,0,0,0,0]);
       if (_.isNaN(activation[0])) throw new TypeError("Classifiers.Simplicity.learn: NaN activation detected!");
 
-      return Promise.resolve(behaviors);
+      learning.set = set;
+      learning.sampleSize = set.length;
+      return Promise.resolve(learning);
     },
     predict(behaviors) {
+      let mapper = this._createMapper(behaviors);
       behaviors.forEach((behavior) => {
-        let input = behavior.simplicity(true, 'truer');
+        let input = mapper.input(behavior, 'truer');
         behavior.features.simplicity.estimated = this.perceptron.activate(input)[0];
       });
 
       return Promise.resolve(behaviors);
     },
     performate (behaviors) {
-      let area, input, output, learning,
-        mapper, predicted = {key: 'Predicted Simplicity', values: []},
-        actual = {key: 'Actual Simplicity', values: []},
-        learnable = Re.learnableSet(behaviors);
+      let learnable = Re.learnableSet(behaviors);
 
       this.stage();
-      return this.learn(learnable).then((learning) => {
-        mapper = this._createMapper(learnable);
 
-        _(learnable)
-          .each((behavior) => {
-            input = mapper.input(behavior);
-            // area  = this.areas[this.areaIds.indexOf(behavior.areaId)];
+      // TODO better integration of Re estimatives
+      return Re.estimate(behaviors, app.areas.concat())
+        .then(this.learn.bind(this))
+        .then((learning) => {
+          let mapper = this._createMapper(learnable),
+            factors = ['money', 'time', 'cycles', 'effort', 'commonality'],
+            baseInput = _.fill(Array(factors.length), 0);
 
-            output      = this.perceptron.activate(input);
-            predicted.values.unshift({
-              x: behavior.createdAt,
-              y: mapper.denormalize(output)
-            });
+          return _(factors)
+            .map((factor, index) => {
+              let values = [], cursor = 0, output, input = baseInput.concat()
+                data = [];
 
-            actual.values.unshift({
-              x: behavior.createdAt,
-              y: mapper.output(behavior.features.duration.actual)
-            });
-          })
-          .value();
+              while (cursor < 1) {
+                input[index] = cursor;
 
-        var sort = (a, b) => a.y - b.y
-        predicted.values.sort(sort);
-        actual.values.sort(sort);
+                values.push({
+                  x: mapper.denormalize(this.perceptron.activate(input)),
+                  y: cursor
+                });
 
-        actual.values.forEach((v, i) => {
-          actual.values[i].x = predicted.values[i].x = i;
-        });
+                cursor += 0.1;
+              }
 
-        learning.sampleSize = actual.values.length;
-        return {data: [predicted, actual], stats: learning, type: 'scatter'};
+              data.push({
+                key: 'Predicted ' + factor,
+                values: values
+              });
+
+              data.push(_(learnable)
+                .map((behavior) => {
+                  let mapped   = mapper.input(behavior, 'truer');
+
+                  input[index] = mapped[index];
+
+                  return {
+                    x: mapper.denormalize(this.perceptron.activate(input)),
+                    y: input[index]
+                  };
+                })
+                .thru((values) => {return {key: "Actual " + factor, values: values};})
+                .value());
+
+              return {data: data, meta: learning, type: 'scatter'};
+            })
+            .thru((datas) => {return {graphs: datas}})
+            .value();
       });
     },
-    _createMapper (behaviors) {
-
+    _createMapper (behaviors, type) {
       return {
-        areaIds: this.areaIds,
-        areasLength: this.areas.length,
-        maximumDuration: Feature.aggregates.maximums.duration_actual,
-        hasher: Hash.Sim,
-        mappedSimilarityHash (string) {
-          return this.hasher.createBinaryArray(this.hasher.simhash(string));
+        // TODO remove simplicity method from behavior
+        input(behavior, type) {
+          type || (type = 'actual');
+          return behavior.simplicity(true, type);
         },
-        output(behavior) {
-          let duration = behavior.features.duration, output = [];
-
-          if (Number.isFinite(duration.actual)) {
-            output.push(duration.actual / this.maximumDuration)
-          } else {
-            output.push(this._durationFromSimilar(behavior, behaviors))
-          }
-
-          if (output[0] > 1) {
-            console.warn("Invalid normalization for behavior! Will normalize to 1");
-            output[0] = 1;
-          }
-
-          return output;
-        },
-        input(behavior) {
-          let input = [];
-
-          if (behavior.start) {
-            input.push(behavior.start.getHours() / 23);
-          } else {
-            input.push(0.5);
-          }
-
-          if (behavior.end) {
-            input.push(behavior.end.getHours() / 23);
-          } else {
-            input.push(0.5);
-          }
-
-          input.push(this.areaIds.indexOf(behavior.areaId) / this.areasLength);
-
-          input = input.concat(this.mappedSimilarityHash(behavior.name || ''));
-          if (input[1] > 1 || input[1] < 0) {
-            throw new TypeError("Invalid input normalization");
-          }
-          return input;
+        output(behavior, type) {
+          type || (type = 'actual');
+          return [ss.average(behavior.simplicity(true, type))];
         },
         denormalize(output) {
-          return output[0] * this.maximumDuration
+          return parseFloat(output[0].toFixed(4)) * 100;
         }
       };
     },

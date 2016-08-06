@@ -64,8 +64,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       // Domain
-      next (succeeded, failed, params) {
-        return this.for.index(succeeded, failed, params);
+      next (params, succeeded, failed) {
+        return this.for.index(succeeded, failed, params || this.params);
       },
 
       hasNext() {return !!this.paginationToken; },
@@ -74,9 +74,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return new Promise((resolve, reject) => {
           let responded = (response) => {
             if (this.hasNext()) this.next().then(responded, reject);
-            else resolve(this);
+            else resolve(this.responses);
           };
 
+          this.responses = [];
           this.next().then(responded, reject);
         });
       },
@@ -121,6 +122,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _responded(event, detail) {
         let response = detail.response;
+
+        // when aggregating responses, store it
+        // TODO better response aggregation
+        this.responses && this.responses.push(response);
+
         // TODO remove lodash dependency
         this.paginationToken = _.get(response, this.responseTokenPath);
       }

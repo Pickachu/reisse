@@ -83,24 +83,42 @@
       Lore.synchronize();
     };
 
+    app.fetch = function () {
+      console.log("app: fetch firebase records");
+      if (this.ocurrences && this.ocurrences.length) return Promise.resolve(this.ocurrences);
+      return Promise.resolve(new Firebase('https://boiling-fire-6466.firebaseio.com/lore/ocurrences')
+        .limitToLast(15000).once('value'))
+        .then((snapshot) =>
+          Promise.resolve(_.map(snapshot.val(), (ocurrence, firebaseKey) => {
+              ocurrence.__firebaseKey__ = firebaseKey;
+              return ocurrence;
+            }))
+        )
+        .then((ocurrences) =>
+          console.log(`app: fetched ${ocurrences.length} records`) ||
+          Promise.resolve(app.ocurrences = ocurrences)
+        )
+    };
+
     // Move to classifier manager
+    app.learning = false;
     app.learn = function () {
-      this.estimating = true;
-      Re.estimate(this.ocurrences, this.areas.concat([]))
-        .then((estimated) => {
-          this.measures = Re.learn(estimated);
-          this.estimating = false;
-        });
+      this.learning = true;
+      this.fetch()
+        .then((fetched  ) => Re.estimate(fetched, this.areas.concat([])))
+        .then((estimated) => Re.learn(estimated))
+        .then(()          => {this.learning = false});
 
       // this.linkEvents(app.ocurrences, Re.unclassified, ['unclassified']);
       // this.unclassified = {events: Re.unclassified};
     };
 
     app.predict = function () {
-      Re.lisse(app.ocurrences).then((events) => {
-        this.linkEvents(app.ocurrences, events, ['predictions']);
-        this.prediction = { events: events };
-      });
+      Re.lisse(this.ocurrences)
+        .then((events) => {
+          this.linkEvents(this.ocurrences, events, ['predictions']);
+          this.prediction = { events: events };
+        });
     };
 
     app.linkEvents = function (ocurrences, events, prefix) {
@@ -122,7 +140,7 @@
     };
 
     app.set('performance', {
-        classifiers: ['Sleep', 'ResponsibilityArea', 'Duration']
+        classifiers: ['Simplicity', 'Duration', 'Sleep', 'ResponsibilityArea']
     });
 
     Object.defineProperty(app, 'limit', {

@@ -19,6 +19,16 @@ var behavioral = stampit({
             time   = 1 - this._neuronized('duration', type);
             cycles = 1 - this._neuronized('brainCycles', type);
 
+            if (time < 0 || time > 1) {
+              console.warn(this.__firebaseKey__, 'Behavior.simplicity: invalid time calculated:', time)
+              time = 0.5;
+            }
+
+            if (cycles < 0 || cycles > 1) {
+              console.warn(this.__firebaseKey__, 'Behavior.simplicity: invalid brain cycles calculated:', cycles)
+              cycles = 0.5;
+            }
+
             // console.log("name", this.name);
             // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "commonality:", commonality);
 

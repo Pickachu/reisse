@@ -6,14 +6,14 @@ estimators.time = stampit({
   },
   methods: {
     estimate (behaviors) {
-      return new Promise((resolve) => {
+      return this.when('duration').then((resolve) => {
         // this.inferRelativeTime(behaviors);
-        this.inferActualTime(behaviors, resolve);
+        return this.inferActualTime(behaviors, resolve);
       });
     },
 
     inferActualTime(behaviors, finished) {
-      this.time.learn(behaviors).then(() => {
+      return this.time.learn(behaviors).then(() => {
         this.time.predict(behaviors).then(finished);
       });
     },
@@ -139,6 +139,6 @@ estimators.time = stampit({
 
   },
   props: {
-    durationMap: new Map()
+    // durationMap: new Map()
   }
 });
