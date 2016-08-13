@@ -12,7 +12,7 @@ Classifiers.Chance = stampit({
     },
     learn (ocurrences) {
       return this.simplicity.learn(ocurrences)
-        .then(Promise.resolve(this.motivation.learn(ocurrences)))
+        .then(this.motivation.learn(ocurrences))
         .then(() => {
           let set;
           ocurrences = ocurrences.filter((ocurrence) => Number.isFinite(ocurrence.features.chance.actual));

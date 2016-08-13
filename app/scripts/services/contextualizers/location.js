@@ -6,7 +6,11 @@ Context.add(stampit({
     name: 'location'
   },
   methods: {
-    contextualize (context) {
+    // TODO predict location at moment
+    contextualize (moment, context) {
+      // TODO better current location caching
+      if (Context.lastLocation) return Promise.resolve(context.location = Context.lastLocation, context);
+
       let provider, fetch = () => {
         provider = document.createElement('geo-location');
         provider.addEventListener('geo-response' , listener);
@@ -19,8 +23,6 @@ Context.add(stampit({
 
       }, contextualized;
 
-
-
       fetch();
 
       return new Promise((resolve, reject) => {
@@ -29,10 +31,10 @@ Context.add(stampit({
         provider.addEventListener('geo-error' , () => {
           // Retry once!
           fetch();
-          console.log('contextualizer', this.name, 'failed, trying.');
+          console.log('contextualizer', this.name, 'failed, re-trying.');
           provider.addEventListener('geo-error', reject);
         });
-      });
+      }).then((context) => Context.lastLocation = context.location, context );
     }
   }
 }));

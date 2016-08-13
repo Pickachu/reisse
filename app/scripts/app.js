@@ -148,7 +148,6 @@
         this.$.mainData.limitToLast = +v;
       }
     });
-    app
 
     // Manage event features
     FeatureManager(app);

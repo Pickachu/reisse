@@ -41,12 +41,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       init: function () {
         oauth = document.createElement('oauth-v2');
-        oauth.endpoint      = "https://app.jawbone.com/-/oauth_authorize"
-        oauth.exchange_url  = "https://app.jawbone.com/-/oauth_token"
-        oauth.response_type = "token"
-        oauth.urlParams     = {}
+        oauth.endpoint      = "https://app.jawbone.com/-/oauth_authorize";
+        oauth.exchange_url  = "https://app.jawbone.com/-/oauth_token";
+        oauth.response_type = "token";
+        oauth.urlParams     = {};
         oauth.redirect_uri  = document.location.origin;
-        oauth.addEventListener('response', AuthEngine.responded)
+        oauth.addEventListener('response', AuthEngine.responded);
         this.oauth = oauth;
       },
 
@@ -139,7 +139,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       /** signs user out */
       signOut: function() {
-        throw new TypeError("Sign out not implemented yet")
+        throw new TypeError("Sign out not implemented yet");
         // AuthEngine.signOut();
       }
 

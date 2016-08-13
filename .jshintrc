@@ -1,6 +1,7 @@
 {
   "esnext": true,
   "newcap": false,
+  "expr"  : true,
   "globals": {
     "console": false,
     "require": false,

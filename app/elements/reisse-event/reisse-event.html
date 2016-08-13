@@ -19,6 +19,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       display: block;
       margin-bottom: 1px;
       padding-left: 0.5em;
+      overflow: auto;
     }
 
     h3 {
@@ -36,7 +37,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
 
     .emoji {
-      font-family: "Apple Color Emoji","Segoe UI Emoji","NotoColorEmoji","Segoe UI Symbol","Android Emoji","EmojiSymbols"
+      font-family: "Apple Color Emoji","Segoe UI Emoji","NotoColorEmoji","Segoe UI Symbol","Android Emoji","EmojiSymbols";
     }
 
   </style>
@@ -159,10 +160,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         attached () {
           this.async(() => {
-            let fontSize   = Math.min(this.offsetHeight - 2, 14),
-            lineHeight = Math.min(fontSize + 2, 16);
+            let fontSize = Math.max(Math.min(this.offsetHeight - 7, 16), 7),
+            lineHeight   = Math.max(Math.min(this.offsetHeight    , 18), 2);
+
+            if (fontSize <= 12) {lineHeight = 0;}
+
             this.updateStyles({
-              '--title-theme': `font-size: ${fontSize}; line-height: ${lineHeight};`
+              '--title-theme': `font-size: ${fontSize}px; line-height: ${lineHeight}px;`
             });
           });
         },
@@ -172,12 +176,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             if (event.name) return '';
             else return event.provider.name;
           } else {
-            return 'No event defined'
+            return 'No event defined';
           }
         },
 
         _infer (event, feature) {
-          let estimator = estimators[feature](), inferal = 'inferActual' + _.capitalize(feature);
+          let estimator = estimators[feature](), inferal = 'inferActual' + _.upperFirst(feature);
           estimator[inferal](Ocurrence.fromJSON(event));
           return event.features[feature].actual;
         },

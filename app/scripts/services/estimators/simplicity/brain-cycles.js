@@ -50,6 +50,10 @@ estimators.brainCycles = stampit({
         return 0;
       },
 
+      forNap (sleep) {
+        return 0;
+      },
+
       inferRelativeBrainCycles(ocurrences) {
 
       },

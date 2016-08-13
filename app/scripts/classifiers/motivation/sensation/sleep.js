@@ -20,7 +20,7 @@ Classifiers.Sleep = stampit({
 
         // Create training set
         set = _(behaviors)
-          .where({activity: {type: 'sleep'}})
+          .filter({activity: {type: 'sleep'}})
           .filter((behavior) => behavior.completedAt > this.timeCap)
           .map((behavior) => {
             let day = behavior.completedAt.getDay(),

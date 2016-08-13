@@ -37,7 +37,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         parse: function (feed) {
           var calendar, jcal, vCalendar, vEvents, properties;
-          calendar   = {name: undefined, events: []}
+          calendar   = {name: undefined, events: []};
           jcal       = ICAL.parse(feed);
           vCalendar  = new ICAL.Component(jcal);
 
@@ -48,12 +48,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }, this);
 
 
-          vEvents    = vCalendar.getAllSubcomponents()
+          vEvents    = vCalendar.getAllSubcomponents();
           vEvents.forEach(function (vEvent) {
             var properties;
             event = {};
 
-            properties = vEvent.getAllProperties()
+            properties = vEvent.getAllProperties();
             properties.forEach(function (property) {
               event[property.name] = this._valueForProperty(property);
             }, this);
@@ -61,17 +61,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             calendar.events.push(event);
           }, this);
 
-          return this.calendar = calendar;
+          this.calendar = calendar;
+          
+          return calendar;
         },
         _valueForProperty: function (property) {
-          var values = property.getValues(), value = undefined;
+          var values = property.getValues(), value;
           if (values.length > 1) {
             throw new TypeError("Multiple property values not supported");
           }
           value = values[0];
           switch (value.icalclass) {
           case 'icaltime':
-            return value.toJSDate()
+            return value.toJSDate();
           default:
             return value;
           }

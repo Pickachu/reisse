@@ -15,11 +15,11 @@ var contextualizable = stampit({
     contextualizations: []
   },
   methods: {
-    current () {
+    for (moment) {
       let context = {}
       this.contextualizations = this.contextualizers.map((contextualizer) => {
           console.log("contextualizing", contextualizer.name);
-          return contextualizer.contextualize(context);
+          return contextualizer.contextualize(moment, context);
       });
 
       return Promise.all(this.contextualizations).then(() => context);

@@ -12,57 +12,54 @@ Classifiers.Duration = stampit({
   methods: {
     stage () {
       let Architect   = synaptic.Architect;
-      this.perceptron = new Architect.LSTM(35, 6, 8, 6, 1);
+      // this.perceptron = new Architect.LSTM(35, 6, 8, 6, 1);
       this.areaIds = this.areas.map((area) => area.provider.id);
     },
     learn(behaviors) {
-      let set = [], finite = Number.isFinite, mapper;
-      console.log('learning duration');
-      // TODO create task type
+      let set = [], dict = new Map(), finite = Number.isFinite;
 
-      mapper = this._createInputMapper(behaviors);
+      _(behaviors)
+        .filter('name')
+        .map((behavior) => {
+          let duration = behavior.features.duration;
 
-      behaviors.forEach((behavior) => {
-        let duration = behavior.features.duration, inputs,
-            seconds  = duration.actual;
+          if (!finite(duration.actual)) return behavior;
+          if (duration.actual < 0) return behavior;
+          // if (duration.actual > 6 * 60 * 60) return;
 
-        // Skip behaviors without enough information to estimate
-        if (!finite(seconds)) return;
-        if (!behavior.areaId) return;
-        // TODO identify relevante long duration behaviors! (eg: Sleep)
-        if (duration.actual > 360 * 60) return;
-        if (duration.actual < 0) {
-          return console.warn('Skipping duration with negative value!', behavior.name, duration.actual)
-        };
+          mimir.tokenize(behavior.name).forEach((token) => {
+            let durations;
+            if (dict.has(token)) {
+              durations = dict.get(token);
+            } else {
+              durations = [];
+              dict.set(token, durations);
+            }
 
-        set.push({
-            input : mapper.input( behavior),
-            output: mapper.output(behavior)
-        });
-      });
+            durations.push(duration.actual);
+          });
 
-      return new Promise((finished) => {
-        // Train network
-        let train = (learning) => {
-          if (set.length) {
-            console.log('learning duration remaining', set.length);
-            new Promise((resolve) => {
-              this.perceptron.trainer.workerTrain(set.splice(0, 500), resolve, {iterations: 10, log: 2, rate: 0.75});
-            }).then(train);
-          } else {
-            console.log('learned duration')
-            finished(learning);
-          }
-        };
+          return behavior;
+        })
+        .tap((behaviors) => {
+          dict.forEach((durations, token) => {
+            dict.set(token, ss.average(durations));
+          });
 
-        train();
-      });
+          this.durationByToken = dict;
+        })
+        .value();
+
+      return Promise.resolve(behaviors);
     },
     predict(behaviors) {
-      let mapper = this._createInputMapper(behaviors), total = behaviors.length;
+      let total = behaviors.length;
       behaviors.forEach((behavior, index) => {
-        if (!(index % 1000)) console.log('predicting duration', index, 'of', total, 'Sample:', behavior.name, 'Predicted Duration:', mapper.denormalize(this.perceptron.activate(mapper.input(behavior))));
-        behavior.features.duration.estimated = mapper.denormalize(this.perceptron.activate(mapper.input(behavior)));
+        if (!behavior.name) return;
+        let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
+        if (!durations.length) durations = [0];
+        if (!(index % 1000)) console.log('predicting duration', index, 'of', total, 'Sample:', behavior.name, 'Predicted Duration:', ss.average(durations));
+        behavior.features.duration.estimated = ss.average(durations);
       });
     },
     performate (behaviors) {
@@ -85,25 +82,20 @@ Classifiers.Duration = stampit({
 
           _(behaviors)
             .map(Ocurrence.fromJSON, Ocurrence)
+            .filter('name')
             .map((behavior, index) => {
               let value = {}, input, output;
-              if (!behavior.areaId) return;
               if (!(index % 1000)) console.log('predicting duration', index, 'of', behaviors.length, 'Sample:', behavior.name);
 
-              // TODO identify relevante long duration behaviors! (eg: Sleep)
-              if (behavior.features.duration.actual > 360 * 60) return;
-
               if (behavior.features.duration.actual < 0) return;
+              // if (behavior.features.duration.actual > 6 * 60 * 60) return;
 
-              input = mapper.input(behavior);
-              // TODO area  = this.areas[this.areaIds.indexOf(behavior.areaId)];
-
-              output          = this.perceptron.activate(input);
-              value.hash      = mapper.hasher.simhash(behavior.name);
-              value.predicted = mapper.denormalize(output) / 60;
+              let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
+              if (!durations.length) durations = [0];
+              value.predicted = ss.average(durations) / 60;
 
               if (!Number.isFinite(behavior.features.duration.actual)) return value;
-              value.actual = behavior.features.duration.actual / 60
+              value.actual = behavior.features.duration.actual / 60;
 
               return value;
             })

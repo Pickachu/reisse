@@ -1,0 +1,89 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="integrations-page">
+  <template>
+    <style>
+      :host { display: block; }
+
+      :host paper-datatable, :host paper-datatable tbody { height: 30em; overflow: auto;}
+    </style>
+    <content></content>
+    <paper-tabs selected="{{providerName}}" attr-for-selected="name">
+      <paper-tab name="any">Any</paper-tab>
+      <paper-tab name="asana">Asana</paper-tab>
+      <paper-tab name="things">Things</paper-tab>
+      <paper-tab name="i-calendar">ICalendar</paper-tab>
+    </paper-tabs>
+
+    <paper-tabs selected="{{statusName}}" attr-for-selected="name">
+      <paper-tab name="any">Any</paper-tab>
+      <paper-tab name="open">Open</paper-tab>
+      <paper-tab name="completed">Completed</paper-tab>
+    </paper-tabs>
+
+    <array-selector id="filterer" items="[[ocurrences]]" selected="{{filteredOcurrences}}" multi></array-selector>
+
+    <paper-datatable data="[[filteredOcurrences]]">
+      <paper-datatable-column property="providerName" header="Provider"></paper-datatable-column>
+      <paper-datatable-column property="name" header="Name"></paper-datatable-column>
+      <paper-datatable-column property="status" header="Status"></paper-datatable-column>
+      <paper-datatable-column property="simplicity" header="Simplicity"></paper-datatable-column>
+    </paper-datatable>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'integrations-page',
+
+      properties: {
+        providerName: {
+          type: String,
+          value: 'asana'
+        },
+        statusName: {
+          type: String,
+          value: 'open'
+        },
+        ocurrences: Array,
+        filteredOcurrences: Array
+      },
+
+      observers: ['_selectOcurrencesByProvider(providerName, statusName, ocurrences.length)'],
+
+      _selectOcurrencesByProvider (provider, status) {
+        let filterer = this.$.filterer, matches = {}, filtered;
+
+        provider != 'any' && (matches.provider = {name: provider});
+        status   != 'any' && (matches.status   = status  );
+
+        filtered = _.filter(this.ocurrences, matches);
+        filterer.clearSelection();
+
+        if (filtered.length > 1000) {
+          console.warn('too many filter results, handicaped to 1000. Actual amount:', filtered.length);
+          filtered = filtered.splice(0, 1000);
+        }
+        filtered.forEach((ocurrence) => {
+          filterer.select(ocurrence);
+        });
+      },
+      _compact (ocurrence) {
+        ocurrence.providerName = ocurrence.provider.name;
+        ocurrence.simplicity   = ocurrence.features.simplicity.actual;
+      }
+    });
+  })();
+  </script>
+</dom-module>

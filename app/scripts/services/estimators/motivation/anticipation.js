@@ -11,20 +11,19 @@ estimators.anticipation = stampit({
   methods: {
     estimate(ocurrences) {
       let learnable = Re.learnableSet(ocurrences);
-      this.contextualize(ocurrences);
 
       // TODO reuse responsibility area neural net on anticipation classifier
+      this.contextualize(learnable);
       this.responsibilityArea.learn(learnable);
 
-      this.inferActualAnticipation(ocurrences);
+      this.inferActualAnticipation(learnable);
     },
 
     contextualize (ocurrences) {
-      let startTime = new Date();
       ocurrences.forEach((ocurrence) => {
         // TODO use other property than completedAt, after infering task execution
         // by pomodoro duration
-        ocurrence.context.startTime = ocurrence.completedAt || startTime;
+        ocurrence.context.calendar = {now: ocurrence.start};
       });
     },
 

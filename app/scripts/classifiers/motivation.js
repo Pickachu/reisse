@@ -3,8 +3,9 @@ var Classifiers = Classifiers || (Classifiers = {});
 
 Classifiers.Motivation = stampit({
     init() {
-      let Architect   = synaptic.Architect;
-      this.perceptron = new Architect.Perceptron(3, 6, 1);
+      let Architect     = synaptic.Architect;
+      this.perceptron   = new Architect.Perceptron(3, 6, 1);
+      this.anticipation = Classifiers.Anticipation();
 
       // TODO move to sensation
       this.sleep      = Classifiers.Sleep();
@@ -44,6 +45,9 @@ Classifiers.Motivation = stampit({
       predict(behaviors) {
         this.sleep.context = this.context;
         this.sleep.predict(behaviors);
+
+        this.anticipation.context = this.context;
+        this.anticipation.predict(behaviors);
 
         behaviors.forEach((behavior) => {
           behavior.features.motivation.estimated = this.perceptron.activate(behavior.motivation(true, 'truer'))[0];

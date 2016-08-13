@@ -5,10 +5,8 @@ Context.add(stampit({
     name: 'calendar'
   },
   methods: {
-    contextualize (context) {
-      let now = new Date();
-
-      context.calendar = { now: now }
+    contextualize (moment, context) {
+      context.calendar = { now: moment }
 
       return Promise.resolve(context);
     }

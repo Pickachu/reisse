@@ -41,28 +41,16 @@ var Re = stampit({
     },
 
     // - Predict ocurrences most likely to happen
-    // - Also generate good suggestions
-    predict(ocurrences) {
-      return Context().current()
-        .then((context) => {
-          return Suggester({
-            ocurrences: ocurrences,
-            context: context
-          });
-        })
-        .then((resolutions) => {
-          let ocurrences = resolutions[0],
-            context      = resolutions[1],
-            future       = this.predictableSet(ocurrences);
+    predict(ocurrences, context) {
+      let future = this.predictableSet(ocurrences);
 
-          this.chance.context = context;
-          this.chance.predict(future);
+      this.chance.context = context;
+      this.chance.predict(future);
 
-          // Incorporate features in ocurrence to save prediction on database
-          future.map((ocurrence) => ocurrence.incorporate());
+      // Incorporate features in ocurrence to save prediction on database
+      future.map((ocurrence) => ocurrence.incorporate());
 
-          return future;
-        });
+      return future;
     },
 
     // Only try to predict future ocurrences (do not already have a prediction attached and it is not already done)
@@ -86,47 +74,94 @@ var Re = stampit({
         return available;
     },
     lisse(ocurrences) {
-      // TODO create a prediction for each context
-      return this.predict(ocurrences).then((prediction) => {
-        let midnight = ICAL.Time.now(), oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60),
-          lisse, range;
+      let range, midnight = ICAL.Time.now(), lisse,
+        oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), next = midnight.clone();
 
-        midnight.hour = midnight.minute = midnight.second = 0;
-        range = [ midnight, midnight.clone().addDuration(oneDay)]
+      midnight.hour = midnight.minute = midnight.second = 0;
+      next.addDuration(oneDay);
+      range = [ midnight.toJSDate(), next.toJSDate() ];
 
-        lisse = this._predictedEventsForToday(range, ocurrences, prediction);
+      return this._predictedEventsFor(range, ocurrences)
         // Add already completed events from today at the beginning of time
-        lisse = this._pastEventsFromToday(range, ocurrences).concat(lisse);
-        lisse = this._suggestedEventsForToday(range, ocurrences).concat(lisse);
-        return lisse;
-      });
+        // TODO externalize past events for range
+        .then((predicted) => {
+          lisse = predicted.concat(this._pastEventsFromToday(range, ocurrences));
+          return Promise.resolve(lisse);
+        })
+        .then(() => this._suggestedEventsFor(range, ocurrences))
+        .then((suggestions) => {
+          lisse = lisse.concat(suggestions);
+
+          if (lisse.length > 50) {
+            console.error("app: Your prediction probably failed and was handicapped to only 50 results.");
+            lisse = lisse.splice(0, 50);
+          }
+
+          return lisse;
+        });
     },
 
-    _predictedEventsForToday(range, ocurrences, prediction) {
-      let available = this._computeAvailableTime(range), lisse, start = ICAL.Time.now();
+    _predictedEventsFor(range, ocurrences) {
+      return new Promise((finished, rejected) => {
+        let available = this._computeAvailableTime(range),
+          start = ICAL.Time.fromJSDate(range[0]), travel, lisse = [];
 
-      prediction = prediction.sort(byChance);
+        travel = () =>
+          Context().for(start.toJSDate())
+            .then((context) => {
+              let message = ["Prediction"];
+              message.push(" Context");
+              message.push("  Now     : " + context.calendar.now);
+              message.push("  Location: " + context.location.latitude + 'lt ' + context.location.longitude + ' lon');
+              message.push(" Meta ");
+              message.push("  Available Time: " + available + 's');
+              console.log(message.join('\n'));
+              return this.predict(ocurrences, context);
+            })
+            // TODO think of how to deal with most probably behavior for each context, between predictions
+            //      do this to speed up prediction and fix up anticipationn
+            .then((prediction) => Promise.resolve(
+              prediction
+                .sort(byChance)
+                // Slice prediction by context for only 1 ocurrence
+                .slice(0, 1)
+                .map((ocurrence) => {
+                  let seconds  = ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION,
+                      duration = ICAL.Duration.fromSeconds(seconds);
 
-      // TODO predict duration start instead of setting it by hand
+                  ocurrence.features.start = start.toJSDate();
+                  start.addDuration(duration);
+                  ocurrence.features.end   = start.toJSDate();
 
-      lisse = prediction.filter((ocurrence, index, prediction) => {
-        let seconds  = ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION,
-            duration = ICAL.Duration.fromSeconds(seconds);
 
-        ocurrence.features.start = start.toJSDate();
-        start.addDuration(duration);
-        ocurrence.features.end   = start.toJSDate();
+                  // TODO figure out better way of doing this, shouldn't the
+                  // context change be enough prevent it?
+                  // Prevent predicting the same ocurrence twice in the same day
+                  // FIXME figure out why indexOf is not working!
+                  // ocurrences.splice(ocurrences.indexOf(ocurrence), 1);
+                  let index = ocurrences.indexOf(ocurrences.find((o) => o.__firebaseKey__ === ocurrence.__firebaseKey__));
+                  ocurrences.splice(index, 1);
 
-        available -= seconds;
-        return available >= 0;
+                  available -= seconds;
+
+                  return ocurrence;
+                })
+            ))
+            .then((events) => {
+              // Add probable events for time
+              lisse = lisse.concat(events);
+
+              // There is still time available on range, add more predictions
+              if (available > 0 && lisse.length < 3) {
+                travel();
+              } else {
+                finished(lisse);
+              }
+            })
+            .catch(rejected);
+
+        travel();
       });
-
-      if (lisse.length > 50) {
-        console.error("app: Your prediction probably failed and was handicapped to only 50 results.");
-        lisse = lisse.splice(0, 50);
-      }
-
-      return lisse;
     },
 
     _pastEventsFromToday(range, ocurrences) {
@@ -134,12 +169,21 @@ var Re = stampit({
       return ocurrences.filter((o) => o.completedAt && o.completedAt > comparable );
     },
 
-    _suggestedEventsForToday (range, ocurrences) {
-      // TODO use range
-      let today = new Date().getDay();
-      return ocurrences.filter((o) =>
-        o.suggestion && o.start.getDay() === today
-      );
+    _suggestedEventsFor (range, ocurrences) {
+      // TODO respect range and context when suggesting
+      return Context().for(range[0])
+        .then((context) => {
+          return Suggester({
+            ocurrences: ocurrences,
+            context   : context
+          })
+        })
+        .then((ocurrences) => {
+          let today = new Date().getDay();
+          return ocurrences.filter((o) =>
+            o.suggestion && o.start.getDay() === today
+          );
+        });
     }
   }
 });

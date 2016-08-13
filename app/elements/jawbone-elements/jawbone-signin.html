@@ -63,7 +63,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // List of all options: https://jawbone.com/up/developer/authentication
         scope: {
           type: Array,
-          value () { return ['basic_read'] }
+          value () { return ['basic_read']; }
         },
 
         auths: {
@@ -81,7 +81,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
           // TODO open github issue to allow exchange body modification
-          oauth.$.exchange.method = "GET"
+          oauth.$.exchange.method = "GET";
           oauth._exchange  = this._custom_exchange.bind(oauth);
         });
       },

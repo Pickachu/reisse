@@ -57,7 +57,7 @@ estimators.location = stampit({
           }
           // TODO compute changes
           app.set(['ocurrences', index, 'context', 'venue'], estimated.context.venue);
-        }).value();
+        });
 
       return estimated;
     },
@@ -126,10 +126,10 @@ estimators.location = stampit({
               ocurrence.context.venue = Object.assign({inferred: true}, venue);
             } else {
               // TODO predict next location
-              currentVenue || (currentVenue = venue)
+              currentVenue || (currentVenue = venue);
             }
           }
-        }).value();
+        });
 
       this.currentVenue = currentVenue;
       return located;

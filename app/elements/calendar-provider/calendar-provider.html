@@ -48,7 +48,7 @@ that handles authentication.
        */
       calendars: {
         type: Array,
-        value: function() { return []; },
+        value: () => [],
         readOnly: true,
         notify: true
       },
@@ -78,10 +78,10 @@ that handles authentication.
 
         request.execute(function(resp) {
           if (resp.error) {
-            console.error("Error with calendarList.list", resp.message)
+            console.error("Error with calendarList.list", resp.message);
           } else {
             calendars = resp.items.map((calendar) => {
-              calendar.feed = `https://calendar.google.com/calendar/ical/${calendar.id}/public/basic.ics`
+              calendar.feed = `https://calendar.google.com/calendar/ical/${calendar.id}/public/basic.ics`;
               return calendar;
             })
             this._setCalendars(calendars);

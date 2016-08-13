@@ -75,8 +75,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._previous = this.relatives[0];
       },
       _recomputeIndexes(index) {
-        this.nextRelativeIndex     = +index
-        this.previousRelativeIndex = +index - 1
+        this.nextRelativeIndex     = +index;
+        this.previousRelativeIndex = +index - 1;
       },
       _save () {
         this._relativize(this.key, +this._relativeValue, +1, 'duration');

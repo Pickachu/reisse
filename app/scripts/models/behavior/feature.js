@@ -27,8 +27,9 @@ var aggregable = function (instance, property, feature, current, callback) {
         // Value more close to the truth for this feature
         aggregable(this, 'truer'    , this.name, this.actual || this.estimated);
 
-        // Clean feature to preserve the JSON structure accepted by firebase
-        _.forEach(this, (value, key) => {_.isUndefined(value) && delete this[key]})
+        // FIXME Clean feature to preserve the JSON structure accepted by firebase
+        //       do cleaning on serialization!
+        // _.forEach(this, (value, key) => {_.isUndefined(value) && delete this[key]})
 
         //Feature.store(this.name, this);
         Feature.summaries(this.name);
@@ -48,7 +49,7 @@ var aggregable = function (instance, property, feature, current, callback) {
             let names = [].slice.call(arguments, 1, arguments.length), features = {};
             source.features || (source.features = {});
 
-            names.map((name) => {
+            names.forEach((name) => {
                 let feature = source.features[name] || {name: name};
                 feature.name || (feature.name = name);
                 features[name]   = Feature(feature);

@@ -59,7 +59,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // TODO for other modes implement swarm-venues
           m: 'foursquare',
           v: '20160426'
-        }
+        };
       },
       _populate (event, request) {
         let response = request.response,
@@ -71,7 +71,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.fire('populated');
             break;
           default:
-            throw new Error `Received invalid response code: ${meta.code}`;
+            throw new Error(`Received invalid response code: ${meta.code}`);
         }
       },
       _failed(event, detail) {
@@ -83,8 +83,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.fire('error', detail);
             break;
           default:
-            throw Error `Received unhandled failure status code ${request.status}.`
-            break;
+            throw Error(`Received unhandled failure status code ${request.status}.`);
         }
       }
     });

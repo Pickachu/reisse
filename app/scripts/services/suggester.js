@@ -21,7 +21,7 @@ var suggestable = stampit({
         return suggester.suggest(ocurrences, context);
       });
 
-      return Promise.all(this.suggestions).then(() => [ocurrences, context]);
+      return Promise.all(this.suggestions).then(() => ocurrences);
     },
     then (resolve, reject) {
       this.suggest(this.ocurrences, this.context).then(resolve, reject);

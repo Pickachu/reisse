@@ -54,7 +54,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _computeEndPoint (collection) {
         // /jawbone is proxied to https://jawbone.com/`
-        return `/jawbone/nudge/api/v.1.1/users/@me/${collection}`
+        return `/jawbone/nudge/api/v.1.1/users/@me/${collection}`;
       },
 
       _authorizationChanged (current, old) {
@@ -79,7 +79,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         this.data = items;
-        this.fire('populated')
+        this.fire('populated');
       }
 
     });

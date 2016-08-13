@@ -53,10 +53,12 @@ Classifiers.ResponsibilityArea = stampit({
         this.learned = true;
       },
       predict(behaviors) {
-        let baseInput = _.fill(Array(24), 0), ids = this.areaIds;
+        let baseInput = _.fill(Array(24), 0), ids = this.areaIds, contextualNow;
+
+        contextualNow = (this.context && this.context.calendar.now)
 
         return behaviors.map((behavior) => {
-          let hour    = behavior.context.startTime.getHours(),
+          let hour    = (contextualNow || behavior.context.calendar.now).getHours(),
           input       = baseInput.concat([]), prediction;
           input[hour] = 1;
           prediction           = this.perceptron.activate(input);
@@ -99,10 +101,10 @@ Classifiers.ResponsibilityArea = stampit({
         return Promise.resolve({data: columns, stats: {sampleSize: behaviors.length}});
       },
       quality (predictions) {
-        let grouped = _.groupBy(predictions, (p) => p[2])
+        let grouped = _.groupBy(predictions, (p) => p[2]);
         return {
           success: grouped.true.length / predictions.length
-        }
+        };
       }
     }
 });
