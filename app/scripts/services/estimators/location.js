@@ -46,18 +46,37 @@ estimators.location = stampit({
 
     // TODO move to location fetcher element
     storeCertainValues(estimated) {
-      let ocurrences = app.ocurrences;
+      let ocurrences = app.ocurrences, updates = {};
 
       _(estimated)
         .filter((e) => e.context.venue && e.context.venue.inferred === undefined)
-        .each((estimated) => {
+        .map((estimated) => {
           let index = ocurrences.findIndex((ocurrence) => ocurrence.__firebaseKey__ === estimated.__firebaseKey__);
-          if (index < 0) {
-            return console.error(`estimators.${this.name}: failed storing certain value for`, estimated);
+
+          if (index < 0) { return false; }
+
+          // TODO move estimators to elements
+          // For now ignore updates
+          updates[`ocurrences/${estimated.__firebaseKey__}/context/venue`] = estimated.context.venue;
+
+          return estimated;
+        })
+        .tap((estimateds) => {
+          console.log('skiped certain storage', updates);
+
+          let failures = _.compact(estimateds).length - estimateds.length,
+            successes = estimateds.length - failures;
+
+          if (failures) {
+            console.error(`estimators.${this.name}: failed storing certain values for`, failures, 'ocurrences.');
           }
-          // TODO compute changes
-          app.set(['ocurrences', index, 'context', 'venue'], estimated.context.venue);
-        });
+
+          if (successes) {
+            let names = _(estimated).map('context.venue.name').uniq().value();
+            console.info(`estimators.${this.name}: stored certain venues for`, successes, 'ocurrences. Samples: ', names);
+          }
+        })
+        .value();
 
       return estimated;
     },

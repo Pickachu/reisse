@@ -1,11 +1,12 @@
 'use strict';
 
-var Classifiers = Classifiers || (Classifiers = {});
-
-Classifiers.Time = stampit({
+Classifier.add(stampit({
+  refs: {
+    name: 'time'
+  },
   init() {
     let Architect    = synaptic.Architect;
-    this.duration    = Classifiers.Duration();
+    this.duration    = Classifier.duration;
   },
   methods: {
     learn(behaviors) {
@@ -27,4 +28,4 @@ Classifiers.Time = stampit({
       return Promise.resolve(behaviors);
     }
   }
-});
+}));

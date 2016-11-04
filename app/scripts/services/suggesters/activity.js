@@ -13,13 +13,14 @@ Suggester.add(stampit({
     },
 
     stage (behaviors) {
-      this.sleeps = Classifiers.Sleep();
+      this.sleeps = Classifier.sleep;
     },
 
     // Suggest optimal sleep and nap times
     // For sleep time predict using:
     // 1. Past sleep activity (sleep classifier)
     // TODO align past sleep activity with homeostatic and cicardian timing
+    // TODO move behavior creation to habitual behaviors / external service behaviors generation
     sleep (behaviors, context) {
       let prediction, now = context.calendar.now;
 

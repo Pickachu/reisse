@@ -2,7 +2,7 @@
 
 var behavioral = stampit({
     init () {
-        Object.assign(this.features, Feature.many(this, 'chance', 'motivation', 'simplicity', 'anticipation', 'belongness'));
+      Object.assign(this.features, Feature.many.apply(Feature, [this].concat(behavioral.layers)));
     },
 
     props: {
@@ -29,22 +29,28 @@ var behavioral = stampit({
               cycles = 0.5;
             }
 
+            let factors = [money, time, cycles, effort, commonality];
+            if (factors.filter(Number.isFinite).length != factors.length) {debugger};
+
             // console.log("name", this.name);
             // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "commonality:", commonality);
 
-            return [money, time, cycles, effort, commonality];
+            return factors;
         },
 
         motivation (full, type) {
             type || (type = 'actual')
 
             // TODO change estimated hour based on task cumulative distribution for the day
-            let sensation  = 0,
+            let sensation  = this.features.sensation[type],
               anticipation = this.features.anticipation[type],
               belonging    = this._neuronized('belongness', type);
 
             // console.log("sensation:", sensation, "anticipation:", anticipation, "belonging:", belonging);
-            return [sensation, anticipation, belonging];
+            let factors = [sensation, anticipation, belonging];
+            if (factors.filter(Number.isFinite).length != factors.length) {debugger};
+
+            return factors;
         },
 
         // TODO Save behavior specie on database
@@ -68,14 +74,30 @@ var behavioral = stampit({
 
           // Convert
           return value / maximum;
-        }
+        },
 
         // TODO increase daytime prediction success rate
         // _hour () {
         //   return ((this.completedAt) ? this.completedAt.getHours() : Behavior.currentHour) / 23
         // }
-
+        toJSON () {
+          let features = JSON.stringify(this.features),
+          cloned = _.cloneDeep(this);
+          cloned.features = JSON.parse(features);
+          return cloned;
+        }
+    },
+    static: {
+      layers: (function () {
+        let layers = [];
+        layers = layers.concat(['chance']);
+        layers = layers.concat(['motivation', 'simplicity']);
+        layers = layers.concat(['anticipation', 'sensation', 'belongness']);
+        return layers;
+      })()
     }
-}), Behavior = behavioral;
+});
+
+var Behavior = behavioral.compose(awarable);
 
 // Behavior.currentHour = new Date().getHours()

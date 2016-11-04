@@ -2,7 +2,7 @@
 
 estimators.time = stampit({
   init() {
-    this.time = Classifiers.Time();
+    this.time = Classifier.time;
   },
   methods: {
     estimate (behaviors) {

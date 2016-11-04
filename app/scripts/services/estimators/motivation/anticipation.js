@@ -1,19 +1,22 @@
 'use strict';
 
-estimators.anticipation = stampit({
+estimators.anticipation = estimatorable.compose(stampit({
   init () {
     if (!estimators.anticipation.responsibilityArea) {
-      estimators.anticipation.responsibilityArea = Classifiers.ResponsibilityArea({areas: this.areas});
+      estimators.anticipation.responsibilityArea = Classifier.responsibilityArea;
     }
 
     this.responsibilityArea = estimators.anticipation.responsibilityArea;
   },
   methods: {
     estimate(ocurrences) {
-      let learnable = Re.learnableSet(ocurrences);
+      let learnable = this.learnableSet(ocurrences);
+
+      // TODO only used for responsibility area prediction, remove from this estimator and create
+      // a context estimator better estimate task context
+      this.contextualize(learnable);
 
       // TODO reuse responsibility area neural net on anticipation classifier
-      this.contextualize(learnable);
       this.responsibilityArea.learn(learnable);
 
       this.inferActualAnticipation(learnable);
@@ -21,9 +24,8 @@ estimators.anticipation = stampit({
 
     contextualize (ocurrences) {
       ocurrences.forEach((ocurrence) => {
-        // TODO use other property than completedAt, after infering task execution
-        // by pomodoro duration
-        ocurrence.context.calendar = {now: ocurrence.start};
+        // TODO update ocurrence duration estimator and use only start time
+        ocurrence.context.calendar = {now: ocurrence.start || ocurrence.completedAt};
       });
     },
 
@@ -41,4 +43,4 @@ estimators.anticipation = stampit({
       });
     }
   }
-});
+}));

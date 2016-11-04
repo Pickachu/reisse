@@ -56,7 +56,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       attached () {
         this.async(() => {
-          this.$.oauth.open()
+          this.$.oauth.open();
         });
       },
       _responded (event, response) {
@@ -64,7 +64,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._authStatusText = "Asana Ready";
       },
       _computeAuthorization (token) {
-        return `Bearer ${token}`
+        return `Bearer ${token}`;
       }
     });
   })();

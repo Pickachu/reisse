@@ -63,6 +63,13 @@ var estimatorsable = stampit({
     methods: {
       estimate() {
         throw new TypeError(`${this.name} must implement estimate method`);
+      },
+      learnableSet (ocurrences) {
+        let past, now = Date.now(),
+          completed  = (ocurrence) => ocurrence.status === 'complete';
+
+        // Only learn from past ocurrences that actualy happened
+        return ocurrences.filter(completed);
       }
     }
   }),

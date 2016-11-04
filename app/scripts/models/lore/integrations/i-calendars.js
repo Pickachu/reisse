@@ -9,7 +9,7 @@ Lore.integrations.push(
     calendarId: 'heitorsalazar@gmail.com',
 
     // Array of events that are in fact representing a duration of another ocurrence
-    // instead of beign a ocurrence itself
+    // instead of being a ocurrence itself
     durationEventIds: [],
 
     populate (lore) {
@@ -116,7 +116,8 @@ Lore.integrations.push(
             }
           });
 
-          ocurrence.features.duration.actual = duration;
+          // Do not set duration to 0.
+          if (duration) ocurrence.features.duration.actual = duration;
 
           // TODO sperate duration and start concerns
           // The supreme start definer of an ocurrence is the first calendar

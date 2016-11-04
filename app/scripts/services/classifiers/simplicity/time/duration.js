@@ -1,9 +1,10 @@
 'use strict';
 
-var Classifiers = Classifiers || (Classifiers = {});
-
 // TODO Calculate neural net accuracy
-Classifiers.Duration = stampit({
+Classifier.add(stampit({
+  refs: {
+    name: 'duration'
+  },
   init() {
     // FIXME forwardable properties to reisse classifiers
     this.areas || (this.areas = app.areas);
@@ -45,6 +46,12 @@ Classifiers.Duration = stampit({
           dict.forEach((durations, token) => {
             dict.set(token, ss.average(durations));
           });
+
+          // TODO update tokenizator to consider emojis
+          dict.delete("");
+
+          // TODO update tokenizator to consider R$
+          dict.delete("r");
 
           this.durationByToken = dict;
         })
@@ -190,4 +197,4 @@ Classifiers.Duration = stampit({
       };
     }
   }
-});
+}));

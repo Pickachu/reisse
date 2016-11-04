@@ -23,6 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-tab name="asana">Asana</paper-tab>
       <paper-tab name="things">Things</paper-tab>
       <paper-tab name="i-calendar">ICalendar</paper-tab>
+      <paper-tab name="reisse">Relissë</paper-tab>
     </paper-tabs>
 
     <paper-tabs selected="{{statusName}}" attr-for-selected="name">
@@ -71,9 +72,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         filtered = _.filter(this.ocurrences, matches);
         filterer.clearSelection();
 
-        if (filtered.length > 1000) {
-          console.warn('too many filter results, handicaped to 1000. Actual amount:', filtered.length);
-          filtered = filtered.splice(0, 1000);
+        if (filtered.length > 600) {
+          console.warn('too many filter results, handicaped to 600. Actual amount:', filtered.length);
+          filtered = filtered.splice(0, 600);
         }
         filtered.forEach((ocurrence) => {
           filterer.select(ocurrence);

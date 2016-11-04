@@ -38,7 +38,7 @@ var aggregable = function (instance, property, feature, current, callback) {
     methods: {
         toJSON () {
             // Return serialized version of only non undefined values
-            return _.pick(_.omit(this, _.functions(this)), _.negate(_.isUndefined));
+            return _.pickBy(_.omit(this, _.functions(this)), _.negate(_.isUndefined));
         }
     },
     static: {

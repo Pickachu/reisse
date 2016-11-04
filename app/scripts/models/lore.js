@@ -20,31 +20,6 @@ Lore = Lore.static({
               changes = changes.concat(this.collectionChanges('ocurrences', attributes.ocurrences));
 
               return this._normalizeChanges(changes);
-          },
-          assignArea(ocurrence) {
-              switch (ocurrence.provider.name) {
-              case 'asana':
-                  !this.workArea && console.error("No work area defined for assigining!");
-
-                  // TODO use firebase key instead of things id
-                  ocurrence.areaId = this.workArea.provider.id;
-                  break;
-              case 'jawbone':
-                !this.healthArea && console.error("No health area defined for assigining!");
-
-                // TODO use firebase key instead of things id
-                ocurrence.areaId = this.healthArea.provider.id;
-                break;
-              case 'i-calendar':
-                  break;
-              default:
-                  console.warn("Can\'t assign area to ", ocurrence);
-              };
-
-              return ocurrence;
-          },
-          toJSON() {
-              return _.omit(this, 'workArea',  _.functions(this));
           }
       },
       static: {

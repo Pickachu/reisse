@@ -11,7 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
 <link rel="import" href="./classifier-sandbox.html">
-
+  
 <dom-module id="reisse-auditor">
   <style> :host { display: block; } </style>
   <template>
@@ -32,7 +32,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ocurrences: Array
       },
       _audit (event) {
-        if (!this.ocurrences.length) {
+        if (!this.ocurrences || !this.ocurrences.length) {
           return console.warn(this.is, 'no ocurrences to perform on, aborting!');
         }
         Polymer.dom(event.target).nextElementSibling.perform(this.ocurrences);

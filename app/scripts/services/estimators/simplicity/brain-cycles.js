@@ -17,10 +17,29 @@ estimators.brainCycles = stampit({
 
       inferActualBrainCycles(ocurrence) {
         let cycles = 0, activityType;
+
+        switch (ocurrence.getStamp()) {
+          case Task:
+            cycles += this.forTask(ocurrence);
+            break;
+          case Ocurrence:
+            // TODO compute brainCycles for ocurrence
+            cycles += 0;
+            break;
+          case Activity:
+            // TODO compute exclusive for activities
+            cycles += 0;
+            break;
+          default:
+            console.error('unknowns stamp provided for brain cycle computation');
+            break;
+        }
+
         if (ocurrence.activity && (activityType = _.capitalize(ocurrence.type || ocurrence.activity.type))) {
           cycles += this[`for${activityType}`](ocurrence);
         }
-        ocurrence.features.brainCycles.actual = cycles;
+
+        return ocurrence.features.brainCycles.actual = cycles;
       },
 
       forTask (task) {
@@ -51,6 +70,10 @@ estimators.brainCycles = stampit({
       },
 
       forNap (sleep) {
+        return 0;
+      },
+
+      forMeal (meal) {
         return 0;
       },
 

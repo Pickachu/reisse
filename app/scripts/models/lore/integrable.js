@@ -10,8 +10,6 @@ Lore = Lore.static({
     methods: {
       // Distribute data into a consistent model
       integrations(until) {
-        console.error('remove default status hardcoded on ocurrence.js');
-
         return new Promise((integrated, failed) => {
           let updates = Lore({synchronizedAt: this.synchronizedAt}),
           batch, promises = [], serve;

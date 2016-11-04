@@ -1,0 +1,92 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/nvd3-elements/nvd3-behavior.html">
+
+<!--
+An element to create candle stick bar chart using nvd3.
+
+Example:
+
+    <nvd3-candle-stick-bar
+    data="[[data]]"
+    height="100"
+    width="400"
+    auto-resize
+    show-legend></nvd3-candle-stick-bar>
+
+Data Format:
+```
+    [{
+      "key": "Series1",
+      "color": "#d62728",
+      "values": [{
+        "label": "Group A",
+        "value": -1.8746444827653
+      }, {
+        "label": "Group B",
+        "value": -8.0961543492239
+      }, {
+        "label": "Group C",
+        "value": -0.57072943117674
+      }]
+    }, {
+      "key": "Series2",
+      "color": "#1f77b4",
+      "values": [{
+        "label": "Group A",
+        "value": 25.307646510375
+      }, {
+        "label": "Group B",
+        "value": 16.756779544553
+      }, {
+        "label": "Group C",
+        "value": 18.451534877007
+      }]
+    }]
+```
+
+@group NVD3 Elements
+@element nvd3-candle-stick-bar
+@demo demo/nvd3-candle-stick-bar.html
+@hero hero.svg
+-->
+
+<dom-module id="nvd3-candle-stick-bar">
+  <template>
+    <!-- We need to put svg tag inside a div to set correct margins -->
+    <div>
+      <svg></svg>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'nvd3-candle-stick-bar',
+      behaviors: [NVD3.ChartBehavior],
+      properties: {
+        /**
+         * NVD3 chart object.
+         */
+        _chart: {
+          type: Object,
+          value: function() {
+            return nv.models.candlestickBarChart()
+              .x(function(d) {
+                return d.x
+              })
+              .y(function(d) {
+                return d.y
+              });
+          }
+        },
+
+        /**
+         * Whether to display the legend or not
+         */
+        showLegend: {
+          type: Boolean,
+          value: false
+        }
+      }
+    });
+  </script>
+</dom-module>

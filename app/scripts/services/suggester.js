@@ -2,6 +2,8 @@
 
 var suggestable = stampit({
   init () {
+    this.boundWhen = this.when.bind(this);
+    
     Suggester.suggesters.forEach((suggester) => {
       this.suggesters.push(suggester({
         areas: this.areas,

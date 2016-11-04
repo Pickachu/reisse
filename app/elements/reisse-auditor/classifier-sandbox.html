@@ -30,16 +30,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           observer: '_nameChanged'
         },
-        type: {
-          type: String,
-          value: 'multi-bar'
-        },
         classifier: Object,
         stats: Object
       },
 
       _nameChanged (current) {
-        this.classifier = Classifiers[current]();
+        this.classifier = Classifier.find({name: current}) || Classifier.get(current);
       },
 
       _eq (a, b) {
@@ -52,7 +48,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.classifier.performate(behaviors).then((performance) => {
           if (!performance.graphs) {
             performance.meta = performance.stats;
+            performance.type = 'multi-bar';
             performance = {graphs: [performance]};
+            console.warn(this.is, 'not passing `performance.graphs` is deprecated');
           }
 
           this.performance = performance;

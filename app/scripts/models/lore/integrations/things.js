@@ -16,10 +16,6 @@ Lore.integrations.push(
       lore.ocurrences = lore.ocurrences.concat(ocurrences);
       // TODO: provider.projects.map(Project?.fromThings, Project);
 
-      // TODO configurable responsibility_area
-      lore.workArea   = lore.areas.find((area) => area.provider.id == '9753CADC-C398-43C3-B822-5BD83795070D');
-      lore.healthArea = lore.areas.find((area) => area.provider.id == "2D101DED-2DC7-4EE5-B9CB-C164E0F775E9");
-
       return Promise.resolve(ocurrences);
     },
 

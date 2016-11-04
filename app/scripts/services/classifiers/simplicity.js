@@ -1,8 +1,9 @@
-// 'use strict'
+'use strict'
 
-var Classifiers = Classifiers || (Classifiers = {});
-
-Classifiers.Simplicity = stampit({
+Classifier.add(stampit({
+  refs: {
+    name: 'simplicity'
+  },
   init () { this.stage() },
   methods: {
     stage() {
@@ -29,7 +30,7 @@ Classifiers.Simplicity = stampit({
 
       // TODO move this code to base classifiers stamp (not created yet) and test all neural net for nan inputs
       var activation = this.perceptron.activate([0,0,0,0,0]);
-      if (_.isNaN(activation[0])) throw new TypeError("Classifiers.Simplicity.learn: NaN activation detected!");
+      if (_.isNaN(activation[0])) throw new TypeError("Classifier.Simplicity.learn: NaN activation detected!");
 
       learning.set = set;
       learning.sampleSize = set.length;
@@ -115,4 +116,4 @@ Classifiers.Simplicity = stampit({
       };
     },
   }
-});
+}));

@@ -1,4 +1,4 @@
-/* globals Estimator, Classifiers  */
+/* globals Estimator, Classifier  */
 /* exports Re */
 
 'use strict';
@@ -9,41 +9,40 @@ var Re = stampit({
   static: {
     DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
 
-    // TODO refactor classifiers as esitmators and contextualizers
-    chance: Classifiers.Chance,
-
     // Estimates actual values:
     // - mainly for past ocurrences
     // - for future ocurrences just do some basic normalization
     estimate (ocurrences, areas) {
+      // Reset all classifiers
+      Classifier.stage();
+
       ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
-      return Estimators({ocurrences: ocurrences, areas: areas}).estimate();
+      this.estimators = Estimators({ocurrences: ocurrences, areas: areas});
+
+      return this.estimators.estimate();
     },
 
     // Train classifiers to classify ocurrences
     learn(ocurrences) {
       let learnable = this.learnableSet(ocurrences);
-      this.chance.stage();
+
+      this.chance = Classifier.chance;
       this.chance.learn(learnable).then(() => alert('learned'));
+
       return {amount: learnable.length};
     },
 
-    // ! TODO Move lernable set to classifier base class
+    // ! TODO Move lernable set to classifier and estimators base class
     learnableSet (ocurrences) {
-      let past, now = Date.now(),
-        inPast  = (ocurrence) => ocurrence.start && ocurrence.start < now;
-
       // Only learn from past ocurrences that actualy happened
-      return ocurrences.filter(inPast)
-
-        // Clone and instantiate dataset
-        .map(Ocurrence.fromJSON, Ocurrence);
+      return ocurrences.filter((ocurrence) => ocurrence.status === 'complete');
     },
 
     // - Predict ocurrences most likely to happen
     predict(ocurrences, context) {
       let future = this.predictableSet(ocurrences);
 
+      // Predict chance for future ocorrences
       this.chance.context = context;
       this.chance.predict(future);
 
@@ -73,6 +72,8 @@ var Re = stampit({
 
         return available;
     },
+
+    // TODO externalize prediction, habitiation and suggestion methods
     lisse(ocurrences) {
       let range, midnight = ICAL.Time.now(), lisse,
         oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), next = midnight.clone();
@@ -101,6 +102,7 @@ var Re = stampit({
         });
     },
 
+    // Predict most likely events for a time range
     _predictedEventsFor(range, ocurrences) {
       return new Promise((finished, rejected) => {
         let available = this._computeAvailableTime(range),
@@ -112,7 +114,7 @@ var Re = stampit({
               let message = ["Prediction"];
               message.push(" Context");
               message.push("  Now     : " + context.calendar.now);
-              message.push("  Location: " + context.location.latitude + 'lt ' + context.location.longitude + ' lon');
+              message.push("  Location: " + context.location.latitude + 'lat ' + context.location.longitude + 'lon');
               message.push(" Meta ");
               message.push("  Available Time: " + available + 's');
               console.log(message.join('\n'));
@@ -129,20 +131,29 @@ var Re = stampit({
                   let seconds  = ocurrence.features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION,
                       duration = ICAL.Duration.fromSeconds(seconds);
 
+                  // FIXME predict current happening ocurrence within range
+                  // WANRING! ocurrence.features.start must be defined by this method
+                  // the unique case that it is not defined by this method is for the
+                  // currently happening ocurrence, since range is usually midnight this
+                  // ocurrence is sleep!
+                  if (ocurrence.features.start) {start = ICAL.Time.fromJSDate(ocurrence.features.start);};
+
                   ocurrence.features.start = start.toJSDate();
                   start.addDuration(duration);
                   ocurrence.features.end   = start.toJSDate();
 
 
+
                   // TODO figure out better way of doing this, shouldn't the
                   // context change be enough prevent it?
                   // Prevent predicting the same ocurrence twice in the same day
-                  // FIXME figure out why indexOf is not working!
-                  // ocurrences.splice(ocurrences.indexOf(ocurrence), 1);
+                  // ocurrences.splice(ocurrences.indexOf(ocurrence), 1); // FIXME figure out why indexOf is not working!
                   let index = ocurrences.indexOf(ocurrences.find((o) => o.__firebaseKey__ === ocurrence.__firebaseKey__));
                   ocurrences.splice(index, 1);
 
                   available -= seconds;
+
+                  console.log('Predicted ocurrence:', ocurrence.name, ocurrence.features.start, ocurrence.features.end);
 
                   return ocurrence;
                 })
@@ -152,7 +163,7 @@ var Re = stampit({
               lisse = lisse.concat(events);
 
               // There is still time available on range, add more predictions
-              if (available > 0 && lisse.length < 3) {
+              if (available > 0 && lisse.length < 8) {
                 travel();
               } else {
                 finished(lisse);
@@ -160,7 +171,9 @@ var Re = stampit({
             })
             .catch(rejected);
 
-        travel();
+
+        // Add habitual ocurrences to prediction set then travel through time range
+        this._habitsFor(range, ocurrences).then(travel);
       });
     },
 
@@ -183,6 +196,51 @@ var Re = stampit({
           return ocurrences.filter((o) =>
             o.suggestion && o.start.getDay() === today
           );
+        });
+    },
+
+    // - Adds habitual ocurrences to prediction set
+    // TODO respect max frequency for habitual ocurrences (also ignore what happened!)
+    // TODO externalize habits domain
+    _habitsFor (range, ocurrences) {
+      let prediction, yesterday = moment(range[0]).subtract(1, 'day'),
+        now = new Date(), predictor = this.chance.motivation.sensation.sleep;
+
+      console.log('predicting habits');
+      return Context().for(yesterday.toDate())
+        .then((context) => {
+          predictor.context = context;
+          prediction = predictor.predict();
+
+          // TODO infer venue for the habit
+          // TODO elaborate habitual ocurrences
+          // for now just add todays one sleep habit ocurrence ;)
+          ocurrences.push(Activity({
+            // TODO add this properties
+            // areaId   : this.healthArea.provider.id,
+            // TODO better way to generate a temporary id
+            provider    : {id: (Math.random() * 10000).toFixed(), name: 'relisse'},
+            // quality  : x,
+            // TODO predict features
+            features    : {
+              start     : prediction.asleepAt,
+              duration: {
+                estimated: (prediction.awakeAt - prediction.asleepAt) / 1000
+              }
+            },
+            habituality : {},
+            status      : 'open',
+            activity    : {type: 'sleep'},
+            name        : 'Sleep',
+            notes       : 'Probably you slept this much today.',
+            asleepAt    : prediction.asleepAt,
+            awakeAt     : prediction.awakeAt,
+            start       : prediction.asleepAt,
+            end         : prediction.awakeAt,
+            createdAt   : now,
+            updatedAt   : now,
+            completedAt : prediction.asleepAt
+          }))
         });
     }
   }

@@ -19,7 +19,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       display: block;
       margin-bottom: 1px;
       padding-left: 0.5em;
-      overflow: auto;
+      overflow: auto !important;
     }
 
     h3 {
@@ -79,6 +79,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <p id="simplicity">Simplicity</p>
           <paper-tooltip animation-delay="0" position="top" for="simplicity">
             <p>Estimated: {{event.features.simplicity.estimated}}</p>
+          </paper-tooltip>
+        </p>
+        <p>
+          <p id="sensation">Sensation</p>
+          <paper-tooltip animation-delay="0" position="top" for="sensation">
+            <p>Estimated: {{event.features.sensation.estimated}}</p>
           </paper-tooltip>
         </p>
       </div>

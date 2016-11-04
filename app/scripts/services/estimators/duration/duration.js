@@ -1,8 +1,11 @@
 'use strict';
 
+
+// Estimate ocurrence duration in seconds
 estimators.duration = stampit({
   init () {
       this.durationMap.set('unknowns', []);
+      this.badTagNames = [];
   },
   methods: {
     estimate (ocurrences) {
@@ -10,6 +13,12 @@ estimators.duration = stampit({
         this.inferRelativeDurations(ocurrences);
         this.inferActualDurations(ocurrences, resolve);
       });
+
+      this.estimation.then((ocurrences) => {
+        console.warn(`estimators.duration: Invalid tag names for ${this.badTagNames.length} ocurrences on things provider. Check for sync problems.`);
+        return ocurrences;
+      });
+
       return this.estimation;
     },
 
@@ -52,6 +61,7 @@ estimators.duration = stampit({
           // TODO figure out if this will be needed
           // .then(this.timeFromCalendarEvents.bind(this))
           .then(this.timeFromTagNames.bind(this))
+          .then(this.timeFromMealWeight.bind(this))
           .then(this.timeFromRelativeDuration.bind(this))
           .then(infer);
       }
@@ -61,8 +71,8 @@ estimators.duration = stampit({
 
     timeFromTagNames (ocurrence) {
       if (Number.isFinite(ocurrence.features.duration.actual)) return ocurrence;
-      if (!ocurrence.tagNames) {
-        console.warn(`estimators.duration: Invalid tag names for ocurrence ${ocurrence.name}, tag names: ${ocurrence.tagNames}. Check for sync problems.`);
+      if (!ocurrence.tagNames && ocurrence.provider.name == 'things') {
+        this.badTagNames.push(ocurrence);
         return ocurrence;
       }
 
@@ -74,6 +84,23 @@ estimators.duration = stampit({
 
       return ocurrence;
     },
+
+    // Average eating speed:
+    // TODO find better eating speed estimations
+    // - https://www.researchgate.net/publication/285674524_Assessment_of_eating_rate_and_food_intake_in_spoon_versus_fork_users_in_a_laboratory_setting
+    // - https://www.researchgate.net/publication/301664303_Consumption_with_fork_or_spoon_Effects_on_acute_food_intake_eating_rate_and_palatability
+    //   (42 + 67) / 2 = 54.5 g / min
+    timeFromMealWeight (ocurrence) {
+      if (Number.isFinite(ocurrence.features.duration.actual)) return ocurrence;
+      if (!ocurrence.activity || ocurrence.activity.type != 'meal') return ocurrence;
+      if (!ocurrence.weight) return ocurrence;
+
+      ocurrence.features.duration.actual = (ocurrence.weight / 54.5) * 60;
+
+      return ocurrence;
+    },
+
+
     timeFromRelativeDuration(ocurrence) {
       if (Number.isFinite(ocurrence.features.duration.actual)) return ocurrence;
       let relativeDuration = ocurrence.features.duration.relative;

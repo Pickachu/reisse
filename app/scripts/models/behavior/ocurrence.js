@@ -31,7 +31,7 @@ var ocurrenceable = stampit({
         }
       }
 
-      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
+      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles', 'sleepiness'));
     }
   },
 
@@ -110,16 +110,10 @@ var ocurrenceable = stampit({
       return Ocurrence(json);
     },
     fromJSON (json) {
-      json = Object.assign({}, json);
+      json = _.cloneDeep(json);
 
       json.start       && (json.start       = new Date(json.start));
       json.end         && (json.end         = new Date(json.end  ));
-
-      // TODO Remove this on reimport!
-      if (!json.status) {
-        if (json.completedAt || json.end) json.status = 'complete';
-        else json.status = 'open'
-      }
 
       let provider = json.provider ? json.provider.name : 'none'
 
@@ -128,7 +122,7 @@ var ocurrenceable = stampit({
         case 'things':
           return Task.fromJSON(json);
         case 'jawbone':
-          // Current activity types: sleep
+          // Current activity types: sleep, meal
           return Activity.fromJSON(json);
         case 'i-calendar':
           // TODO better checking for this
@@ -145,4 +139,4 @@ var ocurrenceable = stampit({
   }
 });
 
-var Ocurrence = Behavior.compose(ocurrenceable);
+var Ocurrence = Behavior.compose(ocurrenceable, awarable);

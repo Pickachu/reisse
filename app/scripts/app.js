@@ -114,7 +114,7 @@
     };
 
     app.predict = function () {
-      Re.lisse(this.ocurrences)
+      Re.lisse(Re.estimators.ocurrences)
         .then((events) => {
           this.linkEvents(this.ocurrences, events, ['predictions']);
           this.prediction = { events: events };
@@ -140,7 +140,7 @@
     };
 
     app.set('performance', {
-        classifiers: ['Simplicity', 'Duration', 'Sleep', 'ResponsibilityArea']
+        classifiers: ['simplicity', 'duration', 'sleep', 'sleepiness', 'responsibilityArea', 'hunger']
     });
 
     Object.defineProperty(app, 'limit', {

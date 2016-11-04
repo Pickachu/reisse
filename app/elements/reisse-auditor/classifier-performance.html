@@ -10,9 +10,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-multi-bar.html">
-<link rel="import" href="../../bower_components/nvd3-elements/nvd3-line.html">
-<link rel="import" href="../../bower_components/nvd3-elements/nvd3-line-with-focus.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-multi-bar-horizontal.html">
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-scatter.html">
+<link rel="import" href="../nvd3-candle-stick-bar/nvd3-candle-stick-bar.html">
 
 <dom-module id="classifier-performance">
   <style> :host { display: block; } </style>
@@ -30,6 +30,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </template>
       <template is="dom-if" if="[[_eq(type, 'multi-bar')]]">
         <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+      </template>
+      <template is="dom-if" if="[[_eq(type, 'multi-bar-horizontal')]]">
+        <nvd3-multi-bar-horizontal id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar-horizontal>
+      </template>
+      <template is="dom-if" if="[[_eq(type, 'candle-stick-bar')]]">
+        <nvd3-candle-stick-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-candle-stick-bar>
       </template>
     </p>
   </template>

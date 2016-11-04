@@ -78,6 +78,8 @@ Lore = Lore.static({
             console.log('lore.<synchronizable>: synchronize');
             return synchronizer.synchronize();
           });
+        }, (reason) => {
+          console.log('lore.<synchronizable>: synchronization failed', reason);
         });
       },
 

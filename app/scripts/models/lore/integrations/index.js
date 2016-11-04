@@ -11,5 +11,11 @@ Lore = Lore.static({
       populate () {throw new TypeError("Not implemented yet");}
     }
   }),
-  integrations: []
+  integrations: Object.assign([], {
+      add (configuration) {
+        if (!configuration) throw new TypeError("Error adding Integration");
+        if (!configuration.refs && !configuration.refs.name) throw new TypeError("Integration name on refs is mandatory");
+        return this.push(Lore.Integration.compose(stampit(configuration)));
+      }
+  })
 });

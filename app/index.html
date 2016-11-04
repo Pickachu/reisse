@@ -125,26 +125,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section class="layout vertical" data-route="home">
                 <div class="toolbar flex-1">
-                  <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
-                  <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
-
-                  <google-signin     client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
-
-                  <!-- TODO insert client ids as parameters -->
-                  <asana-signin      authorization="{{authorization}}"></asana-signin>
-                  <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read"]'></jawbone-signin>
-                  <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
-
-                  <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
-                    Firebase Ready ([[areas.length]] - [[ocurrences.length]])
-                  </paper-button>
-
-                  <p>
-                    <template is="dom-repeat" items="{{areas}}" as="area">
-                      <span>{{area.name}}</span> |
-                    </template>
-                  </p>
-
                   <paper-button on-tap="learn">Learn from past experience</paper-button>
                   <paper-button on-tap="predict" disabled="{{learning}}">Generate the best day</paper-button>
                 </div>
@@ -156,6 +136,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               </section>
 
               <integrations-page ocurrences="{{ocurrences}}" data-route="synchronization">
+                <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
+                <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
+
+                <google-signin   client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
+                <fb:login-button scope="public_profile,email"></fb:login-button>
+
+                <!-- TODO insert client ids as parameters -->
+                <asana-signin      authorization="{{authorization}}"></asana-signin>
+                <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read", "meal_read"]'></jawbone-signin>
+                <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
+
+                <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
+                  Firebase Ready ([[areas.length]] - [[ocurrences.length]])
+                </paper-button>
+
+                <p>
+                  <template is="dom-repeat" items="{{areas}}" as="area">
+                    <span>{{area.name}}</span> |
+                  </template>
+                </p>
                 <paper-button on-tap="fetch">Fetch</paper-button>
               </integrations-page>
 
@@ -189,8 +189,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           -->
 
       <asana-workspace workspace-id="1434006482426" authorization="{{authorization}}"></asana-workspace>
-      <jawbone-element collection-name="sleeps" limit="50" authorization="{{upAuthorization}}"></jawbone-element>
+      <jawbone-element limit="50" authorization="{{upAuthorization}}"></jawbone-element>
       <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
+      <facebook-sdk app-id="1620595611520205"></facebook-sdk>
+      <facebook-graph></facebook-graph>
       <things-element src="sources/things.json"></things-element>
 
       <!-- consider using: http://robrez.github.io/poly-ical/components/poly-ical/index.html -->
@@ -226,7 +228,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/lore/synchronizerable.js"></script>
     <script src="scripts/models/lore/integrable.js"></script>
     <script src="scripts/models/lore/integrations/index.js"></script>
-    <script src="scripts/models/lore/integrations/tasks.js"></script>
+    <script src="scripts/models/lore/integrations/things.js"></script>
+    <script src="scripts/models/lore/integrations/relisse.js"></script>
     <script src="scripts/models/lore/integrations/jawbone.js"></script>
     <script src="scripts/models/lore/integrations/i-calendars.js"></script>
     <script src="scripts/models/lore.js"></script>
@@ -236,6 +239,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/estimator.js"></script>
     <script src="scripts/services/estimators/location.js"></script>
     <script src="scripts/services/estimators/duration/duration.js"></script>
+    <script src="scripts/services/estimators/sleepiness.js"></script>
+    <script src="scripts/services/estimators/weight.js"></script>
 
     <!-- Domain estimators -->
     <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
@@ -252,19 +257,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="scripts/services/hash.js"></script>
 
-    <script src="scripts/classifiers/simplicity/time/duration.js"></script>
-    <script src="scripts/classifiers/simplicity/time.js"></script>
-    <script src="scripts/classifiers/simplicity.js"></script>
-    <script src="scripts/classifiers/chance.js"></script>
-    <script src="scripts/classifiers/motivation.js"></script>
+    <script src="scripts/services/classifier.js"></script>
 
-    <script src="scripts/classifiers/chance/daytime.js"></script>
+    <script src="scripts/services/classifiers/simplicity/time/duration.js"></script>
+    <script src="scripts/services/classifiers/simplicity/time.js"></script>
+    <script src="scripts/services/classifiers/simplicity.js"></script>
 
-    <script src="scripts/classifiers/motivation/sensation/sleep.js"></script>
-    <script src="scripts/classifiers/motivation/sensation.js"></script>
+    <script src="scripts/services/classifiers/motivation/sensation/hunger.js"></script>
+    <script src="scripts/services/classifiers/motivation/sensation/sleep.js"></script>
+    <script src="scripts/services/classifiers/motivation/sensation/sleepiness.js"></script>
+    <script src="scripts/services/classifiers/motivation/sensation.js"></script>
+    <script src="scripts/services/classifiers/motivation/anticipation/responsibility_area.js"></script>
+    <script src="scripts/services/classifiers/motivation/anticipation.js"></script>
+    <script src="scripts/services/classifiers/motivation.js"></script>
 
-    <script src="scripts/classifiers/motivation/anticipation/responsibility_area.js"></script>
-    <script src="scripts/classifiers/motivation/anticipation.js"></script>
+    <script src="scripts/services/classifiers/chance/daytime.js"></script>
+    <script src="scripts/services/classifiers/chance.js"></script>
 
     <script src="scripts/services/feature-manager.js"></script>
 
