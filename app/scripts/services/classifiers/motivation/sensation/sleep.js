@@ -13,7 +13,7 @@ Classifier.add(stampit({
       let Architect   = synaptic.Architect;
       this.perceptron = new Architect.LSTM(7, 5, 5, 2);
 
-      this.timeCap = moment().subtract(2, 'months').toDate();
+      this.timeCap = moment().subtract(4, 'months').toDate();
       this.learned = false;
     },
     learn(behaviors) {
@@ -88,7 +88,7 @@ Classifier.add(stampit({
 
       // Performance graphh
       this.stage();
-      learning = this.learn(Re.learnableSet(behaviors));
+      learning = this.learn(this.performatableSet(behaviors));
 
       // [{
       //   key: previsoes,

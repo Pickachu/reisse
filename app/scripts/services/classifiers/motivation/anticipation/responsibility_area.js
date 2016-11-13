@@ -73,13 +73,28 @@ Classifier.add(stampit({
         ids: this.areaIds,
         skiped: [],
         input (behavior) {
+          let duration = this.duration(behavior);
           // Only learn responsibility area timing from completed behaviors
-          if (!behavior.completedAt) return this.skip(behavior);
+          if (!duration) return this.skip(behavior);
 
-          let hour = behavior.completedAt.getHours(),
-            input  = baseInput.concat([]);
+          let midnight = duration.start.clone().startOf('day'),
+          start  = moment.duration(duration.start.diff(midnight)).as('hours'),
+          cursor = Math.round(start),
+          end    = moment.duration(duration.end.diff(midnight)).as('hours'),
+          input  = baseInput.concat([]);
 
-          input[hour  ] = 1;
+          if (end - start > 1) {
+            input[Math.floor(start)] = (1 - start % 1) || 1;
+
+            while (cursor < end) {
+              input[cursor % 24] = 1;
+              cursor += 1;
+            }
+
+            input[Math.floor(end) % 24] = (end % 1) || 1;
+          } else {
+            input[Math.floor(start)] = end - start;
+          }
 
           return input;
         },
@@ -158,21 +173,23 @@ Classifier.add(stampit({
         // learning = this.learn(learnable);
 
         fillers = _(new Array(24)).map((m, index) => {return {x: index + 1, y: 0};}).value();
-        columns = this.areas.map((area) => {return {key: area.name, values: fillers.concat([])}});
+        columns = this.areas.map((area) => {return {key: area.name, values: _.cloneDeep(fillers)}});
 
         _(learnable)
-          .groupBy((o) => o.areaId + '/' + o.completedAt.getHours())
-          .each((ocurrences, key) => {
-            let splited = key.split('/'), areaId = splited[0],
-              hour = +splited[1], index = ids.indexOf(areaId);
+          .groupBy((o) => o.areaId)
+          .each((ocurrences, areaId) => {
+            let index = ids.indexOf(areaId),
+              inputs = ocurrences.map(mapper.input, mapper),
+              column = columns[index];
 
-            columns[index].values[hour] = {
-              x: hour,
-              y: ocurrences.length
-            };
+            inputs.forEach((input) => {
+              input.forEach((duration, daytime) => {
+                column.values[daytime].y += duration;
+              });
+            });
           });
 
-        graphs.push({data: columns, meta: {title: 'Behavior Completion by Daytime'}, type: 'multi-bar'});
+        graphs.push({data: columns, meta: {title: 'Behavior Presence by Daytime'}, type: 'multi-bar'});
 
         columns = this.areas.map((area) => {return {key: area.name, values: []}});
 
@@ -180,12 +197,19 @@ Classifier.add(stampit({
           .groupBy((o) => moment(o.completedAt).format('Y-M-ww'))
           .toPairs()
           .each((pair) => {
-            let counts = _.groupBy(pair[1], 'areaId');
+            let areas = _.groupBy(pair[1] /* ocurrences */, 'areaId');
 
-            ids.forEach((id, index) => {
-              columns[index].values.push({
-                x: pair[0],
-                y: (counts[id] && counts[id].length) || 0
+            ids.forEach((areaId) => {
+              let ocurrences = areas[areaId] || [],
+              index = ids.indexOf(areaId),
+              weight = ocurrences.reduce((aggregate, ocurrence) =>
+                aggregate + mapper.duration(ocurrence).duration / (60 * 60 * 1000)
+              , 0),
+              column = columns[index];
+
+              column.values.push({
+                x: pair[0], // week number
+                y: weight
               });
             });
           });
@@ -225,7 +249,7 @@ Classifier.add(stampit({
           });
 
         columns = columns.filter((column) => column.values.length);
-        graphs.push({data: columns, meta: {title: 'Duration By Behavior'}, type: 'candle-stick-bar'});
+        graphs.push({data: columns, meta: {title: 'Behavior Duration By Day'}, type: 'candle-stick-bar'});
 
         learning = this.learn(learnable);
         columns  = this.areas.map((area) => {return {key: area.name, values: fillers.concat([])}});

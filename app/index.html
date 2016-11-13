@@ -161,7 +161,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section data-route="performance">
                 <section>
-                  <paper-button on-tap="fetch">Fetch</paper-button>
+                  <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
                   <reisse-auditor ocurrences="{{ocurrences}}" classifiers="{{performance.classifiers}}"></reisse-auditor>
                 </section>
               </section>

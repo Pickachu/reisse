@@ -164,7 +164,7 @@ Classifier.add(stampit({
 
       // Performance graph
       this.stage();
-      learning = this.learn(Re.learnableSet(behaviors));
+      learning = this.learn(this.performatableSet(behaviors));
       mapper   = learning.mapper;
 
       // [{

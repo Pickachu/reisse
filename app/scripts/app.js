@@ -140,7 +140,7 @@
     };
 
     app.set('performance', {
-        classifiers: ['simplicity', 'duration', 'sleep', 'sleepiness', 'responsibilityArea', 'hunger']
+        classifiers: ['simplicity', 'time', 'duration', 'sleep', 'sleepiness', 'responsibilityArea', 'hunger']
     });
 
     Object.defineProperty(app, 'limit', {

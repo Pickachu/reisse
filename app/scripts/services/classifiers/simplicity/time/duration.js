@@ -65,7 +65,7 @@ Classifier.add(stampit({
         if (!behavior.name) return;
         let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
         if (!durations.length) durations = [0];
-        if (!(index % 1000)) console.log('predicting duration', index, 'of', total, 'Sample:', behavior.name, 'Predicted Duration:', ss.average(durations));
+        if (!(index % 5000)) console.log('predicting duration', index, 'of', total, '\nSample:', behavior.name, 'Predicted Duration:', ss.average(durations));
         behavior.features.duration.estimated = ss.average(durations);
       });
     },

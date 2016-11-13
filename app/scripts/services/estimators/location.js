@@ -55,14 +55,19 @@ estimators.location = stampit({
 
           if (index < 0) { return false; }
 
-          // TODO move estimators to elements
+
           // For now ignore updates
           updates[`ocurrences/${estimated.__firebaseKey__}/context/venue`] = estimated.context.venue;
 
           return estimated;
         })
+        // TODO allow estimators to save data by moving them to elements
         .tap((estimateds) => {
-          console.log('skiped certain storage', updates);
+          let query = new Firebase("https://boiling-fire-6466.firebaseio.com/lore");
+          query.update(updates);
+          return estimateds;
+        }).tap((estimateds) => {
+          // console.log('skiped certain storage', updates);
 
           let failures = _.compact(estimateds).length - estimateds.length,
             successes = estimateds.length - failures;
@@ -126,7 +131,7 @@ estimators.location = stampit({
               resolve(provider.venues);
             }
           } else {
-            resolve([]);
+              resolve([]);
           }
       });
     },

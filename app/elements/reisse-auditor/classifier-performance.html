@@ -74,10 +74,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         if (model.stacked) { model.stacked(true); }
 
+        if (this.meta.options) {
+          let options = this.meta.options;
+          if (options.axis) {
+            if (options.axis.x) {
+              model.xAxis.options(options.axis.x);
+            }
+            if (options.axis.y) {
+              model.yAxis.options(options.axis.y)
+            }
+          }
+        }
+
         if (model.useInteractiveGuideline) {
           model.useInteractiveGuideline(true);
-          model.update();
         }
+
+        model.update();
       },
 
       _eq (a, b) {
