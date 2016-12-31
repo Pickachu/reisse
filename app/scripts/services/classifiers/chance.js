@@ -27,8 +27,9 @@ Classifier.add(stampit({
               if (ocurrence.status == 'open') return;
               ocurrence = Ocurrence.fromJSON(ocurrence);
 
+              // TODO get learning from ocurrence instead of simplicity prediction
               let inputs = [
-                this.simplicity.perceptron.activate(ocurrence.simplicity(true, 'actual'))[0],
+                ss.min(ocurrence.simplicity(true, 'actual')),
                 this.motivation.perceptron.activate(ocurrence.motivation(true, 'actual'))[0]
               ];
 

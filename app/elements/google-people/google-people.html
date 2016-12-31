@@ -1,0 +1,102 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/google-signin/google-signin-aware.html">
+<link rel="import" href="../../bower_components/google-apis/google-client-loader.html">
+
+
+<dom-module id="google-people">
+  <style> :host { display: none; } </style>
+  <template>
+    <google-client-loader id="people" name="people" version="v1"
+      on-google-api-load="_apiLoaded"></google-client-loader>
+    <google-signin-aware
+      scopes="https://www.googleapis.com/auth/contacts.readonly"
+      is-authorized="{{_signedIn}}"></google-signin-aware>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'google-people',
+
+      properties: {
+        personId: {
+          type: String,
+          value: 'me'
+        },
+
+        connections: {
+          type: Array,
+          notify: true,
+          readOnly: true
+        },
+        paginationToken: {
+          type: String,
+          value: null
+        },
+        params: {
+          type: Object,
+          computed: '_computeParams(personId, paginationToken)'
+        }
+
+      },
+
+      _apiLoaded () {
+        this.client = this.$.people.api;
+      },
+
+      values () {
+        // Reset events array to prevent duplicated items preservation
+        this._setConnections([]);
+
+        return new Promise((resolve) => {
+          let responded = (response) => {
+            let result = response.result;
+            if (result.nextPageToken) this.next().then(responded);
+            else resolve(this);
+          };
+
+          this.next().then(responded);
+        });
+      },
+
+      next() {
+        return this.list(this.params).then((response) => {
+          let result = response.result;
+          this.paginationToken = result.nextPageToken || null;
+          if (result.connections) this._setConnections(this.connections.concat(result.connections));
+          return response;
+        });
+      },
+
+      list (params) {
+        return this.client.people.connections.list(params) .then(function(response) {
+          if (response.error) {
+            console.error("Error with people.connections.list", response.message)
+            return Promise.reject(response);
+          } else {
+            return Promise.resolve(response);
+          }
+        }.bind(this));
+      },
+
+      _computeParams(id, page) {
+        let params = {resourceName: 'people/' + id};
+        (page   ) && (params.pageToken = page);
+        return params;
+      }
+
+    });
+  })();
+  </script>
+</dom-module>

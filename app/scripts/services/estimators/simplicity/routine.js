@@ -1,20 +1,22 @@
 'use strict';
 
-estimators.time = stampit({
+estimators.dayTime = stampit({
   init() {
-    this.time = Classifier.get('time');
+    this.dayTime   = Classifier.get('dayTime');
+    this.frequency = Classifier.get('frequency');
   },
   methods: {
     estimate (behaviors) {
-      return this.when('duration').then((resolve) => {
+      // return this.when('duration').then((resolve) => {
         // this.inferRelativeTime(behaviors);
-        return this.inferActualTime(behaviors, resolve);
-      });
+      return this.inferActualDayTime(behaviors);
+      // });
     },
 
-    inferActualTime(behaviors, finished) {
-      return this.time.learn(behaviors).then(() => {
-        this.time.predict(behaviors).then(finished);
+    inferActualDayTime(behaviors) {
+      return Promise.all([this.dayTime.learn(behaviors), this.frequency.learn(behaviors)]).then(() => {
+        // this.time.predict(behaviors).then(finished);
+        return Promise.resolve(behaviors);
       });
     },
 

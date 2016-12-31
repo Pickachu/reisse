@@ -2,10 +2,14 @@
 
 var classifiable = stampit({
   init () { },
+  props: {
+    // skipped behaviors on prediction or learing for some reason
+    skips: []
+  },
   methods: {
-    stage (ocurrences) { },
-    learn (ocurrences) { },
-    predict (ocurrences, context) { },
+    stage (ocurrences) { this.skips = []; },
+    learn (ocurrences) { return Promise.resolve(ocurrences); },
+    predict (ocurrences, context) { return Promise.resolve(ocurrences); },
     performate (ocurrences) { },
     quality () { },
 
@@ -13,9 +17,25 @@ var classifiable = stampit({
       return this.learnableSet(ocurrences.map(Ocurrence.fromJSON, Ocurrence));
     },
 
-    learnableSet (ocurrences) {
+    learnableSet (ocurrences, options) {
+      let chainable = _(ocurrences), keys = Object.keys(options || {});
+
       // Only learn from past ocurrences that actualy happened
-      return ocurrences.filter((ocurrence) => ocurrence.status === 'complete');
+      chainable.filter((ocurrence) => ocurrence.status === 'complete');
+
+      if (keys.includes('size')) {
+        chainable.filter((o, i, bs) => i > (options.size * bs.length));
+      }
+
+      if (keys.includes('sorted')) {
+        chainable.sortBy('completedAt');
+      }
+      
+      return chainable.value();
+    },
+
+    skip (ocurrence) {
+      this.skips.push(ocurrence);
     }
   },
   static: {

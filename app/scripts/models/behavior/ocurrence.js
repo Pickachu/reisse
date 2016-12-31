@@ -30,9 +30,9 @@ var ocurrenceable = stampit({
           console.warn(this.__firebaseKey__, 'Ocurrence.init: failed to compute duration with dates:', this.start, this.end);
         }
       }
-
-      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles', 'sleepiness'));
+      Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles', 'sleepiness', 'hunger'));
     }
+
   },
 
   methods: {
@@ -122,7 +122,7 @@ var ocurrenceable = stampit({
         case 'things':
           return Task.fromJSON(json);
         case 'jawbone':
-          // Current activity types: sleep, meal
+          // Current pure activity types: sleep, meal
           return Activity.fromJSON(json);
         case 'i-calendar':
           // TODO better checking for this

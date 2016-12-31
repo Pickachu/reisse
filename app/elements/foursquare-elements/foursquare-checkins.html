@@ -1,0 +1,114 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="foursquare-checkins">
+  <style> :host { display: none; } </style>
+  <template>
+    <iron-ajax id="api" method="get" url="https://api.foursquare.com/v2/users/[[userId]]/checkins" on-response="_populate" on-error="_failed"></iron-ajax>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'foursquare-checkins',
+
+      properties: {
+        checkins: Array,
+
+        // list of parameters: https://developer.foursquare.com/docs/users/checkins
+        afterTimestamp : Date,
+        beforeTimestamp: Date,
+        limit : String,
+        offset: String,
+        sort: {
+          type: String,
+          observer: '_sortChanged'
+        },
+
+        // TODO implement sort: String,
+        userId: {
+          type: String,
+          value: 'self'
+        },
+
+        // TODO implement and use foursquare-signin-aware to remove this attribute
+        authorization: String
+      },
+      observers: ['_fetch(userId, authorization)'],
+
+      fetch() { return this._fetch(this.userId, this.authorization); },
+      _fetch(userId, authorization) {
+        if (!userId) return;
+
+        this.debounce('_fetch', () => {
+          let params = this._computeParams(authorization),
+          api = this.$.api;
+
+          api.params = params;
+          api.generateRequest();
+        });
+      },
+
+      _computeParams(authorization) {
+         let params = {
+          oauth_token: authorization,
+          // TODO for other modes implement swarm-checkins
+          m: 'foursquare',
+          v: '20160426'
+        };
+
+        this.afterTimestamp  && (params.afterTimestamp  = (this.afterTimestamp.getTime()  / 1000))
+        this.beforeTimestamp && (params.beforeTimestamp = (this.beforeTimestamp.getTime() / 1000))
+        this.limit           && (params.limit           = this.limit )
+        this.offset          && (params.offset          = this.offset)
+        this.sort            && (params.sort            = this.sort )
+
+        return params;
+      },
+      _populate (event, request) {
+        let response = request.response,
+        meta         = response.meta;
+
+        switch (meta.code) {
+          case 200:
+            this.checkins = response.response.checkins.items;
+            this.fire('populated');
+            break;
+          default:
+            throw new Error(`Received invalid response code: ${meta.code}.`);
+        }
+      },
+      _failed(event, detail) {
+        let request = detail.request;
+
+        switch (request.status) {
+          // Usually happens on rate limit exceded
+          case 403:
+            this.fire('error', detail);
+            break;
+          default:
+            throw Error(`Received unhandled failure status code ${request.status}.`);
+        }
+      },
+      _sortChanged (current, old) {
+        let allowed = ['oldestfirst', 'newestfirst', undefined, null]
+        if (!allowed.includes(current)) {
+          this.sort = old;
+          throw new TypeError("Sort option must be one of: " + allowed.join(','));
+        }
+      }
+    });
+  })();
+  </script>
+</dom-module>

@@ -1,44 +1,25 @@
 'use strict';
 
-estimators.sensation = stampit({
-  init () {
-    if (!estimators.sensation.sleepiness) {
-      estimators.sensation.sleepiness = Classifier.sleepiness;
-    }
-
-    this.sleepiness = estimators.sensation.sleepiness;
+estimators.sensation = estimatorable.compose(stampit({
+  init() {
+    this.sensation = Classifier.get('sensation');
   },
   methods: {
-    estimate(ocurrences) {
-      let learnable = Re.learnableSet(ocurrences);
-
-      // TODO reuse responsibility area neural net on sensation classifier
-      this.contextualize(learnable);
-      this.sleepiness.learn(learnable);
-
-      this.inferActualSensation(learnable);
+    estimate (behaviors) {
+      return this.when('sleepiness', 'hunger').then(() =>
+        this.inferActualSensation(this.inferrableSet(behaviors))
+      );
     },
 
-    contextualize (ocurrences) {
-      ocurrences.forEach((ocurrence) => {
-        // TODO use other property than completedAt, after infering task execution
-        // by pomodoro duration
-        ocurrence.context.calendar = {now: ocurrence.start};
-      });
-    },
-
-    inferActualSensation (ocurrences) {
-      let predictions = this.sleepiness.predict(ocurrences);
-      ocurrences.forEach((ocurrence, index) => {
-        // Prediction is an array with estimated sensation for each
-        // responsibility area at that day time. Get the aticipation related
-        // to this ocurrence responsibility area
-        let prediction = predictions[index],
-        area = this.sleepiness.areaIds.indexOf(ocurrence.areaId);
-
-        // FIXME some ocurrences are coming without responsibility area!
-        ocurrence.features.sensation.actual = prediction[area] || 0.5;
-      });
+    inferActualSensation(behaviors) {
+      return this.sensation.learn(behaviors).then(() =>
+        this.sensation.predict(behaviors)
+          .then((predictions) =>
+            predictions.forEach((prediction, index) =>
+              behaviors[index].features.sensation.actual = prediction
+            )
+          )
+      );
     }
   }
-});
+}));

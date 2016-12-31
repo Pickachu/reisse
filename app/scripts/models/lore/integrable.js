@@ -46,9 +46,14 @@ Lore = Lore.static({
           }, failed);
         });
       },
-      when (name) {
-        if (!this.servings[name]) throw new TypeError(`The serving for integration ${name} does not return a promise or does not exist.`);
-        return this.servings[name];
+      when () {
+        return Promise.all(_(arguments)
+          .toArray()
+          .map((name) => {
+            if (!this.servings[name]) throw new TypeError(`The serving for integration ${name} does not return a promise or does not exist.`);
+            return this.servings[name];
+          })
+        ).then((resolutions) => Promise.resolve(resolutions.pop()));
       }
     }
   })

@@ -8,7 +8,7 @@ Lore.integrations.add({
   },
   methods: {
     populate (lore) {
-      return Promise.all(this.when('things'), this.when('asana'), this.when('jawbone')).then(() => {
+      return this.when('things', 'asana', 'jawbone').then(() => {
         // TODO configurable responsibility_areas
         let workArea  = lore.areas.find((area) => area.provider.id == '9753CADC-C398-43C3-B822-5BD83795070D');
         if (!workArea.responsibilities.includes('work')) workArea.responsibilities.push('work');

@@ -23,6 +23,8 @@ var aggregable = function (instance, property, feature, current, callback) {
         // Predicted (estimated) value for this feature (generally predicted by classifiers)
         aggregable(this, 'estimated', this.name, this.estimated, (value) => {this.truer = this.truer || value;});
         // Actual value for this feature (generally defined by the estimators)
+        // - Non-Domain estimators have actual values inferred matematically
+        // - Domain estimators have actual values predicted by classifiers
         aggregable(this, 'actual'   , this.name, this.actual   , (value) => {this.truer = value;});
         // Value more close to the truth for this feature
         aggregable(this, 'truer'    , this.name, this.actual || this.estimated);

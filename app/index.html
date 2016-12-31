@@ -139,8 +139,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
-                <google-signin   client-id="{{google.clientId}}" scopes="https://www.googleapis.com/auth/calendar.readonly"></google-signin>
-                <fb:login-button scope="public_profile,email"></fb:login-button>
+                <google-signin   client-id="[[google.clientId]]" scopes="https://www.googleapis.com/auth/calendar.readonly  https://www.googleapis.com/auth/contacts.readonly"></google-signin>
+                <fb:login-button scope="public_profile,email,user_events,user_friends"></fb:login-button>
 
                 <!-- TODO insert client ids as parameters -->
                 <asana-signin      authorization="{{authorization}}"></asana-signin>
@@ -190,10 +190,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       <asana-workspace workspace-id="1434006482426" authorization="{{authorization}}"></asana-workspace>
       <jawbone-element limit="50" authorization="{{upAuthorization}}"></jawbone-element>
+      <things-element src="sources/things.json"></things-element>
       <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
+      <foursquare-checkins authorization="{{squareAuthorization}}"></foursquare-checkins>
+
       <facebook-sdk app-id="1620595611520205"></facebook-sdk>
       <facebook-graph></facebook-graph>
-      <things-element src="sources/things.json"></things-element>
+
+      <google-people></google-people>
 
       <!-- consider using: http://robrez.github.io/poly-ical/components/poly-ical/index.html -->
       <calendar-provider name="google" calendars="{{calendars}}">
@@ -221,6 +225,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/behavior/ocurrence/activity.js"></script>
     <script src="scripts/models/behavior/ocurrence/activity/jawbone.js"></script>
     <script src="scripts/models/area.js"></script>
+    <script src="scripts/models/person.js"></script>
     <script src="scripts/models/concerns/parsers/jawbone.js"></script>
 
     <script src="scripts/models/lore/synchronizable.js"></script>
@@ -232,6 +237,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/lore/integrations/relisse.js"></script>
     <script src="scripts/models/lore/integrations/jawbone.js"></script>
     <script src="scripts/models/lore/integrations/i-calendars.js"></script>
+    <script src="scripts/models/lore/integrations/google.js"></script>
     <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/services/string/transliterate.js"></script>
@@ -239,18 +245,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/estimator.js"></script>
     <script src="scripts/services/estimators/location.js"></script>
     <script src="scripts/services/estimators/duration/duration.js"></script>
+    <script src="scripts/services/estimators/hunger.js"></script>
     <script src="scripts/services/estimators/sleepiness.js"></script>
     <script src="scripts/services/estimators/weight.js"></script>
+    <script src="scripts/services/estimators/people.js"></script>
 
     <!-- Domain estimators -->
+    <script src="scripts/services/estimators/simplicity/routine.js"></script>
     <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
     <script src="scripts/services/estimators/simplicity/time.js"></script>
     <script src="scripts/services/estimators/motivation/anticipation.js"></script>
     <script src="scripts/services/estimators/motivation/belongness.js"></script>
+    <script src="scripts/services/estimators/motivation/sensation.js"></script>
 
     <script src="scripts/services/context.js"></script>
     <script src="scripts/services/contextualizers/location.js"></script>
     <script src="scripts/services/contextualizers/calendar.js"></script>
+    <script src="scripts/services/contextualizers/people.js"></script>
+
+    <script src="scripts/services/habit.js"></script>
+    <script src="scripts/services/habituators/meal.js"></script>
+    <script src="scripts/services/habituators/sleep.js"></script>
 
     <script src="scripts/services/suggester.js"></script>
     <script src="scripts/services/suggesters/activity.js"></script>
@@ -261,6 +276,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="scripts/services/classifiers/simplicity/time/duration.js"></script>
     <script src="scripts/services/classifiers/simplicity/time.js"></script>
+    <script src="scripts/services/classifiers/simplicity/routine/frequency.js"></script>
+    <script src="scripts/services/classifiers/simplicity/routine/day_time.js"></script>
+    <script src="scripts/services/classifiers/simplicity/routine.js"></script>
     <script src="scripts/services/classifiers/simplicity.js"></script>
 
     <script src="scripts/services/classifiers/motivation/sensation/hunger.js"></script>
@@ -271,7 +289,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/classifiers/motivation/anticipation.js"></script>
     <script src="scripts/services/classifiers/motivation.js"></script>
 
-    <script src="scripts/services/classifiers/chance/daytime.js"></script>
+    <!-- <script src="scripts/services/classifiers/chance/daytime.js"></script> -->
     <script src="scripts/services/classifiers/chance.js"></script>
 
     <script src="scripts/services/feature-manager.js"></script>

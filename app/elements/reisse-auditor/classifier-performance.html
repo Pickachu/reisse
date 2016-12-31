@@ -74,7 +74,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         if (model.stacked) { model.stacked(true); }
 
-        if (this.meta.options) {
+        if (this.meta && this.meta.options) {
           let options = this.meta.options;
           if (options.axis) {
             if (options.axis.x) {
@@ -90,7 +90,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           model.useInteractiveGuideline(true);
         }
 
-        model.update();
+        model.update && model.update();
       },
 
       _eq (a, b) {

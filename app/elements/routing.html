@@ -29,8 +29,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     page('/performance', scrollToTop, function() {
       app.route = 'performance';
+      window.Firebase && app.fetch();
     });
-    
+
     page('/synchronization', scrollToTop, function() {
       app.route = 'synchronization';
     });

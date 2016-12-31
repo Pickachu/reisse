@@ -1,3 +1,4 @@
+
 /*
  Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
@@ -140,7 +141,7 @@
     };
 
     app.set('performance', {
-        classifiers: ['simplicity', 'time', 'duration', 'sleep', 'sleepiness', 'responsibilityArea', 'hunger']
+        classifiers: ['sensation', 'hunger', 'sleep', 'sleepiness', 'responsibilityArea', 'simplicity', 'time', 'duration', 'frequency', 'dayTime']
     });
 
     Object.defineProperty(app, 'limit', {

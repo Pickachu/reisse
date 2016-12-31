@@ -40,14 +40,14 @@ Lore.integrations.push(
           console.info('Lore.integrations[i-calendars]:', untimed.length, 'remaining.');
         }
 
-        // Actual duration already defined, does not need to infer
+        // Actual duration already defined, does not need to inferß
         // TODO infer actual duration when sincronized dates are missing
         if (ocurrence.features.duration.actual) return infer();
 
         this._timeFromCalendarEvents(ocurrence).then(infer);
       };
 
-      return Promise.all([this.when('asana'), this.when('things')]).then((servings) =>
+      return this.when('asana', 'things').then((servings) =>
         new Promise((resolve, reject) => {
           finished = resolve;
           untimed  = _.flatten(servings);

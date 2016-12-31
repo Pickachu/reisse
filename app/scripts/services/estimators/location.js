@@ -55,7 +55,6 @@ estimators.location = stampit({
 
           if (index < 0) { return false; }
 
-
           // For now ignore updates
           updates[`ocurrences/${estimated.__firebaseKey__}/context/venue`] = estimated.context.venue;
 
@@ -101,8 +100,8 @@ estimators.location = stampit({
             resolve(locations);
           }
         },
-        fail = () => {
-          reject({message: 'rate_limit', locations: locations})
+        fail = (reason) => {
+          reject({message: 'rate_limit', locations: locations, originalReason: reason})
         };
 
         next();
@@ -111,12 +110,12 @@ estimators.location = stampit({
     },
     _fetchLocation (item) {
       return new Promise((resolve, reject) => {
+          if (this.limit < 0) {return resolve([]);}
+
           let listener = function () {
             this.removeEventListener('populated', listener);
             resolve(this.venues);
           }, venue = item.venue;
-
-          if (this.limit < 0) {return resolve([]);}
 
           if (venue && !venue.name) {
             let provider = this.provider;

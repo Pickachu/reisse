@@ -10,7 +10,7 @@ estimators.anticipation = estimatorable.compose(stampit({
   },
   methods: {
     estimate(ocurrences) {
-      let learnable = this.learnableSet(ocurrences);
+      let learnable = this.inferrableSet(ocurrences);
 
       // TODO only used for responsibility area prediction, remove from this estimator and create
       // a context estimator better estimate task context

@@ -1,6 +1,7 @@
 'use strict'
 
 // Predicts hour of sleep by day of week
+// TODO move to routine classifier
 Classifier.add(stampit({
   refs: {
     name: 'sleep'

@@ -18,7 +18,6 @@ Classifier.add(stampit({
       this.perceptron = new Architect.Perceptron(24, this.areas.length * 2, this.areas.length);
       this.areaIds = this.areas.map((area) => area.provider.id);
     },
-    // TODO use task execution times to infer responsibility area
     learn(behaviors) {
       if (this.learned) return;
 
@@ -214,7 +213,7 @@ Classifier.add(stampit({
             });
           });
 
-        graphs.push({data: columns, meta: {title: 'Behavior Completion by Week'}, type: 'multi-bar'});
+        graphs.push({data: columns, meta: {title: 'Behavior Completion by Week Index'}, type: 'multi-bar'});
 
         columns = this.areas.map((area) => {return {key: area.name, values: []}});
         let offset  = 0;

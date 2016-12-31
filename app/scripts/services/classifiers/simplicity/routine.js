@@ -2,11 +2,11 @@
 
 Classifier.add(stampit({
   refs: {
-    name: 'time'
+    name: 'routine'
   },
   init() {
     let Architect    = synaptic.Architect;
-    this.duration    = Classifier.get('duration');
+    this.dayTime    = Classifier.get('dayTime');
   },
   methods: {
     learn(behaviors) {
@@ -21,8 +21,8 @@ Classifier.add(stampit({
 
       behaviors.forEach((behavior) => {
         let features = behavior.features;
-        features.time || (features.time = {});
-        features.time.estimated = 1 - features.duration.estimated / mapper.maximumDuration;
+        features.routine || (features.routine = {});
+        features.routine.estimated = 1 - features.duration.estimated / mapper.maximumDuration;
       });
 
       return Promise.resolve(behaviors);

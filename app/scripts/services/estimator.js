@@ -34,7 +34,7 @@ var estimatorsable = stampit({
     estimate () {
       this.estimators.forEach((estimator) => {
           console.log("estimating", estimator.name);
-          let estimation = estimator.estimate(this.ocurrences, this.areas)
+          let estimation = estimator.estimate(this.ocurrences, this.areas);
           this.estimations.push(estimation);
 
           Promise.resolve(estimation).then((estimated) => {
@@ -52,24 +52,30 @@ var estimatorsable = stampit({
         estimates.then(() => resolve(this.ocurrences))
       );
     },
-    when (name) {
-      let estimator = this.estimators.findIndex((estimator) => estimator.name == name);
-      if (!this.estimations[estimator]) throw new TypeError(`This estimator ${name} does not return a promise or does not exist.`);
-      return this.estimations[estimator];
+    when () {
+      return Promise.all(_(arguments)
+        .toArray()
+        .map((name) => {
+          let estimator = this.estimators.findIndex((estimator) => estimator.name == name);
+          if (!this.estimations[estimator]) throw new TypeError(`This estimator ${name} does not return a promise or does not exist.`);
+          return this.estimations[estimator];
+        })
+      ).then((resolutions) => Promise.resolve(resolutions.pop()));
     }
   }
 }),
   estimatorable = stampit({
+    props: {
+      // Stores any estimation skips
+      skips: []
+    },
     methods: {
       estimate() {
         throw new TypeError(`${this.name} must implement estimate method`);
       },
-      learnableSet (ocurrences) {
-        let past, now = Date.now(),
-          completed  = (ocurrence) => ocurrence.status === 'complete';
-
+      inferrableSet (ocurrences) {
         // Only learn from past ocurrences that actualy happened
-        return ocurrences.filter(completed);
+        return ocurrences.filter((ocurrence) => ocurrence.status === 'complete');
       }
     }
   }),

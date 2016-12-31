@@ -9,7 +9,7 @@ Classifier.add(stampit({
 
     // TODO use anticipation classifier
     // TODO better way to reuse ResponsibilityArea estimator classifier
-    this.responsibilityArea = estimators.anticipation.responsibilityArea || Classifier.responsibilityArea;
+    this.responsibilityArea = estimators.anticipation.responsibilityArea || Classifier.get('responsibilityArea');
   },
   methods: {
       learn(behaviors) {

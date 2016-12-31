@@ -13,7 +13,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="facebook-graph">
   <template>
-    <facebook-sdk api="[[sdk]]"></facebook-sdk>
+    <facebook-sdk api="{{sdk}}"></facebook-sdk>
   </template>
   <script>
   (function() {
@@ -23,7 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       is: 'facebook-graph',
 
       properties: {
-        foo: {
+        sdk: {
           type: String,
           value: 'facebook-graph',
           notify: true

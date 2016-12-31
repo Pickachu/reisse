@@ -22,6 +22,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       overflow: auto !important;
     }
 
+    :host(.hovering) {
+      bottom: auto !important;
+      z-index: 2;
+    }
+
     h3 {
       @apply(--title-theme);
       font-weight: normal;
@@ -164,6 +169,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           '_computeHeight(event.features.duration.estimated)'
         ],
 
+        listeners: {
+          'mouseenter': '_handleFocus',
+          'mouseleave': '_handleFocus'
+        },
+
         attached () {
           this.async(() => {
             let fontSize = Math.max(Math.min(this.offsetHeight - 7, 16), 7),
@@ -195,6 +205,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _computeHeight (duration) {
           duration || (duration = 120);
           this.style.minHeight = Math.floor(duration / (60 * 60)) + "em";
+        },
+
+        _handleFocus (event) {
+          this.toggleClass('hovering', event.type == 'mouseenter');
         }
       });
     })();

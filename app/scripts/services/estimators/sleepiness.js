@@ -1,20 +1,18 @@
 'use strict';
 
-estimators.sleepiness = stampit({
+estimators.sleepiness = estimatorable.compose(stampit({
   init () {
-    this.sleepiness = Classifier.sleepiness;
+    this.sleepiness = Classifier.get('sleepiness');
   },
   methods: {
     estimate(ocurrences) {
-      let learnable = Re.learnableSet(ocurrences);
+      let learnable = this.inferrableSet(ocurrences);
 
       // TODO estimate context for past ocurrences
-      this.contextualize(learnable);
-      this.sleepiness.sleep.learn(learnable);
-      this.sleepiness.learn(learnable);
-
-      this.inferActualSleepiness(learnable);
-      return true;
+      return this.contextualize(learnable)
+        .then( () => this.sleepiness.sleep.learn(learnable))
+        .then( () => this.sleepiness.learn(learnable))
+        .then( () => this.inferActualSleepiness(learnable))
     },
 
     // TODO estimate context for past ocurrences
@@ -22,14 +20,16 @@ estimators.sleepiness = stampit({
       ocurrences.forEach((ocurrence) => {
         ocurrence.context.calendar = {now: ocurrence.start};
       });
+
+      return Promise.resolve(ocurrences);
     },
 
     inferActualSleepiness (ocurrences) {
       ocurrences.forEach((ocurrence, index) => {
+        if (!ocurrence.context.calendar.now) return this.skips.push(ocurrence);
         this.sleepiness.context = ocurrence.context;
-        if (!ocurrence.features.sleepiness) return;
         ocurrence.features.sleepiness.actual = this.sleepiness.predict([ocurrence]) || 0.5;
       });
     }
   }
-});
+}));

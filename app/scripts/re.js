@@ -63,14 +63,16 @@ var Re = stampit({
     },
 
     // TODO move to context
-    _computeAvailableTime () {
-        let oneDay = ICAL.Duration.fromSeconds(24 * 60 * 60), midnight = ICAL.Time.now(), available;
+    // TODO compute available time from past, and from already defined events
+    // For now, give 2 days of available time
+    _computeAvailableTime (range) {
+      let oneDay = ICAL.Duration.fromSeconds(2 * 24 * 60 * 60), midnight = ICAL.Time.now(), available;
 
-        midnight.hour  = midnight.minute = midnight.second = 0;
-        midnight.addDuration(oneDay);
-        available      = midnight.subtractDate(ICAL.Time.now()).toSeconds();
+      midnight.hour  = midnight.minute = midnight.second = 0;
+      midnight.addDuration(oneDay);
+      available      = midnight.subtractDate(ICAL.Time.now()).toSeconds();
 
-        return available;
+      return available;
     },
 
     // TODO externalize prediction, habitiation and suggestion methods
@@ -115,6 +117,7 @@ var Re = stampit({
               message.push(" Context");
               message.push("  Now     : " + context.calendar.now);
               message.push("  Location: " + context.location.latitude + 'lat ' + context.location.longitude + 'lon');
+              message.push("  People  : " + _(context.people).map('profile.names.0').compact().value());
               message.push(" Meta ");
               message.push("  Available Time: " + available + 's');
               console.log(message.join('\n'));
@@ -141,7 +144,6 @@ var Re = stampit({
                   ocurrence.features.start = start.toJSDate();
                   start.addDuration(duration);
                   ocurrence.features.end   = start.toJSDate();
-
 
 
                   // TODO figure out better way of doing this, shouldn't the
@@ -182,8 +184,8 @@ var Re = stampit({
       return ocurrences.filter((o) => o.completedAt && o.completedAt > comparable );
     },
 
+    // FIXME respect range and context when suggesting
     _suggestedEventsFor (range, ocurrences) {
-      // TODO respect range and context when suggesting
       return Context().for(range[0])
         .then((context) => {
           return Suggester({
@@ -200,48 +202,20 @@ var Re = stampit({
     },
 
     // - Adds habitual ocurrences to prediction set
+    //   This are basically ocurrences that usually happen but are missing in the data
+    // (either because user does not registered it yet or will never register)
+    // on the stated range.
     // TODO respect max frequency for habitual ocurrences (also ignore what happened!)
-    // TODO externalize habits domain
+    // TODO add meal habitual ocurrences
     _habitsFor (range, ocurrences) {
-      let prediction, yesterday = moment(range[0]).subtract(1, 'day'),
-        now = new Date(), predictor = this.chance.motivation.sensation.sleep;
+      let yesterday = moment(range[0]).subtract(1, 'day');
 
       console.log('predicting habits');
       return Context().for(yesterday.toDate())
-        .then((context) => {
-          predictor.context = context;
-          prediction = predictor.predict();
+        .then((context) =>
+          Habit().for(ocurrences, context)
+        );
 
-          // TODO infer venue for the habit
-          // TODO elaborate habitual ocurrences
-          // for now just add todays one sleep habit ocurrence ;)
-          ocurrences.push(Activity({
-            // TODO add this properties
-            // areaId   : this.healthArea.provider.id,
-            // TODO better way to generate a temporary id
-            provider    : {id: (Math.random() * 10000).toFixed(), name: 'relisse'},
-            // quality  : x,
-            // TODO predict features
-            features    : {
-              start     : prediction.asleepAt,
-              duration: {
-                estimated: (prediction.awakeAt - prediction.asleepAt) / 1000
-              }
-            },
-            habituality : {},
-            status      : 'open',
-            activity    : {type: 'sleep'},
-            name        : 'Sleep',
-            notes       : 'Probably you slept this much today.',
-            asleepAt    : prediction.asleepAt,
-            awakeAt     : prediction.awakeAt,
-            start       : prediction.asleepAt,
-            end         : prediction.awakeAt,
-            createdAt   : now,
-            updatedAt   : now,
-            completedAt : prediction.asleepAt
-          }))
-        });
     }
   }
 });
