@@ -38,14 +38,13 @@ Lore.integrations.push(
           integration     = this,
           listener        = function () {
             let ocurrences  = this.tasks.map(Task.fromAsana, Task);
-            ocurrences      = integration._timeAwareFilter(ocurrences)
-              .map(lore.assignArea, lore);
+            ocurrences      = integration._timeAwareFilter(ocurrences);
 
             lore.ocurrences = lore.ocurrences.concat(ocurrences);
             // TODO: provider.projects.map(Project?.fromAsana, Project);
             // TODO: provider.workspaces.map(Workspace?.fromAsana, Workspace?);
             provider.removeEventListener('populated', listener);
-            console.log('service asana finish download');
+            console.log('service asana finish downloading: ', this.tasks.length);
             served(ocurrences);
           };
 

@@ -68,8 +68,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           v: '20160426'
         };
 
-        this.afterTimestamp  && (params.afterTimestamp  = (this.afterTimestamp.getTime()  / 1000))
-        this.beforeTimestamp && (params.beforeTimestamp = (this.beforeTimestamp.getTime() / 1000))
+        // FIXME improve timestamp to second conversion
+        this.afterTimestamp  && (params.afterTimestamp  = Math.floor(this.afterTimestamp.getTime()  / 1000))
+        this.beforeTimestamp && (params.beforeTimestamp = Math.floor(this.beforeTimestamp.getTime() / 1000))
         this.limit           && (params.limit           = this.limit )
         this.offset          && (params.offset          = this.offset)
         this.sort            && (params.sort            = this.sort )

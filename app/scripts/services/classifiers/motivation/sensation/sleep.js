@@ -15,8 +15,10 @@ Classifier.add(stampit({
       this.perceptron = new Architect.LSTM(7, 5, 5, 2);
 
       this.timeCap = moment().subtract(4, 'months').toDate();
+      this.minimunCount = 100;
       this.learned = false;
     },
+    // TODO implement learnableSet method
     learn(behaviors) {
       if (this.learned) return;
       this.learned = true;
@@ -27,12 +29,24 @@ Classifier.add(stampit({
         .filter({activity: {type: 'sleep'}})
         .filter((behavior) => behavior.completedAt > this.timeCap)
 
+        .thru((list) => {
+          if (list.length < this.minimunCount) {
+            const sleeps  = _(behaviors)
+              .filter({activity: {type: 'sleep'}})
+              .sortBy(behaviors, 'createdAt').value();
+
+            const missing = Math.max(this.minimunCount - list.length, 0);
+            list = list.concat(sleeps.slice(0, missing))
+          }
+          return list;
+        })
+
         // Ignore naps and segmented sleep
         // TODO figure out better way to use and ignore naps and segmented sleep
         .filter((behavior) => behavior.features.duration.actual > 16800)
 
         .map((behavior) => {
-          let day = behavior.completedAt.getDay(),
+          let day = behavior.asleepAt.getDay(),
             input  = baseInput.concat(),
             asleepAt, awakeAt;
 
@@ -40,7 +54,7 @@ Classifier.add(stampit({
           asleepAt     = (behavior.asleepAt.getHours() * 60 + behavior.asleepAt.getMinutes()) / (24 * 60);
           awakeAt      = (behavior.awakeAt.getHours()  * 60 + behavior.awakeAt.getMinutes() ) / (24 * 60);
 
-          // Assume user will sleep between noon and next noon
+          // Assumes user will sleep between noon and next noon
           asleepAt     = (asleepAt + 0.5) % 1;
 
           return {
@@ -55,6 +69,7 @@ Classifier.add(stampit({
       learning.sampleSize = set.length;
       return learning;
     },
+    // TODO remove usage of ICAL.Time and start using JS
     predict(behaviors) {
       let now = this.context.calendar.now,
         midnight = ICAL.Time.fromJSDate(now),

@@ -96,6 +96,7 @@ var taskable = stampit({
         delete json.due_on;
         delete json.due_at;
         delete json.created_at;
+        delete json.modified_at;
         delete json.assignee_status;
         delete json.num_hearts;
         delete json.completed_at;

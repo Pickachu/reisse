@@ -152,8 +152,8 @@ Classifier.add(stampit({
         learnable = this.performatableSet(behaviors);
 
       // run dependencies
-      estimators.weight({areas: this.areas}).estimate(learnable);
-      let p = estimators.duration({areas: this.areas}).estimate(learnable);
+      Estimator.get('weight', {areas: this.areas}).estimate(learnable);
+      let p = Estimator.get('duration', {areas: this.areas}).estimate(learnable);
       return p.then(() => {
         this.stage();
         ids = this.areaIds;
@@ -269,8 +269,8 @@ Classifier.add(stampit({
         learning.title = "Classifier Output By Daytime";
         graphs.push({data: columns, meta: learning, type: 'multi-bar'});
 
-        // ! TODO scatter audit completion time by daytime of ocurrence
-        // ! TODO also audit prediction error rate
+        // TODO scatter audit completion time by daytime of ocurrence
+        // TODO also audit prediction error rate
         // output      = this.perceptron.activate(input);
         // predicted   = prediction.indexOf(ss.max(prediction));
         // actual      = ids.indexOf(behavior.areaId);

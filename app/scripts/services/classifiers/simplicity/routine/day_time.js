@@ -1,22 +1,34 @@
 'use strict'
 
-// ! FIXME this classifier is not used yet!
+// = Day Time Classifier
+// It receives a ocurrence and maps it to a daytime timeslice and a activity type
+// It outputs the most probable activity type for that daytime timeslice
+// A daytime timeslice is simply a 24 hours vector array with a duration (start,
+// time and end) representation of the ocurrence
 Classifier.add(stampit({
   refs: {
+    // TODO rename to activityType classifier
     name: 'dayTime'
   },
   init () {
     this.stage();
   },
+
+  props: {
+    // deprecated: did not yell better results
+    // 24 day hours + 1 for center of timeslice
+    // INPUT_SIZE: 24 + 1,
+    INPUT_SIZE: 24,
+  },
   methods: {
     stage() {
       let Architect   = synaptic.Architect;
 
-      // 24 hours
-      // Predict activity type
       this.activityTypes = ['unknown', 'meal', 'sleep']
-      this.perceptron    = new Architect.Perceptron(24, 4, this.activityTypes.length);
+      this.perceptron    = new Architect.Perceptron(this.INPUT_SIZE, 4, this.activityTypes.length);
+      this.learned       = false;
     },
+
     learn(behaviors) {
       if (this.learned) return;
 
@@ -38,7 +50,7 @@ Classifier.add(stampit({
       }
 
       // Train network
-      let learning = this.perceptron.trainer.train(set, {iterations: 500, log: 100, rate: 0.01});
+      let learning = this.perceptron.trainer.train(set, {iterations: 500, log: 100, rate: 0.5});
 
       this.learned = true;
 
@@ -52,16 +64,17 @@ Classifier.add(stampit({
     // FIXME improve prediction api
     // FIXME consider contextual ranges in input time for activity
     predict(behaviors, options) {
-      let baseInput = _.fill(Array(24), 0), types = this.activityTypes, contextualNow;
+      let baseInput = _.fill(Array(this.INPUT_SIZE), 0), types = this.activityTypes, contextualNow;
 
       contextualNow = (this.context && this.context.calendar.now);
 
+      if (!options) {options = {}};
       if (options.limit) {behaviors = [behaviors[behaviors.length - 1]]}
 
       return behaviors.map((behavior) => {
         let hour             = (contextualNow || behavior.context.calendar.now).getHours(),
         input                = baseInput.concat([]), prediction;
-        input[hour]          = 1;
+        input[hour]          = options.hourActivationValue || 1;
         prediction           = this.perceptron.activate(input);
         prediction.predicted = prediction.indexOf(ss.max(prediction));
         prediction.actual    = types.indexOf(behavior.activity && behavior.activity.type || 'unknown');
@@ -69,17 +82,23 @@ Classifier.add(stampit({
       });
 
     },
+
     _createMapper(behaviors) {
-      let baseInput  = _.fill(Array(24), 0),
+      let baseInput  = _.fill(Array(this.INPUT_SIZE), 0),
         baseOutput   = _.fill(Array(this.activityTypes.length), 0);
 
       return {
         types: this.activityTypes,
+
+        // - Converts an activity to a duration timeslice
+        // An activity that starts 8:45 and ends 10:25 would produce a duration
+        // timeslice like this: [0, 0, 0, 0, 0, 0, 0, 0.75, 1, 0.25, 0, 0, ... ]
+        // and adds the center of timeslice at the end
         input (behavior) {
           let duration = this.duration(behavior);
-          // Only learn responsibility area timing from completed behaviors
           if (!duration) return this.skip(behavior);
 
+          // timeslice
           let midnight = duration.start.clone().startOf('day'),
           start  = moment.duration(duration.start.diff(midnight)).as('hours'),
           cursor = Math.round(start),
@@ -99,8 +118,12 @@ Classifier.add(stampit({
             input[Math.floor(start)] = end - start;
           }
 
+          // center of timeslice (did not yield better results)
+          // input[25] = (((end - start) / 2) + start) / 24;
+
           return input;
         },
+
         output (behavior) {
           let index = this.types.indexOf(behavior.activity && behavior.activity.type || 'unknown'),
             output  = baseOutput.concat([]);
@@ -133,10 +156,14 @@ Classifier.add(stampit({
             }
           }
 
+          // FIXME throw an error, instead of guessing default durations
+          // the estimator should estimate default durations when possible
+          // behavior without truer duration should be ignored on this classifier.
+          // This code is only temporary while we can't estimate meal durations
           if (behavior.completedAt) {
             return {
-              start   : moment(behavior.completedAt.getTime() - 60 * 1000),
-              duration: 60 * 1000,
+              start   : moment(behavior.completedAt.getTime() - 5 * 60 * 1000),
+              duration: 5 * 60 * 1000,
               end     : moment(behavior.completedAt)
             };
           }
@@ -146,40 +173,28 @@ Classifier.add(stampit({
         skip: this.skip.bind(this)
       };
     },
+
     performate(behaviors) {
-      let baseInput = _.fill(Array(24), 0),
-        hour, learning, hours = 24, fillers,
+      let baseInput = _.fill(Array(this.INPUT_SIZE), 0),
+        hour, hours = 24, fillers, mapper,
         types, predictions = [], graphs = [],
         input, output, predicted, actual, prediction,
         columns   = this.activityTypes.map((type) => {return {key: type, values: []}}),
         learnable = this.performatableSet(behaviors);
 
-      // run dependencies
-      let p    = estimators.duration({activityTypes: this.activityTypes}).estimate(learnable);
-      learning = this.learn(learnable);
-
-      return p
+      return Estimator.get('duration', {activityTypes: this.activityTypes})
+        .estimate(learnable)
         .then(() => {
           this.stage();
-          let mapper = this._createMapper(learnable);
+          mapper = this._createMapper(learnable);
           return this.learn(learnable);
         })
         .then((learning) => {
 
           types = this.activityTypes;
-          this.learned = false;
-          let cap = moment().subtract(4, 'months').valueOf()
-
-          learnable = _(learnable)
-            .filter('completedAt')
-            .filter((o) => o.completedAt > cap)
-            .sortBy('completedAt')
-            .value();
-
-          // learning = this.learn(learnable);
 
           fillers = _(new Array(24)).map((m, index) => {return {x: index + 1, y: 0};}).value();
-          columns = this.activityTypes.map((type) => {return {key: type, values: _.cloneDeep(fillers)}});
+          columns = types.map((type) => {return {key: type, values: _.cloneDeep(fillers)}});
 
           _(learnable)
             .groupBy((o) => o.activity ? o.activity.type : 'unknown' )
@@ -189,7 +204,7 @@ Classifier.add(stampit({
                 column = columns[index] || columns[0];
 
               inputs.forEach((input) => {
-                input.forEach((duration, dayTime) => {
+                input.slice(0, 24).forEach((duration, dayTime) => {
                   column.values[dayTime].y += duration;
                 });
               });
@@ -197,7 +212,9 @@ Classifier.add(stampit({
 
           graphs.push({data: columns, meta: {title: 'Activity Presence by Daytime'}, type: 'multi-bar'});
 
-          columns = this.activityTypes.map((type) => {return {key: type, values: []}});
+
+
+          columns = types.map((type) => {return {key: type, values: []}});
 
           _(learnable)
             .groupBy((o) => moment(o.completedAt).format('Y-M-ww'))
@@ -222,7 +239,9 @@ Classifier.add(stampit({
 
           graphs.push({data: columns, meta: {title: 'Behavior Completion by Week'}, type: 'multi-bar'});
 
-          columns = this.activityTypes.map((type) => {return {key: type, values: []}});
+
+
+          columns = types.map((type) => {return {key: type, values: []}});
           let offset  = 0;
 
           _(learnable)
@@ -258,11 +277,20 @@ Classifier.add(stampit({
           graphs.push({data: columns, meta: {title: 'Behavior Duration By Day'}, type: 'candle-stick-bar'});
 
 
-          columns  = this.activityTypes.map((type) => {return {key: type, values: fillers.concat([])}; });
+
+          columns  = types.map((type) => {return {key: type, values: fillers.concat([])}; });
 
           while (hours--) {
+            let start = hours - 1;
+            start = start < 0 ? 23 : start;
+
             input        = baseInput.concat([]);
+            input[start] = 0.5;
             input[hours] = 1;
+            input[(hours + 1) % 24] = 0.5;
+
+            // timeslice center
+            // input[24] = ((hours + 1 - start) / 2 + start) / 24
 
             output      = this.perceptron.activate(input);
             columns.forEach((column, index) => {
@@ -276,8 +304,8 @@ Classifier.add(stampit({
           learning.title = "Classifier Output By Daytime";
           graphs.push({data: columns, meta: learning, type: 'multi-bar'});
 
-          // ! TODO scatter audit completion time by daytime of ocurrence
-          // ! TODO also audit prediction error rate
+          // TODO scatter audit completion time by daytime of ocurrence
+          // TODO also audit prediction error rate
           // output      = this.perceptron.activate(input);
           // predicted   = prediction.indexOf(ss.max(prediction));
           // actual      = types.indexOf(behavior.areaId);
@@ -286,6 +314,7 @@ Classifier.add(stampit({
           return Promise.resolve({graphs: graphs});
         });
     },
+
     quality (predictions) {
       let grouped = _.groupBy(predictions, (p) => p[2]);
       return {

@@ -7,21 +7,29 @@ Suggester.add(stampit({
   methods: {
     // TODO add when method to suggesters
     suggest (behaviors, context) {
+      const suggestions = [];
+
       this.stage();
 
       // Suggest todays sleep activity
-      this.sleep(behaviors, context);
+      suggestions.push(this.sleep(behaviors, context));
 
       // Suggest todays eating activity
       // TODO consult meal habitualizations when implementing meal suggestions
-      // this.meal(behaviors, context);
+      suggestions.push(this.meal(behaviors, context));
+
+      return Promise.all(suggestions);
     },
 
     stage (behaviors) {
-      this.sleep     = Classifier.get('sleep');
-      this.hunger    = Classifier.get('hunger');
-      this.dayTime   = Classifier.get('dayTime');
-      this.frequency = Classifier.get('frequency');
+      this.classifiers = {
+        sleep     : Classifier.get('sleep'),
+        hunger    : Classifier.get('hunger'),
+        dayTime   : Classifier.get('dayTime'),
+        // NOTE not used yet, eventually will be used as some criteria for suggestion
+        // dayTime   : Classifier.get('dayTime/meal'),
+        frequency : Classifier.get('frequency')
+      };
     },
 
     // Suggest optimal sleep and nap times
@@ -30,16 +38,17 @@ Suggester.add(stampit({
     // TODO align past sleep activity with homeostatic and cicardian timing
     // TODO move behavior creation to habitual behaviors / external service behaviors generation
     sleep (behaviors, context) {
-      let prediction, now = context.calendar.now;
+      let prediction, now = context.calendar.now, sleep = this.classifiers.sleep;
 
-      this.sleep.learn(_.filter(Re.learnableSet(behaviors), 'completedAt'));
-      this.sleep.context = context;
+      sleep.learn(_.filter(Re.learnableSet(behaviors), 'completedAt'));
+      sleep.context = context;
 
-      prediction = this.sleep.predict();
+      prediction = sleep.predict();
 
       // Suggest todays nap activity
       this.nap(behaviors, context);
 
+      // TODO make imutable
       behaviors.push(Activity({
         // TODO add this properties
         // areaId   : this.healthArea.provider.id,
@@ -68,11 +77,12 @@ Suggester.add(stampit({
     // TODO 1. 7 hours after cicardian phase 0
     // TODO 2. 7 hours after today waking time
     // 3. 7 hours after today predicted waking time
+    // TODO move behavior creation to habitual behaviors / external service behaviors generation
     nap (behaviors, context) {
-      let prediction, start, end, now = new Date();
+      let prediction, start, end, now = new Date(), sleep = this.classifiers.sleep;
       // TODO update context to be yesterday
-      this.sleep.context = context;
-      prediction = this.sleep.predict();
+      sleep.context = context;
+      prediction = sleep.predict();
 
       // TODO get todays waking time
       // _(behaviors)
@@ -94,6 +104,7 @@ Suggester.add(stampit({
       // TODO predict nap duration
       end.addDuration(ICAL.Duration.fromSeconds(30 * 60));
 
+      // TODO make imutable
       behaviors.push(Activity({
         // TODO add this properties
         // areaId   : this.healthArea.provider.id,
@@ -117,36 +128,39 @@ Suggester.add(stampit({
       }));
     },
 
-    // Try to predict optimal eating time:
+    // Try to predict optimal eating time by this criteria (in order):
     // 1. TODO Past meal activity (meal classifier that predicts based on meal frequency and huger)
     // 2. TODO When estimated hunger is below eat threshold
-    // 3. Guess meal weekly frequency and hunger level to predict meal times
+    // 3. Guess meal weekly frequency and past times of day eating to
     // TODO suggest macronutrient content / food content
     // TODO consider context.hunger when suggesting meals
     // TODO consider context.location when suggesting meals
     // TODO consider meals that already happened on context
+    // TODO move behavior creation to habitual behaviors / external service behaviors generation
     meal (behaviors, context) {
-      let now = new Date(), macronutrients;
+      let now = new Date(), macronutrients, dayTime = this.classifiers.dayTime, frequency = this.classifiers.frequency;
 
       // TODO consider todays sleep
       // todaysSleep = _.findLast(behaviors, ['activity.type', 'sleep'])
+      dayTime.context = frequency.context = context;
 
-      this.dayTime.context = this.frequency.context = context;
-
-      // FIXME create suggestions by context instead of assuming an 1 day daytime period
+      // FIXME create suggestions by context instead of assuming an 1 day of
+      // daytime period. essentialy stop assuming the same context for the whole
+      // day
       let predictActivityTypeByDaytime = (behaviors, context) => {
         let start = moment(context.calendar.now).startOf('day'), end = start.clone().add(1, 'day'),
-          cursor = _.cloneDeep(context), predicts;
+          cursor = _.cloneDeep(context), predicts = [];
 
         while (start.isBefore(end)) {
           // TODO increase granularity of daytime activity prediction
-          cursor.calendar.now = start.add(1, 'hour').valueOf();
-          this.dayTime.context = cursor;
-          predicts.push(this.dayTime.predict(behaviors, {limit: 1}));
+          // manually change context here
+          cursor.calendar.now = start.add(1, 'hour').toDate();
+          dayTime.context = cursor;
+          predicts.push(dayTime.predict(behaviors, {limit: 1}));
         }
 
         return Promise.all(predicts).then((predictions) => {
-          let mealActivityIndex = this.dayTime.mapper.types.indexOf('meal').toString();
+          let mealActivityIndex = dayTime.mapper.types.indexOf('meal').toString();
 
           return _(predictions).map((prediction, index) => {
             return {
@@ -168,10 +182,24 @@ Suggester.add(stampit({
       };
 
       // TODO improve dayTime prediction api
-      Promise.all([this.frequency.predict(behaviors), predictActivityTypeByDaytime(behaviors, context)])
-        .then((frequencies, probabilities) => {
+      return Promise.resolve(dayTime.learn(behaviors))
+        .then(() => Promise.all([frequency.predict(behaviors), predictActivityTypeByDaytime(behaviors, context)]))
+        .then(([frequencies, probabilities]) => [
+          // TODO improve frequency prediction api (probably classifier api), by
+          // allowing filtering (last week and meal only specie) results? For now
+          // take last frequency and specie prediction by hand
+          _(frequencies).filter(['specie', 'meal']).sortBy('week').value().pop().frequency,
+
+          // Since we are suggesting, only suggest eating for future times
+          // TODO remove this heuristic and improve the probability predictor
+          // to consider habitual behaviors
+          // TODO this filter currently is useless because context is always at
+          // midnight
+          probabilities.filter((p) => p.hour > moment(context.calendar.now).hour())
+        ])
+        .then(([frequency, probabilities]) => {
           // TODO usar uma distribuição melhor de refeições por semana do que dividir por 7
-          let amount = Math.round(frequencies.meal / 7), satiety, meals = [];
+          let amount = Math.round(frequency / 7), satiety, meals = [], start, end, meal;
 
           while (amount > 0) {
             amount -= 1;
@@ -207,7 +235,8 @@ Suggester.add(stampit({
             // start       = end.clone().add(satiety, 'seconds');
           }
 
-          behaviors = behaviors.concat(meals);
+          // TODO make imutable
+          behaviors.push.apply(behaviors, meals);
           return behaviors;
         });
     }

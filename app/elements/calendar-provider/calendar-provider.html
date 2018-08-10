@@ -57,6 +57,17 @@ that handles authentication.
       }
     },
 
+    ready: function() {
+      this.__tryAPIReady();
+    },
+
+    __tryAPIReady() {
+      if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
+
+      // TODO figure out why google-js-api(IronJsonpLibraryBehavior) is not firing an event
+      if (!this.$.calendar.api) { return this.$.calendar._loadClient(); }
+    },
+
     _signInChanged: function(val) {
       if (val) {
         this.fetchCalendars();

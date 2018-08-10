@@ -1,7 +1,16 @@
 'use strict';
 
-// TODO Mark as dependent from location estimator
-estimators.belongness = stampit({
+// Belongness estimator
+// • TODO Mark as dependent from location estimator
+// • TODO perhaps is a great idea to move BJFogg factors estimation to the domain model?
+// • Since there are no specific devices to measure/extract belongness values from humans
+// and we are using the BJ Fogg conceptual sensation construct.
+// • The actual belongness value is a prediction based on actual measurable
+// values (visit duration (time stayed on a location) for now) for ocurrences that have happened.
+Estimator.add(stampit({
+  refs: {
+    name: 'belongness'
+  },
   init () {},
   methods: {
     estimate() {
@@ -67,4 +76,4 @@ estimators.belongness = stampit({
       return ocurrences;
     }
   }
-});
+}));

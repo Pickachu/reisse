@@ -1,6 +1,9 @@
 'use strict';
 
-estimators.dayTime = stampit({
+Estimator.add(stampit({
+  refs: {
+    name: 'dayTime'
+  },
   init() {
     this.dayTime   = Classifier.get('dayTime');
     this.frequency = Classifier.get('frequency');
@@ -140,4 +143,4 @@ estimators.dayTime = stampit({
     // }
 
   }
-});
+}));

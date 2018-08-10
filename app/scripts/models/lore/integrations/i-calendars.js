@@ -18,7 +18,7 @@ Lore.integrations.push(
 
       // Add duration to tasks on this importation from events
       return this._populateDurations()
-        // Import events igoring the ones consumed by populate Durations
+        // Import events ignoring the ones consumed by populate Durations
         .then(this._populateEvents.bind(this));
     },
     _populateDurations () {
@@ -62,6 +62,11 @@ Lore.integrations.push(
       let providers = document.querySelectorAll('event-cursor'),
         cursor = _.filter(providers, {calendarId: this.calendarId})[0];
 
+      if (!cursor) {
+        console.warn('Lore.integrations[i-calendars]: no cursors found for calendar id: ' + this.calendarId);
+        return Promise.resolve();
+      }
+
       cursor.timeMinimum = this.since;
       cursor.timeMaximum = this.until;
 
@@ -74,11 +79,10 @@ Lore.integrations.push(
 
           .map(Ocurrence.fromICalendar, Ocurrence)
 
-          // Add area to downloaded events
-          .map(this.populable.assignArea, this.populable);
-
         // Add imported events to ocurrences
         this.populable.ocurrences = this.populable.ocurrences.concat(ocurrences);
+
+        console.warn('Lore.integrations[i-calendars]: imported: ' + ocurrences.length + 'events.');
       });
     },
     _timeFromCalendarEvents (ocurrence) {

@@ -46,14 +46,21 @@ Classifier.add(stampit({
       return Promise.resolve(learning);
     },
     predict(behaviors) {
-      this.sensation.context = this.context;
-      this.sensation.predict(behaviors);
+      this.sensation.context = this.anticipation.context = this.context;
 
-      this.anticipation.context = this.context;
-      this.anticipation.predict(behaviors);
+      return Promise.all([
+        this.sensation.predict(behaviors),
+        this.anticipation.predict(behaviors)
+      ]).then((resolutions) => {
+        behaviors.forEach((behavior, index) => {
+          behavior.features.sensation.estimated    = resolutions[0][index];
+          behavior.features.anticipation.estimated = resolutions[1][index];
+        });
 
-      behaviors.forEach((behavior) => {
-        behavior.features.motivation.estimated = this.perceptron.activate(behavior.motivation(true, 'truer'))[0];
+        behaviors.forEach((behavior) => {
+          behavior.features.motivation.estimated = this.perceptron.activate(behavior.motivation(true, 'truer'))[0];
+        });
+
       });
     }
   }

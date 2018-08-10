@@ -1,12 +1,18 @@
 'use strict';
 
-estimators.anticipation = estimatorable.compose(stampit({
+// Anticipation estimator
+// • Since there are no specific devices to measure/extract anticipation values from humans
+// and we are using the BJ Fogg conceptual anticipation construct.
+// • The actual anticipation value is a prediction based on other measurable
+// values (responsibilityArea for now) for ocurrences that have happened.
+// TODO perhaps is a great idea to move BJFogg factors estimation to the domain model?
+Estimator.add(stampit({
+  refs: {
+    name: 'anticipation'
+  },
   init () {
-    if (!estimators.anticipation.responsibilityArea) {
-      estimators.anticipation.responsibilityArea = Classifier.responsibilityArea;
-    }
-
-    this.responsibilityArea = estimators.anticipation.responsibilityArea;
+    // All responsibility area classifier learns with the same set, so reuse it here to save time
+    this.responsibilityArea = Classifier.responsibilityArea || Estimator.responsibilityArea;
   },
   methods: {
     estimate(ocurrences) {

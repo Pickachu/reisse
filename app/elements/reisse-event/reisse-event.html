@@ -197,8 +197,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         _infer (event, feature) {
-          let estimator = estimators[feature](), inferal = 'inferActual' + _.upperFirst(feature);
-          estimator[inferal](Ocurrence.fromJSON(event));
+          let estimator = Estimator.get(feature), inferal = 'inferActual' + _.upperFirst(feature);
+          if (estimator[inferal]) {
+            estimator[inferal](Ocurrence.fromJSON(event));
+          } else {
+            console.warn(this._is, 'Estimator do not implements ' + inferal + '!');
+          }
           return event.features[feature].actual;
         },
 

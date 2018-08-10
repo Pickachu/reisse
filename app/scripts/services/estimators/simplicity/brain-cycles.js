@@ -1,6 +1,20 @@
 'use strict';
 
-estimators.brainCycles = stampit({
+// Brain cycles estimator
+// • Since there are no specific devices to measure/extract brain cycles values from humans
+// and we are using the BJ Fogg conceptual brain cycles construct.
+// • The actual brain cycles value is a prediction based on actual measurable
+// values for ocurrences that have happened.
+// • For now this values are:
+// - Reading dificulty
+// - Remebering dificulty
+// • This value are huge guesses based on my own experience, it's a good idea
+// to search for a main factor that relates to brain cycles. but the idea is
+// to add as many as possible.
+Estimator.add(stampit({
+  refs: {
+    name: 'brainCycles'
+  },
   init() {
     // TODO set this now to ocurrence hour context
     this.now = Date.now();
@@ -179,4 +193,4 @@ estimators.brainCycles = stampit({
       // }
 
   }
-});
+}));

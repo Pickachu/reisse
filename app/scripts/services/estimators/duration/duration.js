@@ -2,7 +2,7 @@
 
 
 // Estimate ocurrence duration in seconds
-estimators.duration = stampit({
+Estimator.add(stampit({
   init () {
       this.durationMap.set('unknowns', []);
       this.badTagNames = [];
@@ -193,6 +193,7 @@ estimators.duration = stampit({
       "🍅🍅🍅"      : 3 * 30 * 60,
       "🍅🍅🍅🍅"    : 4 * 30 * 60,
       "🍅🍅🍅🍅🍅"  : 5 * 30 * 60
-    }
+    },
+    name: 'duration'
   }
-});
+}));

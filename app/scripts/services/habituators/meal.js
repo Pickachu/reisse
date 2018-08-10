@@ -3,10 +3,10 @@
 
 Habit.add(stampit({
   init () {
-    // FIXME! get trained classifiers
-    this.hungerer  = Re.estimators.estimators[2].hunger    || Classifier.get('hunger');
-    this.dayTime   = Re.estimators.estimators[6].dayTime   || Classifier.get('dayTime');
-    this.frequency = Re.estimators.estimators[6].frequency || Classifier.get('frequency');
+    // FIXME get trained classifiers
+    this.hungerer  = Re.estimators && Re.estimators.estimators[2].hunger    || Classifier.get('hunger');
+    this.dayTime   = Classifier.get('dayTime/meal');
+    this.frequency = Re.estimators && Re.estimators.estimators[6].frequency || Classifier.get('frequency');
   },
   refs: {
     name: 'meal'
@@ -23,89 +23,121 @@ Habit.add(stampit({
           fiber: 0.1
         };
 
-      return this.getHabitualMealTimes(ocurrences, context).then((mealTimes) => {
-        mealTimes.forEach((mealTime) => {
-          let start = mealTime.pop(), end = mealTime.pop();
-          // TODO infer venue for the habit, probably from context?
-          // for now just add todays one sleep habit ocurrence ;D
-          ocurrences.push(Activity({
-            // TODO add this properties
-            // areaId     : this.healthArea.provider.id,
-            // TODO better way to generate a temporary id
-            provider      : {id: (Math.random() * 10000).toFixed(), name: 'relisse'},
-            // quality    : x,
-            // TODO predict features
-            features      : {
-              start       : start,
-              duration: {
-                estimated: (end - start) / 1000
-              }
-            },
-            habituality   : {},
-            status        : 'open', // TODO predict status correctly
-            activity      : {type: 'meal'},
-            name          : 'Meal',
-            notes         : 'Probably you have eaten at this time today.',
-            start         : start,
-            end           : end,
-            macronutrients: macronutrients,
-            createdAt     : now,
-            updatedAt     : now,
-            completedAt   : end
-          }));
+      return this.dayTime.learn(ocurrences)
+        .then(() =>
+          this.getHabitualMealTimes(ocurrences, context).then((mealTimes) => {
+            mealTimes.forEach(([start, end]) => {
+              // TODO infer venue for the habit, probably from context?
+              // for now just add todays one sleep habit ocurrence ;D
+              ocurrences.push(Activity({
+                // TODO add this properties
+                // areaId     : this.healthArea.provider.id,
+                // TODO better way to generate a temporary id
+                provider      : {id: (Math.random() * 10000).toFixed(), name: 'relisse'},
+                // quality    : x,
+                // TODO guess all other features
+                features      : {
+                  start       : start,
+                  duration: {
+                    estimated: (end - start) / 1000
+                  }
+                },
+                habituality   : {},
+                status        : 'complete',
+                activity      : {type: 'meal'},
+                name          : 'Habitual Meal',
+                notes         : 'Probably you have eaten at this time today.',
+                start         : start,
+                end           : end,
+                macronutrients: macronutrients,
+                createdAt     : now,
+                updatedAt     : now,
+                completedAt   : end
+              }));
 
-        });
+            });
 
-        return ocurrences;
-      });
+            return ocurrences;
+          })
+        );
     },
 
     getHabitualMealTimes(behaviors, context) {
-      this.frequency.context = context;
 
-      return Promise.all([this.frequency.predict(behaviors), this.getDayTimeMealProbability(behaviors, context)])
-        .then((resolutions) => {
-          let frequencies = resolutions[0], probabilities = resolutions[1];
+      // TODO consider already happened behaviors when selecting meal time activity
+      return Promise.all([
+          this.getDayMealFrequency(behaviors, context),
+          this.getDayTimeMealProbabilities(behaviors, context),
+          this.getMisteriousTime(behaviors, context),
+        ])
 
-          frequencies = _.findLast(frequencies, {specie: 'meal'})
+        .then(([frequency, probabilities, slots]) => {
 
-          // TODO usar uma distribuição melhor de refeições por semana do que dividir por 7
-          let amount = Math.round(frequencies.frequency / 7), start, end,
-            hours = _.map(probabilities.slice(0, amount), 'hour');
+          return _(probabilities)
+            .filter(({hour}) =>
+              slots.some(({start, end}) =>
+                // TODO make probabilities return a timestamp inside current context
+                // instead of raw daytime hours, because if ending hour is midnight,
+                // moment().hour() will return zero. also check with timestamps instead of hours.
+                moment(start).hour() <= hour && hour <= (moment(end).hour() || 24)
+              )
+            )
+            .slice(0, frequency)
+            .map(({hour}) => {
+              let start, end;
 
-          return hours.map((hour) => {
-            // TODO guess meal duration
-            start = moment(context.calendar.now).startOf('hour').hour(hour);
-            end   = start.clone().add(15, 'minutes');
+              // TODO improve guessing of meal duration
+              start = moment(context.calendar.now).startOf('hour').add(hour * 60, 'minutes');
+              end   = start.clone().add(5, 'minutes');
 
-            return [start.toDate(), end.toDate()];
-          });
+              return [start.toDate(), end.toDate()];
+            });
         });
     },
 
-    getDayTimeMealProbability (behaviors, context) {
-      let start = moment(context.calendar.now).startOf('day'), end = start.clone().add(1, 'day'),
-        cursor = _.cloneDeep(context), predicts = [];
+    getDayMealFrequency (behaviors, context) {
+      this.frequency.context = context;
+      // Fix frequency predictor because of 2018, test misterious slots
+      return this.frequency
+        .predict(behaviors)
+        .then((predictions) => {
+          const meal = _.findLast(predictions, {specie: 'meal'})
+          // TODO usar uma distribuição melhor de refeições por semana do que dividir por 7
+          return Math.round(meal.frequency / 7);
+        });
+    },
 
-      while (start.isBefore(end)) {
-        // TODO increase granularity of daytime activity prediction
-        cursor.calendar.now = start.add(1, 'hour').toDate();
-        this.dayTime.context = cursor;
-        predicts.push(this.dayTime.predict(behaviors, {limit: 1}));
-      }
+    getDayTimeMealProbabilities (behaviors, context) {
+      const {mapper} = this.dayTime;
+      let limit = 30;
 
-      return Promise.all(predicts).then((predictions) => {
-        let mealActivityIndex = this.dayTime.mapper.types.indexOf('meal');
-
-        return _(predictions).map((prediction, index) => {
-          return {
-            hour: index,
-            probability: prediction[0][mealActivityIndex]
-          };
+      return _.chain(this.dayTime)
+        .set('context', context)
+        .invoke('predictTrend', behaviors, {
+          limitReached(last) { limit -= 1; return limit < 0; } // Keep generating
         })
+        .map(mapper.denormalize, mapper)
+        .groupBy( h => h.toFixed(0) )
+        .mapValues( hours => ({hour: ss.average(hours), probability: hours.length}) )
         .sortBy('probability')
-        .value();
-      });
+        .reverse()
+        .value()
+    },
+
+    performate (ocurrences) {
+      const initial = ocurrences.length;
+      return this.frequency
+        .learn(ocurrences)
+        .then(() => Context().for(moment().startOf('day').toDate()))
+        .then((context) => this.habitualize(ocurrences, context))
+        .then((ocurrences) => {
+          return {
+            graphs: ocurrences
+              .slice(initial - 1, ocurrences.length)
+              .map((ocurrence) => ({event: ocurrence}))
+            };
+        })
     }
-  }
+  },
+
 }));

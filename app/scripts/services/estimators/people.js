@@ -1,11 +1,13 @@
 'use strict';
 
-estimators.people = stampit({
+Estimator.add(stampit({
+  refs: {
+    name: 'people',
+  },
+
   init() {
     this.provider = document.querySelector('foursquare-checkins');
   },
-
-  refs: { },
 
   methods: {
     estimate(ocurrences) {
@@ -180,4 +182,4 @@ estimators.people = stampit({
       });
     }
   }
-});
+}));

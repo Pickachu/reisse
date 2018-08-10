@@ -22,7 +22,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       url-params="{{params}}"
       client_id="{{clientId}}"
       response_type="token"
-      redirect_uri="{{_redirectUri}}"></oauth-v2>
+      redirect_uri="{{_redirectUri}}"
+      on-response="_responded"></oauth-v2>
 
     <a href="#">{{_authStatusText}}</a>
 

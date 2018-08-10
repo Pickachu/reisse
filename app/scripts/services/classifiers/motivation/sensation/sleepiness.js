@@ -19,7 +19,8 @@ Classifier.add(stampit({
       // this.perceptron   = new Architect.Perceptron(1, 3, 1);
       this.sleep = this.sleep ||  Classifier.sleep;
 
-      let twoMothsAgo = Date.now() - 8 * 30 * 24 * 60 * 60 * 1000;
+      // let twoMothsAgo = Date.now() - 2 * 30 * 24 * 60 * 60 * 1000;
+      let twoMothsAgo = Date.now() - 32 * 30 * 24 * 60 * 60 * 1000;
       this.timeCap = new Date(twoMothsAgo);
     },
     learn(behaviors) {
@@ -110,6 +111,10 @@ Classifier.add(stampit({
         }).value();
 
       this.model.train();
+
+      if (set.length < 15) {
+        console.warn(`classifier.sleepiness: Insuficient sleep ocurrences found '${set.length}', will not be able to predict sleepiness.`);
+      }
 
       // Train network
       // learning = this.perceptron.trainer.train(set, {iterations: 1000, log: 100});

@@ -1,6 +1,9 @@
 'use strict';
 
-estimators.time = stampit({
+Estimator.add(stampit({
+  refs: {
+    name: 'time'
+  },
   init() {
     this.time = Classifier.get('time');
   },
@@ -138,4 +141,4 @@ estimators.time = stampit({
     // }
 
   }
-});
+}));

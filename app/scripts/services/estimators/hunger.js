@@ -1,6 +1,9 @@
 'use strict';
 
-estimators.hunger = estimatorable.compose(stampit({
+Estimator.add(stampit({
+  refs: {
+    name: 'hunger'
+  },
   init () {
     this.hunger = Classifier.get('hunger');
   },

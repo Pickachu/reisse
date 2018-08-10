@@ -15,31 +15,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <style>
       :host { display: block; }
 
-      :host paper-datatable, :host paper-datatable tbody { height: 30em; overflow: auto;}
+      :host paper-datatable, :host paper-datatable tbody { height: 50em; overflow: auto;}
+      :host paper-datatable-card {
+        --paper-datatable-top-toolbar: { height: auto; }
+      }
     </style>
     <content></content>
-    <paper-tabs selected="{{providerName}}" attr-for-selected="name">
-      <paper-tab name="any">Any</paper-tab>
-      <paper-tab name="asana">Asana</paper-tab>
-      <paper-tab name="things">Things</paper-tab>
-      <paper-tab name="i-calendar">ICalendar</paper-tab>
-      <paper-tab name="reisse">Relissë</paper-tab>
-    </paper-tabs>
 
-    <paper-tabs selected="{{statusName}}" attr-for-selected="name">
-      <paper-tab name="any">Any</paper-tab>
-      <paper-tab name="open">Open</paper-tab>
-      <paper-tab name="completed">Completed</paper-tab>
-    </paper-tabs>
+    <paper-datatable-card header="Ocurrence library" page-size="30" data-source="[[dataSource]]" id-property="__firebaseKey__">
+      <div toolbar-main style="padding: 2em;">
+        <paper-tabs selected="{{providerName}}" attr-for-selected="name">
+          <paper-tab name="any">Any</paper-tab>
+          <paper-tab name="asana">Asana</paper-tab>
+          <paper-tab name="things">Things</paper-tab>
+          <paper-tab name="i-calendar">ICalendar</paper-tab>
+          <paper-tab name="reisse">Relissë</paper-tab>
+          <paper-tab name="jawbone">Jawbone</paper-tab>
+          <paper-tab name="foursquare">Foursquare</paper-tab>
+          <paper-tab name="facebook">Facebook</paper-tab>
+        </paper-tabs>
 
-    <array-selector id="filterer" items="[[ocurrences]]" selected="{{filteredOcurrences}}" multi></array-selector>
+        <paper-tabs selected="{{statusName}}" attr-for-selected="name">
+          <paper-tab name="any">Any</paper-tab>
+          <paper-tab name="open">Open</paper-tab>
+          <paper-tab name="confirmed" title="status not confirmed as an status yet on data model">Confirmed</paper-tab>
+          <paper-tab name="completed">Completed</paper-tab>
+        </paper-tabs>
+      </div>
 
-    <paper-datatable data="[[filteredOcurrences]]">
-      <paper-datatable-column property="providerName" header="Provider"></paper-datatable-column>
-      <paper-datatable-column property="name" header="Name"></paper-datatable-column>
-      <paper-datatable-column property="status" header="Status"></paper-datatable-column>
-      <paper-datatable-column property="simplicity" header="Simplicity"></paper-datatable-column>
-    </paper-datatable>
+      <paper-datatable>
+        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Some title" sortable align="center" style="min-width: 40px" sorted></paper-datatable-column>
+        <paper-datatable-column header="Name" type="String" sortable property="name" ></paper-datatable-column>
+        <paper-datatable-column header="Status" property="status" type="String" sortable ></paper-datatable-column>
+        <paper-datatable-column header="Created At" type="Date" sortable property="createdAt"></paper-datatable-column>
+        <paper-datatable-column property="simplicity" header="Simplicity"></paper-datatable-column>
+      </paper-datatable>
+
+    </paper-datatable-card>
   </template>
   <script>
   (function() {
@@ -51,38 +63,55 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       properties: {
         providerName: {
           type: String,
-          value: 'asana'
+          value: 'i-calendar'
         },
         statusName: {
           type: String,
-          value: 'open'
+          value: 'any'
         },
         ocurrences: Array,
-        filteredOcurrences: Array
+        filter: {
+          type: Function,
+          computed: '_computeFilter(providerName, statusName)'
+        },
+        dataSource: {
+          type: Object,
+          computed: '_computeDataSource(ocurrences, filter, ocurrences.length)'
+        }
       },
 
-      observers: ['_selectOcurrencesByProvider(providerName, statusName, ocurrences.length)'],
+      _computeFilter (provider, status) {
+        let matcher = {};
 
-      _selectOcurrencesByProvider (provider, status) {
-        let filterer = this.$.filterer, matches = {}, filtered;
+        provider != 'any' && ( matcher.provider = {name: provider});
+        status   != 'any' && ( matcher.status   = status  );
 
-        provider != 'any' && (matches.provider = {name: provider});
-        status   != 'any' && (matches.status   = status  );
-
-        filtered = _.filter(this.ocurrences, matches);
-        filterer.clearSelection();
-
-        if (filtered.length > 600) {
-          console.warn('too many filter results, handicaped to 600. Actual amount:', filtered.length);
-          filtered = filtered.splice(0, 600);
-        }
-        filtered.forEach((ocurrence) => {
-          filterer.select(ocurrence);
-        });
+        return _.matches(matcher);
       },
       _compact (ocurrence) {
         ocurrence.providerName = ocurrence.provider.name;
         ocurrence.simplicity   = ocurrence.features.simplicity.actual;
+      },
+      _formatCreatedAt (value) {
+        return moment(value).valueOf();
+      },
+      _computeDataSource (ocurrences, filter) {
+        return {
+          get(sort, page, pageSize) {
+            return new Promise((resolve) => {
+              // debugger
+              resolve(_(ocurrences)
+                .filter(filter)
+                .orderBy(sort.property, sort.direction)
+                .slice((page - 1) * pageSize, page * pageSize)
+                .value()
+              );
+            });
+          },
+          set(item, property, value) {
+            throw new Error("dataSource.set Not implemented yet.");
+          }
+        }
       }
     });
   })();

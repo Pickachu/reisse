@@ -88,24 +88,24 @@ var ocurrenceable = stampit({
       }
 
       delete json.id
-      delete json.organizer
-      delete json.creator
+
       delete json.etag
       delete json.htmlLink
       delete json.hangoutLink
-      delete json.iCalUID
-      delete json.kind
-      delete json.remiders
       delete json.summary
       delete json.created
       delete json.updated
+      delete json.recurringEventId
+
+      // TODO parse unparsed properties
+      delete json.kind
+      delete json.iCalUID
+      delete json.reminders
+      delete json.organizer
+      delete json.creator
       delete json.timeZone
       delete json.gadget
       delete json.originalStartTime
-      delete json.recurringEventId
-
-      // TODO parse reminders
-      delete json.reminders
 
       return Ocurrence(json);
     },
@@ -125,12 +125,17 @@ var ocurrenceable = stampit({
           // Current pure activity types: sleep, meal
           return Activity.fromJSON(json);
         case 'i-calendar':
-          // TODO better checking for this
-          if (json.end > Date.now()) {
-            json.status = 'open';
+          if (json.status !== 'cancelled') {
+            // TODO better checking for this
+            if (json.end > Date.now()) {
+              json.status = 'open';
+            } else {
+              json.status = 'complete';
+            }
           } else {
-            json.status = 'complete';
+            json.status = 'cancel';
           }
+
           return Ocurrence(json);
         default:
           return Ocurrence(json);

@@ -1,7 +1,8 @@
 'use strict';
 
-estimators.weight = stampit({
+Estimator.add(stampit({
   refs: {
+    name: 'weight',
     // Calories by Macronutrient: http://www.fao.org/docrep/006/y5022e/y5022e04.htm
     _CALORIES_BY: {
       fat: 9,
@@ -49,4 +50,4 @@ estimators.weight = stampit({
       }, {});
     }
   }
-});
+}));

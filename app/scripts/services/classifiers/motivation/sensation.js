@@ -8,13 +8,14 @@ Classifier.add(stampit({
   },
   init () {
     // TODO use anticipation classifier
-    // TODO better way to reuse ResponsibilityArea estimator classifier
-    this.sleepiness = estimators.sensation.sleepiness || Classifier.get('sleepiness');
-    this.hunger     = estimators.sensation.hunger     || Classifier.get('hunger');
+    // TODO better way to reuse Sleepiness estimator classifier
+    this.sleepiness = (Estimator.find('sensation') || {}).sleepiness || Classifier.get('sleepiness');
+    // TODO better way to reuse Hunger estimator classifier
+    this.hunger     = (Estimator.find('hunger'   ) || {}).hunger     || Classifier.get('hunger');
   },
   methods: {
     predict(behaviors) {
-      let predictions, finite = Number.isFinite, sleepiness ;
+      let predictions, finite = Number.isFinite;
 
       predictions = behaviors.map((behavior) => {
         let features   = behavior.features,
@@ -23,9 +24,10 @@ Classifier.add(stampit({
           hunger       = features.hunger.truer,
           sensation;
 
+        // FIXME implement contextual sleepiness and hunger
         if (behavior.status === 'open') {
-          if (!finite(sleepiness)) { sleepiness = this.context.sleepiness; }
-          if (!finite(hunger)    ) { hunger     = this.context.hunger; }
+          if (!finite(sleepiness)) { sleepiness = this.context.sleepiness || 0.5; }
+          if (!finite(hunger)    ) { hunger     = this.context.hunger || 0.5; }
         }
 
         // TODO think how to create a rule based system to set the relationship between
@@ -33,13 +35,13 @@ Classifier.add(stampit({
         switch (activityType) {
           case 'sleep':
           case 'nap':
-            sensation = Math.min((0 + sleepiness + 1 - hunger) / 2, 0);
+            sensation = Math.max((0 + sleepiness + 1 - hunger) / 2, 0);
             break;
           case 'meal':
-            sensation = Math.min((1 - sleepiness + 0 + hunger) / 2, 0);
+            sensation = Math.max((1 - sleepiness + 0 + hunger) / 2, 0);
             break;
           default:
-            sensation = Math.min((1 - sleepiness + 1 - hunger) / 2, 0);
+            sensation = Math.max((1 - sleepiness + 1 - hunger) / 2, 0);
             break;
         }
 
@@ -62,6 +64,9 @@ Classifier.add(stampit({
             {key: 'sensation' , values: [] }
           ];
 
+          // FIXME better mocking of contexts
+          this.context = {sleepiness: 0.5, hunger: 0.5};
+
           estimated = estimated.filter((o, i, bs) => i > (0.95 * bs.length))
 
           return this.predict(estimated)
@@ -80,7 +85,7 @@ Classifier.add(stampit({
                 data[2].values.push({x: index, y: sensation[2]});
               });
 
-              meta = {
+              let meta = {
                 title: 'Sensation By Phisiology',
                 options: {
                   axis: {

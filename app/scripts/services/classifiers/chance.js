@@ -53,25 +53,26 @@ Classifier.add(stampit({
     },
 
     predict (behaviors) {
-      this.motivation.context = this.context;
-      this.motivation.predict(behaviors);
+      this.motivation.context = this.simplicity.context = this.context;
 
-      this.simplicity.context = this.context;
-      this.simplicity.predict(behaviors);
+      return Promise.all([
+        this.motivation.predict(behaviors),
+        this.simplicity.predict(behaviors)
+      ]).then(() => {
+        behaviors.forEach( (behavior) => {
+          let features = behavior.features;
 
-      behaviors.forEach( (behavior) => {
-        let features = behavior.features;
+          features.chance.estimated = this.perceptron.activate([
 
-        features.chance.estimated = this.perceptron.activate([
+            features.simplicity.estimated,
+            features.motivation.estimated
 
-          features.simplicity.estimated,
-          features.motivation.estimated
+          ])[0];
 
-        ])[0];
-
-        if (_.isNaN(features.chance.estimated)) {
-          throw new TypeError(`Classifier.Chance.predict: Chance prediction with NaN for an ocurrence!`);
-        };
+          if (_.isNaN(features.chance.estimated)) {
+            throw new TypeError(`Classifier.Chance.predict: Chance prediction with NaN for an ocurrence!`);
+          };
+        });
       });
     }
   }

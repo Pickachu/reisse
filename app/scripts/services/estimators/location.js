@@ -2,13 +2,14 @@
 
 // TODO create start duration, and end estimators
 // TODO async estimator support
-estimators.location = stampit({
+Estimator.add(stampit({
   init() {
     this.provider = document.querySelector('foursquare-venues');
     this.boundStoreCertainValues = this.storeCertainValues.bind(this);
     this._boundInferLocations    = this._inferLocations.bind(this);
   },
   refs: {
+    name: 'location',
     locations: new Map()
   },
   methods: {
@@ -164,4 +165,4 @@ estimators.location = stampit({
       }
     }
   }
-});
+}));

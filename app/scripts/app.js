@@ -141,7 +141,10 @@
     };
 
     app.set('performance', {
-        classifiers: ['sensation', 'hunger', 'sleep', 'sleepiness', 'responsibilityArea', 'simplicity', 'time', 'duration', 'frequency', 'dayTime']
+        classifiers  : ['sensation', 'hunger', 'sleep', 'sleepiness',
+          'responsibilityArea', 'simplicity', 'time', 'duration', 'frequency',
+          'dayTime', 'dayTime/meal'],
+        habitualizers: ['sleep', 'meal']
     });
 
     Object.defineProperty(app, 'limit', {

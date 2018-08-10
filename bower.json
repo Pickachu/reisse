@@ -21,14 +21,20 @@
     "geo-location": "^1.0",
     "fullcalendar-calendar": "^0.2",
     "fullcalendar": "^2.9.0",
-    "vaadin-grid": "^1.1.1"
+    "vaadin-grid": "^1.1.1",
+    "stampit": "^2.0",
+    "mimir": "techfort/mimir#^0.0.1",
+    "changeset": "eugeneware/changeset#^0.2.1",
+    "paper-datatable": "^0.9.8",
+    "simple-statistics": "^2.5.0",
+    "rest-api": "platosha/rest-api#^0.1.0"
   },
   "devDependencies": {
     "web-component-tester": "*",
     "test-fixture": "PolymerElements/test-fixture#^1.0.0"
   },
   "resolutions": {
-    "polymer": "^1.1.0",
+    "polymer": "^1.6.0",
     "paper-styles": "^1.1.4",
     "lodash": "^4.0"
   }

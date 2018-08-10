@@ -11,7 +11,7 @@ Lore.integrations.push(
         let provider = document.querySelector('jawbone-element'), since = this.since,
           listener = function (event) {
             console.log('service jawbone finish', this.collectionName);
-            let ocurrences  = this.data.map(Activity.fromJawbone, Activity).map(lore.assignArea, lore);
+            let ocurrences  = this.data.map(Activity.fromJawbone, Activity);
             lore.ocurrences = lore.ocurrences.concat(ocurrences);
 
             if (this.collectionName != 'meals') {

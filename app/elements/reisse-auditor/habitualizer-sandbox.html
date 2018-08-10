@@ -1,0 +1,62 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="./habitualizer-performance.html">
+
+<dom-module id="habitualizer-sandbox">
+  <style> :host { display: block; } </style>
+  <template>
+    <template is="dom-repeat" items="[[performance.graphs]]" as="performance">
+      <habitualizer-performance event="[[performance.event]]" type="[[performance.type]]" meta="[[performance.meta]]" data="[[performance.data]]"></habitualizer-performance>
+    </template>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'habitualizer-sandbox',
+
+      properties: {
+        name: {
+          type: String,
+          observer: '_nameChanged'
+        },
+        habitualizer: Object,
+        stats: Object
+      },
+
+      _nameChanged (current) {
+        this.habitualizer = Habit.find({name: current}) || Habit.get(current);
+      },
+
+      _eq (a, b) {
+        return a === b;
+      },
+
+      perform (behaviors) {
+        let draw;
+
+        this.habitualizer.performate(behaviors).then((performance) => {
+          if (!performance.graphs) {
+            performance.meta = performance.stats;
+            performance.type = 'multi-bar';
+            performance = {graphs: [performance]};
+            console.warn(this.is, 'not passing `performance.graphs` is deprecated');
+          }
+
+          this.performance = performance;
+        });
+      }
+    });
+  })();
+  </script>
+</dom-module>

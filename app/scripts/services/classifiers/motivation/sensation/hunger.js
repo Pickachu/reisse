@@ -1,7 +1,15 @@
 'use strict'
 
-// Hunger is mainly equal a reward system modulated habit with two rewards per forkful
-// TODO create satiety estimator, that is a
+// = Hunger Classifier
+// • Hunger is mainly equal a reward system modulated habit with two rewards per full fork
+// so pehaps it can be merged with an more generic habit classifier?
+//
+// • How it works:
+// - It receives as input the macronutrient composition and time of a meal
+// - It outputs a satiety factor
+// The satiety factor is a number between 0 and 1 indicating how much satiety value there is.
+// The satiety value is the amount of seconds that someone stays without hunger.
+// TODO create satiety estimator
 Classifier.add(stampit({
   refs: {
     name: 'hunger'
@@ -77,6 +85,7 @@ Classifier.add(stampit({
 
       return Promise.resolve(predictions);
     },
+    // ! TODO imeplement http://unplu.gg api calls to predict meal times
     performate(behaviors) {
       let learning, mapper, graphs = [], data = [], data2 = [];
 
@@ -157,16 +166,14 @@ Classifier.add(stampit({
         }).value();
 
       graphs.push({
-        title: 'Composition By Meal',
         data: data,
-        meta: learning,
+        meta: Object.assign({title: 'Meal Composition + Satiety By Meal'}, learning),
         type: 'scatter'
       });
 
       graphs.push({
-        title: 'Learning Map',
         data: data2,
-        meta: learning,
+        meta: Object.assign({title: 'All Meals By Fat Content'}, learning),
         type: 'scatter'
       });
 
@@ -204,6 +211,7 @@ Classifier.add(stampit({
         maximumSatiety: 0
       });
 
+      // Maximum satiety in seconds
       edges.maximumSatiety = edges.maximumSatiety / 1000;
 
       return {

@@ -48,7 +48,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- build:js bower_components/webcomponentsjs/webcomponents-lite.min.js -->
     <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="bower_components/simple-statistics/dist/simple_statistics.js"></script>
+    <script src="bower_components/simple-statistics/dist/simple-statistics.js"></script>
     <script src="bower_components/stampit/stampit.js"></script>
     <script src="bower_components/lodash/lodash.js"></script>
     <script src="bower_components/synaptic/dist/synaptic.js"></script>
@@ -120,17 +120,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </paper-toolbar>
 
           <!-- Main Content -->
-          <div class="content">
-            <iron-pages attr-for-selected="data-route" selected="{{route}}">
+          <div class="content layout vertical">
+            <iron-pages class="flex layout vertical" attr-for-selected="data-route" selected="{{route}}">
 
-              <section class="layout vertical" data-route="home">
-                <div class="toolbar flex-1">
+              <section class="flex layout vertical" data-route="home">
+                <div class="toolbar">
                   <paper-button on-tap="learn">Learn from past experience</paper-button>
                   <paper-button on-tap="predict" disabled="{{learning}}">Generate the best day</paper-button>
                 </div>
 
-                <div>
-                  <reisse-calendar id="calendar" class="layout vertical" calendar="{{prediction}}"> </reisse-calendar>
+                <div class="flex layout vertical">
+                  <reisse-calendar id="calendar" class="flex" calendar="{{prediction}}"> </reisse-calendar>
                 </div>
 
               </section>
@@ -144,7 +144,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 <!-- TODO insert client ids as parameters -->
                 <asana-signin      authorization="{{authorization}}"></asana-signin>
-                <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read", "meal_read"]'></jawbone-signin>
+                <!-- <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read", "meal_read"]'></jawbone-signin> -->
                 <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
 
                 <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
@@ -162,7 +162,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <section data-route="performance">
                 <section>
                   <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
-                  <reisse-auditor ocurrences="{{ocurrences}}" classifiers="{{performance.classifiers}}"></reisse-auditor>
+                  <reisse-auditor ocurrences="{{ocurrences}}" classifiers="[[performance.classifiers]]" habitualizers="[[performance.habitualizers]]"></reisse-auditor>
                 </section>
               </section>
 
@@ -193,6 +193,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <things-element src="sources/things.json"></things-element>
       <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
       <foursquare-checkins authorization="{{squareAuthorization}}"></foursquare-checkins>
+      <unplugg-element></unplugg-element>
 
       <facebook-sdk app-id="1620595611520205"></facebook-sdk>
       <facebook-graph></facebook-graph>
@@ -277,6 +278,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/services/classifiers/simplicity/time/duration.js"></script>
     <script src="scripts/services/classifiers/simplicity/time.js"></script>
     <script src="scripts/services/classifiers/simplicity/routine/frequency.js"></script>
+    <script src="scripts/services/classifiers/simplicity/routine/day_time/meal.js"></script>
     <script src="scripts/services/classifiers/simplicity/routine/day_time.js"></script>
     <script src="scripts/services/classifiers/simplicity/routine.js"></script>
     <script src="scripts/services/classifiers/simplicity.js"></script>
