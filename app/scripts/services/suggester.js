@@ -3,7 +3,7 @@
 var suggestable = stampit({
   init () {
     this.boundWhen = this.when.bind(this);
-    
+
     Suggester.suggesters.forEach((suggester) => {
       this.suggesters.push(suggester({
         areas: this.areas,
@@ -38,6 +38,10 @@ var suggestable = stampit({
     suggesters: [],
     add (suggester) {
       this.suggesters.push(suggester);
+    },
+    suggesters: [],
+    find (predicate) {
+      return _.find(this.suggesters, predicate) || null;
     }
   }
 });

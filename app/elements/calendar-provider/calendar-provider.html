@@ -94,7 +94,7 @@ that handles authentication.
             calendars = resp.items.map((calendar) => {
               calendar.feed = `https://calendar.google.com/calendar/ical/${calendar.id}/public/basic.ics`;
               return calendar;
-            })
+            });
             this._setCalendars(calendars);
         }
       }.bind(this));

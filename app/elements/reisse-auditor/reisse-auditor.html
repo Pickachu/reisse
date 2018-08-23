@@ -12,11 +12,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="./classifier-sandbox.html">
 <link rel="import" href="./habitualizer-sandbox.html">
+<link rel="import" href="./suggester-sandbox.html">
 
 <dom-module id="reisse-auditor">
   <style> :host { display: block; } </style>
   <template>
-    <h1> Classifiers Audition </h1>
+    <h1> Suggesters Audition </h1>
+    <template is="dom-repeat" items="{{suggesters}}" as="suggester">
+      <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit [[_format(suggester)]] </paper-button>
+      <suggester-sandbox name="{{suggester}}"></suggester-sandbox>
+    </template>
+    <h1> Classifiers Audition </h1>suggester
     <template is="dom-repeat" items="{{classifiers}}" as="classifier">
       <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit [[_format(classifier)]] </paper-button>
       <classifier-sandbox name="{{classifier}}"></classifier-sandbox>

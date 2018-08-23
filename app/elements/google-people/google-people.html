@@ -82,7 +82,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       list (params) {
         return this.client.people.connections.list(params) .then(function(response) {
           if (response.error) {
-            console.error("Error with people.connections.list", response.message)
+            console.error("Error with people.connections.list", response.message);
             return Promise.reject(response);
           } else {
             return Promise.resolve(response);

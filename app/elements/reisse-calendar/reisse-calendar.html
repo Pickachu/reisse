@@ -11,14 +11,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <script src='../../bower_components/jquery/dist/jquery.min.js'></script>
 <script src='../../bower_components/moment/min/moment.min.js'></script>
-<script src='../../bower_components/fullcalendar/dist/fullcalendar.min.js'></script>
-<link rel='stylesheet' href='../../bower_components/fullcalendar/dist/fullcalendar.min.css'/>
+<script src='../../bower_components/fullcalendar/dist/fullcalendar.js'></script>
+<script src='../../bower_components/fullcalendar-scheduler/dist/scheduler.js'></script>
+
+<link rel='stylesheet' href='../../bower_components/fullcalendar/dist/fullcalendar.css'/>
+<link rel='stylesheet' href='../../bower_components/fullcalendar-scheduler/dist/scheduler.css'/>
 <link rel="import" href="../../bower_components/fullcalendar-calendar/fullcalendar-calendar.html">
 
 <dom-module id="reisse-calendar">
   <style> :host { display: block; } </style>
   <template>
-    <fullcalendar-calendar class="flex" options="[[_options]]"></fullcalendar-calendar>
+    <template is="dom-if" if="[[calendar]]" restamp="true">
+      <fullcalendar-calendar class="flex" options="[[_options]]"></fullcalendar-calendar>
+    </template>
   </template>
 
   <script>
@@ -39,9 +44,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _computeOptions(events) {
           return {
+            height: 'auto',
+            slotLabelFormat: 'HH:mm',
+            nowIndicator: true,
+            allDaySlot: false,
             defaultView: 'agendaDay',
+            // TODO eventSources: this._retrieveEventSources(),
             events: this._retrieveEvents.bind(this),
-            eventRender: this._eventRender.bind(this)
+            resources: this._retrieveResources.bind(this),
+            eventRender: this._eventRender.bind(this),
+
+            schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source'
           };
         },
 
@@ -53,11 +66,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 start: event.features.start || event.start, // event.start is for suggested events
                 end: event.features.end || event.end,
                 title: event.name,
+                resourceId: event.suggestion ? 'suggestions' : 'predictions',
                 private: {index: index}
               };
             })
             .tap(callback)
             .value();
+        },
+
+        _retrieveResources (callback, start, end, timezone) {
+          callback([
+            {
+              id: 'predictions',
+              title: 'Predictions'
+            },
+            {
+              id: 'suggestions',
+              title: 'Suggestions'
+            },
+          ]);
         },
 
         _eventRender (event, element) {

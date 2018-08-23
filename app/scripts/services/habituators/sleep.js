@@ -35,6 +35,10 @@ Habit.add(stampit({
           }
         },
         habituality : {},
+        // TODO auto-complete sleep habit when it's chance is more than 90%
+        // for now, we leave the habit open to allow it to belong to the
+        // prediction set. Think if it's wize to make habits belong to the prediction set,
+        // since they are only missing data-points inferred
         status      : 'open',
         activity    : {type: 'sleep'},
         name        : 'Habitual Sleep',

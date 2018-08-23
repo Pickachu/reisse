@@ -66,58 +66,55 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <body unresolved class="fullbleed layout vertical">
     <span id="browser-sync-binding"></span>
+
     <template is="dom-bind" id="app">
       <iron-signals id="signaler"></iron-signals>
 
-      <paper-drawer-panel id="paperDrawerPanel">
+      <paper-drawer-panel id="paperDrawerPanel" drawer-width="60px">
         <!-- Drawer Scroll Header Panel -->
-        <paper-scroll-header-panel drawer fixed>
-
-          <!-- Drawer Toolbar -->
-          <paper-toolbar id="drawerToolbar">
-            <span class="paper-font-title">Menu</span>
-          </paper-toolbar>
+        <paper-scroll-header-panel drawer>
 
           <!-- Drawer Content -->
           <paper-menu class="list" attr-for-selected="data-route" selected="[[route]]">
             <a data-route="home" href="/" on-click="onDataRouteClick">
-              <iron-icon icon="home"></iron-icon>
-              <span>Home</span>
+              <iron-icon icon="view-agenda" title="the best day agenda"></iron-icon>
             </a>
             <a data-route="performance" href="/performance" on-click="onDataRouteClick">
-              <iron-icon icon="chart"></iron-icon>
-              <span>Performance</span>
+              <iron-icon icon="assessment" title="performance auditing"></iron-icon>
+            </a>
+            <a data-route="suggestion" href="/suggestion" on-click="onDataRouteClick">
+              <iron-icon icon="icons:timeline" title="suggestion settings"></iron-icon>
             </a>
             <a data-route="synchronization" href="/synchronization" on-click="onDataRouteClick">
-              <iron-icon icon="chart"></iron-icon>
-              <span>Synchronization</span>
+              <iron-icon icon="autorenew" title="synchronization auditing"></iron-icon>
             </a>
           </paper-menu>
+
         </paper-scroll-header-panel>
 
         <!-- Main Area -->
         <paper-scroll-header-panel main condenses keep-condensed-header>
 
           <!-- Main Toolbar -->
-          <paper-toolbar id="mainToolbar" class="tall">
+          <!-- <paper-toolbar id="mainToolbar" class="tall">
             <paper-icon-button id="paperToggle" icon="menu" paper-drawer-toggle></paper-icon-button>
             <span class="flex"></span>
 
-            <!-- Toolbar icons -->
+            <!- Toolbar icons ->
             <paper-icon-button icon="refresh"></paper-icon-button>
             <paper-icon-button icon="search"></paper-icon-button>
 
-            <!-- Application name -->
+            <!- Application name ->
             <div class="middle middle-container center horizontal layout">
               <div class="app-name">O Melhor Dia</div>
             </div>
 
-            <!-- Application sub title -->
+            <!- Application sub title ->
             <div class="bottom bottom-container center horizontal layout">
               <div class="bottom-title paper-font-subhead">Calculando seu tempo baseado no agora</div>
             </div>
 
-          </paper-toolbar>
+          </paper-toolbar> -->
 
           <!-- Main Content -->
           <div class="content layout vertical">
@@ -125,12 +122,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               <section class="flex layout vertical" data-route="home">
                 <div class="toolbar">
-                  <paper-button on-tap="learn">Learn from past experience</paper-button>
+                  <paper-button on-tap="learn" disabled="{{learning}}">Learn from the past</paper-button>
                   <paper-button on-tap="predict" disabled="{{learning}}">Generate the best day</paper-button>
                 </div>
 
                 <div class="flex layout vertical">
-                  <reisse-calendar id="calendar" class="flex" calendar="{{prediction}}"> </reisse-calendar>
+                  <br />
+                  <reisse-calendar id="calendar" class="flex layout vertical" calendar="{{prediction}}"> </reisse-calendar>
                 </div>
 
               </section>
@@ -162,7 +160,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <section data-route="performance">
                 <section>
                   <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
-                  <reisse-auditor ocurrences="{{ocurrences}}" classifiers="[[performance.classifiers]]" habitualizers="[[performance.habitualizers]]"></reisse-auditor>
+                  <reisse-auditor
+                    ocurrences="{{ocurrences}}"
+                    classifiers="[[performance.classifiers]]"
+                    habitualizers="[[performance.habitualizers]]"
+                    suggesters="[[performance.suggesters]]"
+                  ></reisse-auditor>
+                </section>
+              </section>
+
+              <section data-route="suggestions">
+                <section>
+                  <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
+                  <reisse-suggesters-section></reisse-suggesters-section>
                 </section>
               </section>
 
@@ -236,67 +246,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/lore/integrations/index.js"></script>
     <script src="scripts/models/lore/integrations/things.js"></script>
     <script src="scripts/models/lore/integrations/relisse.js"></script>
-    <script src="scripts/models/lore/integrations/jawbone.js"></script>
+    <!-- TODO reactivate when jawbone service backs up -->
+    <!-- <script src="scripts/models/lore/integrations/jawbone.js"></script> -->
     <script src="scripts/models/lore/integrations/i-calendars.js"></script>
     <script src="scripts/models/lore/integrations/google.js"></script>
     <script src="scripts/models/lore.js"></script>
 
-    <script src="scripts/services/string/transliterate.js"></script>
-
-    <script src="scripts/services/estimator.js"></script>
-    <script src="scripts/services/estimators/location.js"></script>
-    <script src="scripts/services/estimators/duration/duration.js"></script>
-    <script src="scripts/services/estimators/hunger.js"></script>
-    <script src="scripts/services/estimators/sleepiness.js"></script>
-    <script src="scripts/services/estimators/weight.js"></script>
-    <script src="scripts/services/estimators/people.js"></script>
-
-    <!-- Domain estimators -->
-    <script src="scripts/services/estimators/simplicity/routine.js"></script>
-    <script src="scripts/services/estimators/simplicity/brain-cycles.js"></script>
-    <script src="scripts/services/estimators/simplicity/time.js"></script>
-    <script src="scripts/services/estimators/motivation/anticipation.js"></script>
-    <script src="scripts/services/estimators/motivation/belongness.js"></script>
-    <script src="scripts/services/estimators/motivation/sensation.js"></script>
-
-    <script src="scripts/services/context.js"></script>
-    <script src="scripts/services/contextualizers/location.js"></script>
-    <script src="scripts/services/contextualizers/calendar.js"></script>
-    <script src="scripts/services/contextualizers/people.js"></script>
-
-    <script src="scripts/services/habit.js"></script>
-    <script src="scripts/services/habituators/meal.js"></script>
-    <script src="scripts/services/habituators/sleep.js"></script>
-
-    <script src="scripts/services/suggester.js"></script>
-    <script src="scripts/services/suggesters/activity.js"></script>
-
-    <script src="scripts/services/hash.js"></script>
-
-    <script src="scripts/services/classifier.js"></script>
-
-    <script src="scripts/services/classifiers/simplicity/time/duration.js"></script>
-    <script src="scripts/services/classifiers/simplicity/time.js"></script>
-    <script src="scripts/services/classifiers/simplicity/routine/frequency.js"></script>
-    <script src="scripts/services/classifiers/simplicity/routine/day_time/meal.js"></script>
-    <script src="scripts/services/classifiers/simplicity/routine/day_time.js"></script>
-    <script src="scripts/services/classifiers/simplicity/routine.js"></script>
-    <script src="scripts/services/classifiers/simplicity.js"></script>
-
-    <script src="scripts/services/classifiers/motivation/sensation/hunger.js"></script>
-    <script src="scripts/services/classifiers/motivation/sensation/sleep.js"></script>
-    <script src="scripts/services/classifiers/motivation/sensation/sleepiness.js"></script>
-    <script src="scripts/services/classifiers/motivation/sensation.js"></script>
-    <script src="scripts/services/classifiers/motivation/anticipation/responsibility_area.js"></script>
-    <script src="scripts/services/classifiers/motivation/anticipation.js"></script>
-    <script src="scripts/services/classifiers/motivation.js"></script>
-
-    <!-- <script src="scripts/services/classifiers/chance/daytime.js"></script> -->
-    <script src="scripts/services/classifiers/chance.js"></script>
-
-    <script src="scripts/services/feature-manager.js"></script>
-
-    <script src="scripts/re.js"></script>
     <script src="scripts/app.js"></script>
   </body>
   <!-- endbuild-->

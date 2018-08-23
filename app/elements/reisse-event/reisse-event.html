@@ -1,17 +1,6 @@
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
-
-<!-- TODO <link rel="import" href="../components/reisse-feature/reisse-feature.html"> -->
+<link rel="import" href="../../bower_components/polymer/polymer.html" />
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html" />
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html" />
 
 <dom-module id="reisse-event">
   <style>
@@ -19,22 +8,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       display: block;
       margin-bottom: 1px;
       padding-left: 0.5em;
-      overflow: auto !important;
-    }
-
-    :host(.hovering) {
-      bottom: auto !important;
-      z-index: 2;
+      overflow: visible !important;
     }
 
     h3 {
       @apply(--title-theme);
       font-weight: normal;
       margin: 0;
-    }
-
-    paper-input {
-      display: inline-block;
     }
 
     paper-button {
@@ -51,91 +31,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-button toggles active="{{_details}}" title="clique para ver detalhes">[[event.name]][[_optionalName]]</paper-button>
       <paper-button toggles active="{{_factors}}">Factors</paper-button>
     </h3>
-    <div hidden="{{_details}}" class="layout vertical">
-      <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
-      <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
-      <p>Notes              : <span>{{event.notes}}</span></p>
-      <p>Area               : <span>{{event.areaId}}</span></p>
-      <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
-      <p>Provider           : <span>{{event.provider.name}}</span></p>
-      <section>
-        <!-- <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature> -->
-      </section>
+    <paper-dialog opened="{{_details}}">
+      <h2>[[event.name]][[_optionalName]] - (details)</h2>
+      <div class="layout vertical">
+        <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
+        <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
+        <p>Notes              : <span>{{event.notes}}</span></p>
+        <p>Area               : <span>{{event.areaId}}</span></p>
+        <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
+        <p>Provider           : <span>{{event.provider.name}}</span></p>
+        <section>
+          <!-- <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature> -->
+        </section>
 
-      <hr />
-    </div>
-
-    <div hidden="{{_factors}}" class="layout vertical">
-      <div class="layout horizontal around-justified">
-        <p id="chance">Chance</p>
-        <paper-tooltip animation-delay="0" position="top" for="chance">
-          <p>Estimated: {{event.features.chance.estimated}}</p>
-        </paper-tooltip>
+        <hr />
       </div>
+    </paper-dialog>
 
-      <div class="layout horizontal around-justified">
-        <p>
-          <p id="motivation">Motivation</p>
-          <paper-tooltip animation-delay="0" position="top" for="motivation">
-            <p>Estimated: {{event.features.motivation.estimated}}</p>
-          </paper-tooltip>
-        </p>
-        <p>
-          <p id="simplicity">Simplicity</p>
-          <paper-tooltip animation-delay="0" position="top" for="simplicity">
-            <p>Estimated: {{event.features.simplicity.estimated}}</p>
-          </paper-tooltip>
-        </p>
-        <p>
-          <p id="sensation">Sensation</p>
-          <paper-tooltip animation-delay="0" position="top" for="sensation">
-            <p>Estimated: {{event.features.sensation.estimated}}</p>
-          </paper-tooltip>
-        </p>
+    <paper-dialog opened="{{_factors}}">
+      <h2>[[event.name]][[_optionalName]] - (factors)</h2>
+
+      <div class="layout vertical">
+        <reisse-event-feature name="Chance" feature="[[event.features.chance]]" expanded >
+          <reisse-event-feature name="Motivation" feature="[[event.features.motivation]]" expanded >
+            <reisse-event-feature name="Sensation" feature="[[event.features.sensation]]" expanded > </reisse-event-feature>
+            <reisse-event-feature name="Anticipation" feature="[[event.features.anticipation]]" expanded > </reisse-event-feature>
+            <reisse-event-feature name="Belongness" feature="[[event.features.belongness]]" expanded > </reisse-event-feature>
+          </reisse-event-feature>
+          <reisse-event-feature name="Simplicity" feature="[[event.features.simplicity]]" expanded >
+            <reisse-event-feature name="Brain Cycles" feature="[[event.features.brainCycles]]" expanded > </reisse-event-feature>
+            <reisse-event-feature name="Time" feature="[[event.features.time]]" expanded > </reisse-event-feature>
+          </reisse-event-feature>
+        </reisse-event-feature>
+
+        <div class="layout horizontal around-justified">
+          <p>
+            <p id="duration">Duration</p>
+            <paper-tooltip animation-delay="0" position="top" for="duration">
+              <p>Actual: [[event.features.duration.actual]]s</p>
+              <p>Estimated: [[event.features.duration.estimated]]s</p>
+            </paper-tooltip>
+          </p>
+        </div>
+
       </div>
-
-      <div class="layout horizontal around-justified">
-        <p>
-          <p id="anticipation">Anticipation</p>
-          <paper-tooltip animation-delay="0" position="top" for="anticipation">
-            <p>Actual: {{event.features.anticipation.actual}}</p>
-            <p>Estimated: {{event.features.anticipation.estimated}}</p>
-          </paper-tooltip>
-        </p>
-        <p>
-          <p id="belongness">Belongness</p>
-          <paper-tooltip animation-delay="0" position="top" for="belongness">
-            <p>Actual: {{event.features.belongness.actual}}</p>
-            <p>Estimated: {{event.features.belongness.estimated}}</p>
-          </paper-tooltip>
-        </p>
-        <p>
-          <p id="brainCycles">Brain cycles</p>
-          <paper-tooltip animation-delay="0" position="top" for="brainCycles">
-            <p>Actual   : {{event.features.brainCycles.actual}}</p>
-            <p>Estimated: {{event.features.brainCycles.estimated}}</p>
-            <p>Inferred : {{_infer(event, 'brainCycles')}}</p>
-          </paper-tooltip>
-        </p>
-        <p>
-          <p id="time">Time</p>
-          <paper-tooltip animation-delay="0" position="top" for="time">
-            <p>Estimated: {{event.features.time.estimated}}</p>
-          </paper-tooltip>
-        </p>
-      </div>
-
-      <div class="layout horizontal around-justified">
-        <p>
-          <p id="duration">Duration</p>
-          <paper-tooltip animation-delay="0" position="top" for="duration">
-            <p>Actual: {{event.features.duration.actual}}s</p>
-            <p>Estimated: {{event.features.duration.estimated}}s</p>
-          </paper-tooltip>
-        </p>
-      </div>
-
-    </div>
+    </paper-dialog>
 
   </template>
 
@@ -152,11 +92,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           _factors: {
             type: Boolean,
-            value: true
+            value: false
           },
           _details: {
             type: Boolean,
-            value: true
+            value: false
           },
 
           _optionalName: {
@@ -166,13 +106,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         observers: [
-          '_computeHeight(event.features.duration.estimated)'
+          '_computeHeight(event.features.duration.estimated)',
+          '_computeOverlayMode(_factors, _details)'
         ],
-
-        listeners: {
-          'mouseenter': '_handleFocus',
-          'mouseleave': '_handleFocus'
-        },
 
         attached () {
           this.async(() => {
@@ -196,23 +132,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         },
 
-        _infer (event, feature) {
-          let estimator = Estimator.get(feature), inferal = 'inferActual' + _.upperFirst(feature);
-          if (estimator[inferal]) {
-            estimator[inferal](Ocurrence.fromJSON(event));
-          } else {
-            console.warn(this._is, 'Estimator do not implements ' + inferal + '!');
-          }
-          return event.features[feature].actual;
-        },
+        // _infer (event, feature) {
+        //   let estimator = Estimator.get(feature), inferal = 'inferActual' + _.upperFirst(feature);
+        //   if (estimator[inferal]) {
+        //     estimator[inferal](Ocurrence.fromJSON(event));
+        //   } else {
+        //     console.warn(this._is, 'Estimator do not implements ' + inferal + '!');
+        //   }
+        //   return event.features[feature].actual;
+        // },
 
         _computeHeight (duration) {
           duration || (duration = 120);
           this.style.minHeight = Math.floor(duration / (60 * 60)) + "em";
         },
 
-        _handleFocus (event) {
-          this.toggleClass('hovering', event.type == 'mouseenter');
+        _computeOverlayMode(factors, details) {
+          if (factors || details) {
+            this.style.zIndex = 2;
+          } else {
+            this.style.zIndex = '';
+          }
+
+          this.toggleClass('overlayed', factors || details);
         }
       });
     })();

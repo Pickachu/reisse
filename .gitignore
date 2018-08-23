@@ -4,6 +4,10 @@
 .gulp/node_modules/**/*
 .tmp
 
+# Copy of database files
+backup
+
+sources
 dist
 node_modules/**/*
 bower_components/**/*

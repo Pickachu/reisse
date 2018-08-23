@@ -29,7 +29,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         project: Object,
         tasks: {
           type: Array,
-          value: () => {return []},
+          value: () => {return [];},
           notify: true
         },
         authorization: {
@@ -50,7 +50,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _populate (projectId) {
         // TODO allow parallel loading of project tasks and project
         this.$.projects.show(projectId, (response) => {
-          this.project = response.data
+          this.project = response.data;
 
           var query = {completed_since: this.completedSince.toISOString(), assignee: 'me'};
           this.$.tasks.index((response) => {

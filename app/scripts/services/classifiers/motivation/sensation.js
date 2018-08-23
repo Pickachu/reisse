@@ -14,6 +14,7 @@ Classifier.add(stampit({
     this.hunger     = (Estimator.find('hunger'   ) || {}).hunger     || Classifier.get('hunger');
   },
   methods: {
+    // Uses default learning method from Classifier stamp the learn method does nothing
     predict(behaviors) {
       let predictions, finite = Number.isFinite;
 
@@ -44,6 +45,9 @@ Classifier.add(stampit({
             sensation = Math.max((1 - sleepiness + 1 - hunger) / 2, 0);
             break;
         }
+
+        // Explosive sensation value computed
+        if (sensation > 1) { debugger }
 
         return sensation;
       });

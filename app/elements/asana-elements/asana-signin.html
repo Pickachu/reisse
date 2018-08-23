@@ -21,8 +21,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               response_type="token"
               url-params="{{params}}"
               redirect_uri="{{_redirectUri}}"
-              on-response="_responded"></oauth-v2>
+              on-response="_responded"
+              on-error="_errored"></oauth-v2>
     <a href="#">{{_authStatusText}}</a>
+
+    <iron-localstorage name="oauth-storage" value="{{auths}}"></iron-localstorage>
   </template>
   <script>
   (function() {
@@ -51,20 +54,45 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _authStatusText: {
           type: String,
           value: "Entrar com asana"
-        }
+        },
 
+        auths: {
+          type: Object,
+          observer: '_authsChanged'
+        }
       },
-      attached () {
-        this.async(() => {
-          this.$.oauth.open();
-        });
-      },
+
       _responded (event, response) {
         this.token = response.access_token;
+        this._storeAuth(response);
         this._authStatusText = "Asana Ready";
       },
+
       _computeAuthorization (token) {
         return `Bearer ${token}`;
+      },
+
+      // Previeous session restored
+      _authsChanged (current, old) {
+        // TODO use a token that expires in more than an hour
+        // https://asana.com/developers/documentation/getting-started/auth
+        if (current && current.asana && current.asana.access_token &&
+            Date.now() < current.asana.expires_at
+          ) {
+          this.token = current.asana.access_token;
+          this._authStatusText = "Asana Ready";
+        } else {
+          this.$.oauth.open();
+        }
+      },
+
+      _storeAuth ({access_token, expires_in}) {
+        this.auths || (this.auths = {});
+        this.set('auths.asana', {access_token, expires_at: Date.now() + expires_in * 1000});
+      },
+
+      _errored() {
+        debugger
       }
     });
   })();

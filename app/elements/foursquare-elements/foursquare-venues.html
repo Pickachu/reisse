@@ -82,6 +82,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           case 403:
             this.fire('error', detail);
             break;
+          // Usually happens on quota exceded
+          case 429:
+            this.fire('error', detail);
+            break;
           default:
             throw Error(`Received unhandled failure status code ${request.status}.`);
         }

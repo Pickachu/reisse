@@ -35,7 +35,7 @@ Classifier.add(stampit({
         .value();
 
       // Train network
-      learning = this.perceptron.trainer.train(set, {log: 100, rate: 0.2, iterations: 1000});
+      learning = this.perceptron.trainer.train(set, {log: 2, rate: 0.2, iterations: 10});
 
       // TODO move this code to base classifiers stamp (not created yet) and test all neural net for nan inputs
       let activation = this.perceptron.activate([0,0,0]);

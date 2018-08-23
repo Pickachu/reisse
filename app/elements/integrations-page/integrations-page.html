@@ -44,7 +44,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </div>
 
       <paper-datatable>
-        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Some title" sortable align="center" style="min-width: 40px" sorted></paper-datatable-column>
+        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Firebase Key" sortable align="center" style="min-width: 40px" sorted></paper-datatable-column>
+
+        <!-- TODO figure out why sort attribute does not work
+        <paper-datatable-column header="Provider Id" property="provider" type="Object" sortable align="center" sort="{{_providerSorter}}">
+          <template>
+						<span>[[item.provider.id]]</span>
+          </template>
+        </paper-datatable-column> -->
         <paper-datatable-column header="Name" type="String" sortable property="name" ></paper-datatable-column>
         <paper-datatable-column header="Status" property="status" type="String" sortable ></paper-datatable-column>
         <paper-datatable-column header="Created At" type="Date" sortable property="createdAt"></paper-datatable-column>
@@ -80,6 +87,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
 
+      // TODO alert full ocurrence json on row tap
+      // app.ocurrences.find(({__firebaseKey__}) => __firebaseKey__ === '-LKa6nhasMyXgluXCEwB');
+
       _computeFilter (provider, status) {
         let matcher = {};
 
@@ -94,6 +104,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       _formatCreatedAt (value) {
         return moment(value).valueOf();
+      },
+      _providerSorter(a, b) {
+        debugger
+        if (!a.provider || !b.provider) return 0;
+        return a.provider.id.toString().localeCompare(b.provider.id);
       },
       _computeDataSource (ocurrences, filter) {
         return {
@@ -111,7 +126,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           set(item, property, value) {
             throw new Error("dataSource.set Not implemented yet.");
           }
-        }
+        };
       }
     });
   })();

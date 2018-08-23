@@ -11,7 +11,20 @@ var behavioral = stampit({
     },
 
     methods: {
-        // Commonality is routine related
+        /**
+         * This method fetches the full simplicity cost for running
+         * this behavior
+         *
+         * That is, an array with each simplcity cost factor (the higher the factor,
+         * lower the simplicity will be, hence ss.min(full) to get simplicity)
+         *
+         * • Commonality is routine related
+         *
+         * @param  {[type]} full [description]
+         * @param  {[type]} type [description]
+         *
+         * @return {[type]}      [description]
+         */
         simplicity (full, type) {
             type || (type = 'actual');
             let money = 1, time = 1, cycles = 1, effort = 1, commonality = 1;

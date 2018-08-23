@@ -1,0 +1,72 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+<dom-module id="reisse-event-feature">
+  <style>
+    :host {
+      display: block;
+      padding-left: 0.5em;
+    }
+
+    h3 {
+      @apply(--title-theme);
+      font-weight: normal;
+      margin: 0;
+    }
+
+    paper-button {
+      text-transform: none;
+    }
+
+    .emoji {
+      font-family: "Apple Color Emoji","Segoe UI Emoji","NotoColorEmoji","Segoe UI Symbol","Android Emoji","EmojiSymbols";
+    }
+
+  </style>
+  <template>
+    <!-- <paper-button raised toggles active="{{expanded}}">[[name]]</paper-button> -->
+    <iron-collapse opened="[[expanded]]">
+      <paper-tooltip animation-delay="0" position="top" for="progress">
+        <p>Estimated: [[feature.estimated]]</p>
+      </paper-tooltip>
+      <p>
+        [[name]]:
+        <paper-progress style="min-width: 500px" id="progress" value="[[_formatValue(feature.estimated)]]"></paper-progress>
+      </p>
+      <content></content>
+    </iron-collapse>
+  </template>
+
+  <script>
+    (function () {
+      'use strict';
+
+      Polymer({
+        is: 'reisse-event-feature',
+        properties: {
+          feature: {
+            type: Object,
+            notify: true
+          },
+          expanded: {
+            type: Boolean,
+            value: false
+          },
+          name: {
+            type: String
+          },
+        },
+
+        _formatValue(value) {
+          return value * 100;
+        }
+      });
+
+    })();
+  </script>
+
+</dom-module>

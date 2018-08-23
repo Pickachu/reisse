@@ -112,6 +112,11 @@ gulp.task('jshint', function () {
       'app/scripts/**/*.js',
       'app/elements/**/*.js',
       'app/elements/**/*.html',
+      '!app/elements/nvd3-candle-stick-bar/**/*',
+      '!app/elements/firebase-element/**/*',
+
+      // TODO move icaljs to a dependence of i-calendar
+      '!app/elements/i-calendar/ical.js',
       'gulpfile.js'
     ])
     .pipe($.jshint.extract()) // Extract JS from .html files
@@ -246,9 +251,13 @@ gulp.task('serve', ['styles', 'elements', 'images'], function () {
     }
   });
 
+  // https://browsersync.io/docs/options
   browserSync({
     port: 5000,
     notify: false,
+
+    // https://browsersync.io/docs/options#option-ghostMode
+    ghostMode: false,
     logPrefix: 'PSK',
     snippetOptions: {
       rule: {

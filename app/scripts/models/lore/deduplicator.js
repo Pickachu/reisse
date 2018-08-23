@@ -2,6 +2,19 @@
 
 window.Lore || (window.Lore = stampit());
 
+
+/**
+ * Lore.deduplicator
+ *
+ * Very hardcore only id based deduplicator, use when you are almost sure
+ * that ocurrences with same provider id can be Removed
+ *
+ * Snippet:
+ * await app.fetch();
+ * dedupper = Lore.deduplicator({location: app.location, ocurrences: app.ocurrences});
+ * dedupper._deduplicate(dedupper._findDuplicates(14000));
+ *
+ */
 Lore = Lore.static({
   deduplicator: stampit({
     methods: {
@@ -12,19 +25,32 @@ Lore = Lore.static({
         });
       },
       _findDuplicates (start) {
-        let space, duplicates = [];
+        let space, duplicates = [], stored = [];
+
         space = this.ocurrences.slice(start, this.ocurrences.length - 1);
 
-        space.forEach((uncertified, index) => {
-          if (!uncertified.provider) return console.warn(`No provider found for ocurrence. ${uncertified.name}`);
-          let result = this.ocurrences.findIndex((other) => other.provider && other.provider.id === uncertified.provider.id);
+        if (space.filter(({provider}) => provider).length !== space.length) {
+          console.warn(`Lore.deduplicator: skipped ${space.filter(({provider}) => provider).length - space.length} unidentifiable ocurrences.`);
+        }
 
-          if (result != start + index) {
-            duplicates.push(uncertified.provider.id);
-          }
+        space
+          .filter(({provider}) => provider)
+          .map(({provider}) => provider.id)
+          .forEach((unverified, index) => {
+            if (duplicates.includes(unverified)) return; // Skip already found results
+
+            let results = this.ocurrences
+              .filter(({provider}) => provider && provider.id === unverified)
+              .map(({provider: {id}}) => id);
+
+            if (results.length == 2) {
+              duplicates.push(results[0]);
+            } else if (results.length > 2) {
+              throw new TypeError('Too many duplicates, dont know how to deal');
+            }
         });
 
-        duplicates
+        return duplicates;
       },
       _deduplicate (duplicates) {
         let query, deduplicate;
@@ -33,15 +59,18 @@ Lore = Lore.static({
           let duplicate = duplicates.shift();
           if (!duplicate) return console.log('lore.deduplicate: finished removing duplicates');
 
-          let query = new Firebase(this.location + '/ocurrences').orderByChild('provider/id').equalTo(duplicate).limitToLast(2);
+          // TODO explict by date sorting
+          let query = new Firebase(this.location)
+            .child('lore/ocurrences').orderByChild('provider/id')
+            .equalTo(duplicate).limitToLast(2);
 
           query.once('value', (snapshot) => {
             if (snapshot.numChildren() < 2) {
               console.warn('lore.deduplicate: Invalid duplicated item!');
               return deduplicate();
             }
-            let duplicates = snapshot.val(), duplicated = Object.keys(duplicated)[0]
 
+            let duplicates = snapshot.val(), duplicated = Object.keys(duplicates)[0]
             snapshot.ref().child(duplicated).remove((error) => {
               if (!error) {
                 console.log('lore.deduplicate: Removed duplicated', duplicated, duplicates[duplicated].name);
@@ -54,7 +83,7 @@ Lore = Lore.static({
           });
         }
 
-        deduplicate()
+        deduplicate();
       }
     }
   })

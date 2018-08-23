@@ -39,7 +39,7 @@ Classifier.add(stampit({
       }
 
       // Train network
-      let learning = this.perceptron.trainer.train(set, {iterations: 500, log: 100, rate: 0.01});
+      let learning = this.perceptron.trainer.train(set, {iterations: 200, log: 50, rate: 0.01});
 
       this.learned = true;
 

@@ -1,4 +1,6 @@
-'use strict'
+/* globals moment, Classifier  */
+
+'use strict';
 
 // = Day Time / Meal Classifier
 Classifier.add(stampit({
@@ -49,15 +51,15 @@ Classifier.add(stampit({
       }
 
       // Train network
-      this.learned = true
-      return this._train(set, {iterations: 30, log: 5, rate: 0.7});
+      this.learned = true;
+      return this._train(set, {iterations: 20, log: 2, rate: 0.7});
     },
 
     // Receives an array of behaviors
     // predict the next meal hour time given the whole set of previous behaviors
     predict(behaviors, options) {
-      if (!options) {options = {}};
-      if (options.limit) {behaviors = [behaviors[behaviors.length - 1]]}
+      if (!options) {options = {};}
+      if (options.limit) {behaviors = [behaviors[behaviors.length - 1]];}
 
       return _(behaviors)
         .filter((b) => b.activity && b.activity.type === 'meal' )
@@ -84,7 +86,7 @@ Classifier.add(stampit({
         .slice(- this.SAMPLE_SIZE)
         // TODO threat cases where there is not eight meal records!
         .thru(this.mapper.input.bind(this.mapper))
-        .value()
+        .value();
 
       if (input.length < (this.SAMPLE_SIZE)) {
         throw new TypeError('At least ' + this.SAMPLE_SIZE + ' meals are necessary!');
@@ -95,7 +97,7 @@ Classifier.add(stampit({
         input.push(last[0]);
         input.shift();
         return last;
-      }
+      };
 
       let last = next();
       while (!limitReached.call(this, last)) {

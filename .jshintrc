@@ -2,6 +2,7 @@
   "esnext": true,
   "newcap": false,
   "expr"  : true,
+  "strict": "implied",
   "globals": {
     "console": false,
     "require": false,

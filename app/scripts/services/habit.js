@@ -32,8 +32,8 @@ const habits = stampit({
         return habitualizer.habitualize(ocurrences, context);
       });
 
-      // TODO return only habits
-      return Promise.all(this.habitualizations).then(() => this.ocurrences);
+      // TODO return only habits and not all ocurrences
+      return Promise.all(this.habitualizations).then(() => ocurrences);
     },
     when (name) {
       let habitualizer = this.habitualizers.findIndex((habitualizer) => habitualizer.name == name);

@@ -84,6 +84,7 @@
       Lore.synchronize();
     };
 
+    // Move to the data source service
     app.fetch = function () {
       console.log("app: fetch firebase records");
       if (this.ocurrences && this.ocurrences.length) return Promise.resolve(this.ocurrences);
@@ -101,7 +102,7 @@
         )
     };
 
-    // Move to classifier manager
+    // Move to classifier app service
     app.learning = false;
     app.learn = function () {
       this.learning = true;
@@ -114,13 +115,19 @@
       // this.unclassified = {events: Re.unclassified};
     };
 
+    // Move to classifier app service
     app.predict = function () {
-      Re.lisse(Re.estimators.ocurrences)
+      Re.lisse(Re.estimators.ocurrences.concat([]))
         .then((events) => {
-          this.linkEvents(this.ocurrences, events, ['predictions']);
-          this.prediction = { events: events };
+          // this.linkEvents(this.ocurrences, events, ['predictions']);
+          this.prediction = { events };
         });
     };
+
+    // Move to calendar view model
+    app.setTimelineEvents = (events) => {
+      return this.prediction = { events };
+    }
 
     app.linkEvents = function (ocurrences, events, prefix) {
         if (!Array.isArray(prefix)) throw new TypeError("app.linkEvents: Prefix must be an array.");

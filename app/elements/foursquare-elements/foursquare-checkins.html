@@ -69,11 +69,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         };
 
         // FIXME improve timestamp to second conversion
-        this.afterTimestamp  && (params.afterTimestamp  = Math.floor(this.afterTimestamp.getTime()  / 1000))
-        this.beforeTimestamp && (params.beforeTimestamp = Math.floor(this.beforeTimestamp.getTime() / 1000))
-        this.limit           && (params.limit           = this.limit )
-        this.offset          && (params.offset          = this.offset)
-        this.sort            && (params.sort            = this.sort )
+        this.afterTimestamp  && (params.afterTimestamp  = Math.floor(this.afterTimestamp.getTime()  / 1000));
+        this.beforeTimestamp && (params.beforeTimestamp = Math.floor(this.beforeTimestamp.getTime() / 1000));
+        this.limit           && (params.limit           = this.limit );
+        this.offset          && (params.offset          = this.offset);
+        this.sort            && (params.sort            = this.sort );
 
         return params;
       },
@@ -98,12 +98,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           case 403:
             this.fire('error', detail);
             break;
+          // Usually happens on quota exceded
+          case 429:
+            this.fire('error', detail);
+            break;
           default:
             throw Error(`Received unhandled failure status code ${request.status}.`);
         }
       },
       _sortChanged (current, old) {
-        let allowed = ['oldestfirst', 'newestfirst', undefined, null]
+        let allowed = ['oldestfirst', 'newestfirst', undefined, null];
         if (!allowed.includes(current)) {
           this.sort = old;
           throw new TypeError("Sort option must be one of: " + allowed.join(','));

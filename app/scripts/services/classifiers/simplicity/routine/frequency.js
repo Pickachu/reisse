@@ -1,4 +1,5 @@
-  'use strict'
+/* globals moment, Classifier  */
+'use strict';
 
 // = Frequency Classsifier
 // Frequency is how many ocurrences happen per amount of time
@@ -19,7 +20,7 @@ Classifier.add(stampit({
       // let twoMothsAgo = Date.now() - 8 * 30 * 24 * 60 * 60 * 1000;
       // this.timeCap = new Date(twoMothsAgo);
     },
-    
+
     learn(behaviors) {
       let mapper, set;
 
@@ -41,7 +42,7 @@ Classifier.add(stampit({
         }).value();
 
       // last learning example does not exist
-      set.pop()
+      set.pop();
 
       // Train network
       let learning        = this.network.trainer.train(set, {iterations: 100, log: 100});
@@ -83,7 +84,7 @@ Classifier.add(stampit({
       return this.learn(performatable).then((learning) => {
         mapper   = learning.mapper;
         let species = mapper.species;
-        columns = species.map((specie) => {return {key: specie, values: []}});
+        columns = species.map((specie) => ({key: specie, values: []}));
 
         _(performatable)
           // FIXME group by center of duration
@@ -107,8 +108,8 @@ Classifier.add(stampit({
           });
 
         graphs.push({data: columns, meta: {title: 'Activity Type by Week Index'}, type: 'multi-bar'});
-        columns = species.map((specie) => {return {key: "Actual " + specie, values: []}});
-        columns = columns.concat(species.map((specie) => {return {key: "Predicted " + specie, values: []}}));
+        columns = species.map((specie) => ({key: "Actual " + specie, values: []}));
+        columns = columns.concat(species.map((specie) => ({key: "Predicted " + specie, values: []})));
 
         _(performatable)
           .sortBy('completedAt')
@@ -175,7 +176,7 @@ Classifier.add(stampit({
         .toPairs()
         .each((pair, index, pairs) => {
           let splitted = pair[0].split('-'), inputs = [], specie = species.indexOf(splitted.pop());
-          maximums[specie] = Math.max(pair[1].length, maximums[specie] || 0)
+          maximums[specie] = Math.max(pair[1].length, maximums[specie] || 0);
         });
 
 
@@ -196,7 +197,7 @@ Classifier.add(stampit({
           return [pair[1].length / maximums[specie]];
         },
         denormalize (output, specie) { return output * maximums[species.indexOf(specie)]; }
-      }
+      };
     },
 
     quality (predictions) {

@@ -1,5 +1,5 @@
+/* globals Context, Re  */
 'use strict';
-
 
 Context.add(stampit({
   refs: {

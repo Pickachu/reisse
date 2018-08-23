@@ -55,10 +55,12 @@ Classifier.add(stampit({
 
       predictions = _(behaviors)
         .sortBy('context.calendar.now')
+
+        // TODO reduce cyclomatic complexity
         .map((behavior) => {
           let activityType = behavior.activity && behavior.activity.type, context = behavior.context;
 
-          if (!context.calendar.now) return this.skips.push(behavior);
+          if (!context.calendar.now) return this.skips.push(behavior), 0.5;
 
           if (activityType == 'meal') {
             last.satiety  = mapper.denormalize(this.perceptron.activate(mapper.input(behavior)));
@@ -66,7 +68,7 @@ Classifier.add(stampit({
             return last.satiety / mapper.edges.maximumSatiety; // TODO figure out how much hunger someone feels while eating (satiation)
           } else {
             // TODO better criterion to skip until first meal
-            if (!last.calendar.now   ) return this.skips.push(behavior);
+            if (!last.calendar.now   ) return this.skips.push(behavior), 0.5;
 
             if (behavior.features.hunger) {
               let satiety = (last.satiety - (context.calendar.now - last.calendar.now) / 1000) / mapper.edges.maximumSatiety;

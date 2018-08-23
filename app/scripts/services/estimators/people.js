@@ -44,12 +44,14 @@ Estimator.add(stampit({
         //  - Set time to ocurrence start time
         // 3. Go to next checkin
 
+        // TODO make this code more readable
         let next = () => {
           this._fetchCheckinsWithPeople(cursor)
             .then((checkins) => {
               checkins.forEach((checkin) => {
                 let createdAt = checkin.createdAt * 1000,
                   // TODO query in relisse people database for foursquare friends
+                  // TODO parse checkin.entities attribute (it comes with facebook people)
                   people = checkin.with.map(Person.fromFoursquare, Person).reduce((a, p) => ((a[p.provider.id] = p), a), {inferred: true});
 
                 while (cursor < createdAt) {
@@ -73,7 +75,33 @@ Estimator.add(stampit({
                 this.currentPeople = visit.people;
                 resolve(ocurrences);
               }
-            }, reject);
+
+            // TODO improve foursquare elements error api
+          }, ({detail: {request}}) => {
+              const meta = request.xhr.response.meta;
+              let message;
+
+              switch (meta.errorType) {
+                case 'rate_limit':
+                  message = 'estimators.people: foursquare is currently rate limited,';
+                  message += 'people predictions are beign ignored until rate limit fades.';
+                  message += `\nreceived: code '${meta.code}', details: ${meta.errorDetail} `;
+                  console.warn(message);
+                  resolve(ocurrences);
+                  break;
+                case 'quota_exceeded':
+                  message = 'estimators.people: foursquare is currently out of quota ';
+                  message += 'some people predictions were made. the remaining will be finished';
+                  message += 'once quota is restored.';
+                  message += `\nreceived: code '${meta.code}' with details: ${meta.errorDetail} `;
+                  console.warn(message);
+                  resolve(ocurrences);
+                  break;
+                default:
+                  reject(error);
+                  break;
+              }
+            });
         };
 
         // Check if it is possible to deduce people from this visit and people
@@ -97,7 +125,7 @@ Estimator.add(stampit({
         next();
       });
     },
-    // Infer where user is visiting write now
+    // Infer where user is visiting right now
     // definition of start of visit:
     // 1 TODO Idealy the start of the visit is when the user change locations
     // 2 Guess that were a location change sometime between location changes of ocurrences
@@ -125,6 +153,8 @@ Estimator.add(stampit({
       };
     },
     // TODO move this to an element?
+    // this method fetches tha last 250 checkings that have people tagged in it
+    // starting at the since date
     _fetchCheckinsWithPeople(since) {
       if (this.limit < 0) return Promise.resolve([]);
       if (!since) return Promise.resolve([]);
@@ -138,13 +168,13 @@ Estimator.add(stampit({
 
         this._fetchCheckins(query)
           .then((checkins) => {
-            let crowded = checkins.filter((checkin) => checkin.with);
+            let crowded = checkins.filter(this.__checkinHasPeople);
             if (crowded.length) {
               resolve(crowded);
             } else {
               let last = checkins.pop();
               if (last) {
-                this._fetchCheckinsWithPeople(new Date(last.createdAt * 1000)).then(resolve, reject);
+                this._fetchCheckinsWithPeople(new Date(last.createdAt * 1000 + 1000)).then(resolve, reject);
               } else {
                 resolve([]);
               }
@@ -152,6 +182,19 @@ Estimator.add(stampit({
           }, reject);
       });
     },
+
+    __checkinHasPeople(checkin) {
+      if (checkin.with) return true;
+      // TODO accept other entities as user
+      if (checkin.entities) {
+        console.warn(`estimators.people: ignoring checkin with entities (possible with people): ${checkin.id}`);
+        // return checkin.entities.some(({type}) => type === 'facebookUser' )
+      }
+
+      return false;
+    },
+
+    // method not used yet
     _fetchOldestCheckin() {
       return this._fetchCheckins({
         sort: 'oldestfirst',

@@ -32,6 +32,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       window.Firebase && app.fetch();
     });
 
+    page('/suggestion', scrollToTop, function() {
+      app.route = 'suggestion';
+    });
+
     page('/synchronization', scrollToTop, function() {
       app.route = 'synchronization';
     });
