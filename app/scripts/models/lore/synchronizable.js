@@ -11,7 +11,8 @@ Lore = Lore.static({
       } else {
         this.synchronizedAt = new Date(this.synchronizedAt || 0);
       }
-
+      // TODO create integrable with user data, so integrations can access user keys!
+      /// this.integrable = Lore.integrable({ user });
       this.integrable = Lore.integrable();
     },
     static: {
@@ -34,6 +35,7 @@ Lore = Lore.static({
           });
       },
 
+      // TODO use moment to add months
       _createSyncTimeRanges() {
         return new Firebase(this.location)
           .child('synchronizedAt')
@@ -127,6 +129,7 @@ Lore = Lore.static({
               case Object:
                 let object = change.value;
                 object.toJSON && (object = object.toJSON());
+                // TODO just recurse on the _computeFirebaseChanges method
                 return _.mapValues(object, (value) => (_.isDate(value) && value.getTime()) || value );
               default:
                 throw new TypeError(`Lore._computeFirebaseChanges.<serialize> Unserializable type found ${change.value.constructor}!`);

@@ -1,3 +1,4 @@
+// TODO move this to jawbone integration
 Activity = Activity.static({
   fromJawbone(json) {
     json = Object.assign({}, json);
@@ -25,7 +26,8 @@ Activity = Activity.static({
       };
     }
 
-    json.status = (json.time_completed) ? 'complete' : 'open';
+    // TODO figure out why time_completed is not needed here
+    // json.status = (json.time_completed) ? 'complete' : 'open';
 
     delete json.xid;
     delete json.type;

@@ -167,6 +167,10 @@ Classifier.add(stampit({
           .sortBy('completedAt')
           .value();
 
+        if (!learnable.length) {
+          console.warn(`classifiers.responsibilityArea.performance: learning set is empty!`);
+        }
+
         let mapper = this._createMapper(learnable);
 
         // learning = this.learn(learnable);

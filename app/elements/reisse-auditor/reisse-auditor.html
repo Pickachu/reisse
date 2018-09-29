@@ -22,7 +22,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit [[_format(suggester)]] </paper-button>
       <suggester-sandbox name="{{suggester}}"></suggester-sandbox>
     </template>
-    <h1> Classifiers Audition </h1>suggester
+    <h1> Classifiers Audition </h1>
     <template is="dom-repeat" items="{{classifiers}}" as="classifier">
       <paper-button on-tap="_audit" disabled="[[!ocurrences.length]]"> Audit [[_format(classifier)]] </paper-button>
       <classifier-sandbox name="{{classifier}}"></classifier-sandbox>

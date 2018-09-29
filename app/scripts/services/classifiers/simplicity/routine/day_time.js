@@ -24,7 +24,8 @@ Classifier.add(stampit({
     stage() {
       let Architect   = synaptic.Architect;
 
-      this.activityTypes = ['unknown', 'meal', 'sleep']
+      // TODO get activity types externaly
+      this.activityTypes = ['unknown', 'meal', 'sleep', 'browse']
       this.perceptron    = new Architect.Perceptron(this.INPUT_SIZE, 4, this.activityTypes.length);
       this.learned       = false;
     },
@@ -176,7 +177,7 @@ Classifier.add(stampit({
 
     performate(behaviors) {
       let baseInput = _.fill(Array(this.INPUT_SIZE), 0),
-        hour, hours = 24, fillers, mapper,
+        hour, hours = 24, fillers, mapper, meta,
         types, predictions = [], graphs = [],
         input, output, predicted, actual, prediction,
         columns   = this.activityTypes.map((type) => {return {key: type, values: []}}),
@@ -237,12 +238,18 @@ Classifier.add(stampit({
               });
             });
 
-          graphs.push({data: columns, meta: {title: 'Behavior Completion by Week'}, type: 'multi-bar'});
+          meta = {
+            title: 'Behavior Completion by Week',
+            options: {
+              axis: {x: {axisLabel: 'Week Index'}, y: {axisLabel: 'Total Behaviour Execution Time'}},
+              domains: {y: [0, 50]},
+            }
+          };
+          graphs.push({data: columns, meta, type: 'multi-bar'});
 
 
 
           columns = types.map((type) => {return {key: type, values: []}});
-          let offset  = 0;
 
           _(learnable)
             // .filter((o, index) => index % 100 == 0)
@@ -258,15 +265,25 @@ Classifier.add(stampit({
                 counts[id].forEach((behavior) => {
                   let event = mapper.duration(behavior);
                   if (!event) return;
-                  let midnight = event.start.clone().startOf('day');
+                  const midnight = event.start.clone().startOf('day'),
+                    x = position,
+                    y = moment.duration(event.end.diff(midnight)).as('hours');
+
+                  // // TODO slice long behaviors representations
+                  // if (y > 24) {
+                  //   let unhandled = `Do not showing event ${behavior.name}.`;
+                  //   unhandled += `\nBecause of too big duration (${y} hours)`;
+                  //   console.warn(unhandled);
+                  //   return;
+                  // }
 
                   (columns[index] || columns[0]).values.push({
                     open : 0,
                     close: 0,
                     high : moment.duration(event.end.diff(midnight)).as('hours'),
                     low  : moment.duration(event.start.diff(midnight)).as('hours'),
-                    x    : position,
-                    y    : moment.duration(event.end.diff(midnight)).as('hours')
+                    x    : x,
+                    y    : y
                   });
                 });
 
@@ -274,7 +291,14 @@ Classifier.add(stampit({
             });
 
           columns = columns.filter((column) => column.values.length);
-          graphs.push({data: columns, meta: {title: 'Behavior Duration By Day'}, type: 'candle-stick-bar'});
+          meta = {
+            title: 'Behavior Duration By Day',
+            options: {
+              axis: {x: {axisLabel: 'Day Number'}, y: {axisLabel: 'Hour of the day'}},
+              domains: {y: [0, 24]},
+            }
+          };
+          graphs.push({data: columns, meta, type: 'candle-stick-bar'});
 
 
 

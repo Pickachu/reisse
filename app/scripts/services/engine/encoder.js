@@ -53,7 +53,8 @@ Re.Encoder = stampit({
         // with the final predictable ocurrence set to feed it to the prediction
         // engine. Instead of just mutating the ocurrences array.
         // _habitualEventsFor(range, ocurrences).then((habitualOcurrences) =>
-        _habitualEventsFor(range, ocurrences).then(() =>
+        _habitualEventsFor(range, ocurrences)
+        .then(() =>
           traveler.reduce((events, context, traveler) =>
             this
               .predict(ocurrences, context)
@@ -91,7 +92,7 @@ Re.Encoder = stampit({
                 let seconds = encoded[0].features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
 
                 // By fowarding all available time we stop predicting when it acquires 15 events
-                if (events.length > 8) {
+                if (events.length > 15) {
                   traveler.forward(traveler.available);
                 // By default gets the next context
                 } else {

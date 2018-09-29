@@ -50,6 +50,9 @@ Estimator.add(stampit({
         }
 
         if (ocurrence.activity && (activityType = _.capitalize(ocurrence.type || ocurrence.activity.type))) {
+          if (!this[`for${activityType}`]) {
+            throw new TypeError(`brainCycles estimator not implemented yet for ${activityType}.`);
+          }
           cycles += this[`for${activityType}`](ocurrence);
         }
 
@@ -79,6 +82,7 @@ Estimator.add(stampit({
         return cycles;
       },
 
+      // TODO
       forSleep (sleep) {
         return 0;
       },
@@ -88,6 +92,10 @@ Estimator.add(stampit({
       },
 
       forMeal (meal) {
+        return 0;
+      },
+
+      forBrowse (meal) {
         return 0;
       },
 

@@ -134,27 +134,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               </section>
 
               <integrations-page ocurrences="{{ocurrences}}" data-route="synchronization">
-                <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
                 <!-- <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/ocurrences" data="{{ocurrences}}"></firebase-collection> -->
 
-                <google-signin   client-id="[[google.clientId]]" scopes="https://www.googleapis.com/auth/calendar.readonly  https://www.googleapis.com/auth/contacts.readonly"></google-signin>
-                <fb:login-button scope="public_profile,email,user_events,user_friends"></fb:login-button>
+                <p>
+                  <span>Providers</span>
+                  <google-signin   client-id="[[google.clientId]]" scopes="https://www.googleapis.com/auth/calendar.readonly  https://www.googleapis.com/auth/contacts.readonly"></google-signin>
+                  <fb:login-button scope="public_profile,email,user_events,user_friends"></fb:login-button>
 
-                <!-- TODO insert client ids as parameters -->
-                <asana-signin      authorization="{{authorization}}"></asana-signin>
-                <!-- <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read", "meal_read"]'></jawbone-signin> -->
-                <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
+                  <!-- TODO insert client ids as parameters -->
+                  <asana-signin      authorization="{{authorization}}"></asana-signin>
+                  <!-- <jawbone-signin    authorization="{{upAuthorization}}" scope='["basic_read", "location_read", "sleep_read", "meal_read"]'></jawbone-signin> -->
+                  <foursquare-signin authorization="{{squareAuthorization}}"></foursquare-signin>
 
-                <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
-                  Firebase Ready ([[areas.length]] - [[ocurrences.length]])
-                </paper-button>
+                </p>
 
                 <p>
+                  <firebase-collection location="https://boiling-fire-6466.firebaseio.com/lore/areas" data="{{areas}}"></firebase-collection>
+
+                  <span>Areas:</span>
                   <template is="dom-repeat" items="{{areas}}" as="area">
                     <span>{{area.name}}</span> |
                   </template>
                 </p>
-                <paper-button on-tap="fetch">Fetch</paper-button>
+
+
+                <paper-button on-tap="integrate" title="click to synchronize current data to firebase">
+                  Synchronize integrations ([[areas.length]] - [[ocurrences.length]])
+                </paper-button>
+
+                <paper-button on-tap="fetch">Fetch ocurrence records</paper-button>
+                <!-- TODO create deduplicator button -->
+                <!-- TODO create synchronization range controls -->
+                <paper-button disabled>Deduplicate </paper-button>
               </integrations-page>
 
               <section data-route="performance">
@@ -172,6 +183,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <section data-route="suggestions">
                 <section>
                   <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
+                  <!-- Will be mainly used to configure suggesters -->
                   <reisse-suggesters-section></reisse-suggesters-section>
                 </section>
               </section>
@@ -201,8 +213,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <asana-workspace workspace-id="1434006482426" authorization="{{authorization}}"></asana-workspace>
       <jawbone-element limit="50" authorization="{{upAuthorization}}"></jawbone-element>
       <things-element src="sources/things.json"></things-element>
-      <foursquare-venues authorization="{{squareAuthorization}}"></foursquare-venues>
-      <foursquare-checkins authorization="{{squareAuthorization}}"></foursquare-checkins>
+      <foursquare-venues authorization="[[squareAuthorization]]"></foursquare-venues>
+      <foursquare-checkins authorization="[[squareAuthorization]]"></foursquare-checkins>
+      <!-- TODO make oauth2 authorization for rescue time (have to send email to them) -->
+      <rescue-time-analytics endpoint="/rescue-time/anapi/data"></rescue-time-analytics>
       <unplugg-element></unplugg-element>
 
       <facebook-sdk app-id="1620595611520205"></facebook-sdk>
@@ -234,11 +248,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/behavior/ocurrence.js"></script>
     <script src="scripts/models/behavior/ocurrence/task.js"></script>
     <script src="scripts/models/behavior/ocurrence/activity.js"></script>
-    <script src="scripts/models/behavior/ocurrence/activity/jawbone.js"></script>
     <script src="scripts/models/area.js"></script>
     <script src="scripts/models/person.js"></script>
-    <script src="scripts/models/concerns/parsers/jawbone.js"></script>
 
+
+    <!-- Lore sincronization and integration management layer -->
+    <script src="scripts/models/concerns/parsers/jawbone.js"></script>
+    <script src="scripts/models/concerns/parsers/rescue-time.js"></script>
+    <script src="scripts/models/concerns/parsers/rescue-time/video-parser.js"></script>
+    <script src="scripts/models/concerns/parsers/activity/jawbone.js"></script>
+    <script src="scripts/models/concerns/parsers/activity/rescue-time.js"></script>
     <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
     <script src="scripts/models/lore/synchronizerable.js"></script>
@@ -249,7 +268,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <!-- TODO reactivate when jawbone service backs up -->
     <!-- <script src="scripts/models/lore/integrations/jawbone.js"></script> -->
     <script src="scripts/models/lore/integrations/i-calendars.js"></script>
+    <script src="scripts/models/lore/integrations/rescue-time.js"></script>
     <script src="scripts/models/lore/integrations/google.js"></script>
+    <script src="scripts/models/lore/integrations/google/takeout/my-activity.js"></script>
     <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/app.js"></script>

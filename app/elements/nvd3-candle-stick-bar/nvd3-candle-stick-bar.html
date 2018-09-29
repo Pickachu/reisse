@@ -70,12 +70,8 @@ Data Format:
           type: Object,
           value: function() {
             return nv.models.candlestickBarChart()
-              .x(function(d) {
-                return d.x
-              })
-              .y(function(d) {
-                return d.y
-              });
+              .x((d) => d.x)
+              .y((d) => d.y);
           }
         },
 

@@ -15,11 +15,26 @@ Estimator.add(stampit({
       return this.when('location').then(this.inferActualPeople.bind(this));
     },
 
+    // TODO sort by start and end times
+    // TODO limit time of inferrement to 12 hours
+    getUncrowed(occurrences) {
+      return _(occurrences)
+        .filter(({start}) => start ? start.toString() !== 'Invalid Date' : true)
+        .tap((filtered) => {
+          const difference = occurrences.length - filtered.length;
+          if (difference !== 0) {
+            console.warn(`estimators.people: getUncrowed: skipded ${difference} occurences with invalid start date. (reimport to fix)`);
+          }
+        })
+        .sortBy('start')
+        .value();
+    },
+
     // TODO query facebook checkins
     // TODO query facebook posts with people
     inferActualPeople (ocurrences) {
       return new Promise((resolve, reject) => {
-        let uncrowded,
+        let uncrowded = this.getUncrowed(ocurrences),
           visit = {venue: {id: null}},
           ocurrence = Ocurrence({
             start: new Date(0), end: new Date(0), provider: {},
@@ -29,10 +44,6 @@ Estimator.add(stampit({
           // Main time cursor used to track witch point in time we are to use as
           // reference for ocurrences, checkins, and visits.
           cursor = new Date(0); // TODO start date at foursquare creation
-
-        // TODO sort by start and end times
-        // TODO limit time of inferrement to 12 hours
-        uncrowded = _(ocurrences).sortBy('start').value();
 
         // 1. Get checkin with people that happened at `some time`
         // 2. While time is less then next checkin with people
@@ -143,7 +154,7 @@ Estimator.add(stampit({
       //   end = ocurrence.end || ocurrence.start; // TODO ocurrence.features.end.actual
 
       let start = moment(frame.start).subtract(20, 'minutes').toDate(),
-      end   = moment(frame.end  ).add(     20, 'minutes').toDate();
+          end   = moment(frame.end).add(      20, 'minutes').toDate();
 
       return {
         venue : venue,
@@ -215,7 +226,7 @@ Estimator.add(stampit({
         provider.addEventListener('error', reject);
 
         if (query) {
-          provider.beforeTimestamp = query.beforeTimestamp;
+          // provider.beforeTimestamp = query.beforeTimestamp;
           provider.afterTimestamp  = query.afterTimestamp;
           provider.limit           = query.limit;
           provider.sort            = query.sort;

@@ -76,7 +76,7 @@ Classifier.add(stampit({
         .value());
     },
     performate(behaviors) {
-      let mapper, graphs = [], data = [], columns = [],
+      let mapper, graphs = [], data = [], columns = [], meta,
         performatable = this.performatableSet(behaviors);
 
       this.stage();
@@ -107,7 +107,11 @@ Classifier.add(stampit({
             });
           });
 
-        graphs.push({data: columns, meta: {title: 'Activity Type by Week Index'}, type: 'multi-bar'});
+        meta = {
+          title: 'Activity Type by Week Index',
+          options: { axis: {x: {axisLabel: 'Week Index'}, y: {axisLabel: 'Count of Activities of Type'}}, }
+        };
+        graphs.push({data: columns, meta, type: 'multi-bar'});
         columns = species.map((specie) => ({key: "Actual " + specie, values: []}));
         columns = columns.concat(species.map((specie) => ({key: "Predicted " + specie, values: []})));
 
@@ -139,7 +143,11 @@ Classifier.add(stampit({
             });
           });
 
-        graphs.push({data: columns, meta: {title: 'Activity Type by Week Index'}, type: 'multi-bar'});
+        meta = {
+          title: 'Predicted Activity Type by Week Index',
+          options: { axis: {x: {axisLabel: 'Week Index'}, y: {axisLabel: 'Count of Activities of Type'}}, }
+        };
+        graphs.push({data: columns, meta, type: 'multi-bar'});
 
         // learning = this.learn(performatable);
         // mapper   = learning.mapper;
@@ -167,7 +175,8 @@ Classifier.add(stampit({
     },
     // Assumes behaviors sorted by completedAt date
     _createMapper (behaviors) {
-      let maximums = {}, species = ['unknown', 'meal', 'sleep'];
+      // TODO compute species from behavior set
+      let maximums = {}, species = ['unknown', 'meal', 'sleep', 'browse'];
       // FIXME user ocurrence specie instead of activity type
       // FIXME group by center of duration
       // FIXME create a new entity that represents a group of ocurrences

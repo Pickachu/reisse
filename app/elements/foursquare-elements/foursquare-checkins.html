@@ -52,11 +52,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (!userId) return;
 
         this.debounce('_fetch', () => {
-          let params = this._computeParams(authorization),
-          api = this.$.api;
-
-          api.params = params;
-          api.generateRequest();
+          this.$.api.params = this._computeParams(authorization);
+          this.$.api.generateRequest();
         });
       },
 
@@ -68,7 +65,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           v: '20160426'
         };
 
-        // FIXME improve timestamp to second conversion
+        // FIXME improve timestamp to second conversion, by using moment
+        // also remove the -1000 on the foursquare integration sincroniation
         this.afterTimestamp  && (params.afterTimestamp  = Math.floor(this.afterTimestamp.getTime()  / 1000));
         this.beforeTimestamp && (params.beforeTimestamp = Math.floor(this.beforeTimestamp.getTime() / 1000));
         this.limit           && (params.limit           = this.limit );

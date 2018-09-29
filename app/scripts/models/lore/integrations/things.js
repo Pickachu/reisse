@@ -13,6 +13,7 @@ Lore.integrations.push(
       ocurrences = this._timeAwareFilter(ocurrences);
 
       lore.areas      = provider.areas.map(Area.fromThings, Area);
+      // TODO update already existing things tasks!
       lore.ocurrences = lore.ocurrences.concat(ocurrences);
       // TODO: provider.projects.map(Project?.fromThings, Project);
 
@@ -40,14 +41,16 @@ Lore.integrations.push(
             let ocurrences  = this.tasks.map(Task.fromAsana, Task);
             ocurrences      = integration._timeAwareFilter(ocurrences);
 
+            // TODO update already existing asana tasks!
             lore.ocurrences = lore.ocurrences.concat(ocurrences);
             // TODO: provider.projects.map(Project?.fromAsana, Project);
             // TODO: provider.workspaces.map(Workspace?.fromAsana, Workspace?);
             provider.removeEventListener('populated', listener);
-            console.log('service asana finish downloading: ', this.tasks.length);
+            console.log(`service ${integration.name} finish downloading: `, this.tasks.length);
             served(ocurrences);
           };
 
+          // TODO threat listeing errors
           provider.addEventListener('populated', listener);
           provider.limit = 100;
 

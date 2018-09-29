@@ -8,6 +8,8 @@ Lore = Lore.static({
       since: new Date(0)
     },
     methods: {
+      // TODO implement that returns a provider (foursquare element, rescue time element, etc)
+      // getProvider()
       populate () {throw new TypeError("Not implemented yet");}
     }
   }),

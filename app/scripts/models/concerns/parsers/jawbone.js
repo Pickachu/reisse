@@ -1,7 +1,7 @@
 // Jawbone to Reissë type converter
 // https://jawbone.com/up/developer/types
 
-Jawbone = {
+const Jawbone = {
   _mealNameBySubtype: {
     1: 'Breakfast',
     2: 'Lunch',

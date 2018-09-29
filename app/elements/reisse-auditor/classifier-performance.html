@@ -23,7 +23,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Iterations: [[meta.iterations]] <br />
       Error: [[meta.error]]
       Training Time: [[meta.time]]
+      <span>X Domain</span>
+      <div class="horizontal layout">
+        <paper-input type="number" value="{{_domains.x.start}}" label="X Domain Start"></paper-input>
+        &nbsp;
+        <paper-input type="number" value="{{_domains.x.end}}" label="X Domain End"></paper-input>
+      </div>
     </p>
+
     <p>
       <template is="dom-if" if="[[_eq(type, 'scatter')]]">
         <nvd3-scatter id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
@@ -53,13 +60,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         meta: Object,
         data: Object,
+        _domains: {
+          type: Object,
+          value() {return {x: {}}}
+        },
         _graphReady: {
           type: Boolean,
           value: false
         }
       },
 
-      observers: ['_redraw(data, _graphReady)'],
+      observers: ['_redraw(data, _graphReady, _domains.*)'],
 
       listeners: {
         'dom-change': '_handleGraphAttachement'
@@ -72,10 +83,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         chart.data = data;
         chart.generateChart();
 
-        if (model.stacked) { model.stacked(true); }
 
         if (this.meta && this.meta.options) {
           let options = this.meta.options;
+
           if (options.axis) {
             if (options.axis.x) {
               model.xAxis.options(options.axis.x);
@@ -84,11 +95,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               model.yAxis.options(options.axis.y);
             }
           }
+
+          if (options.domains) {
+            if (options.domains.y) {
+              model.yDomain(options.domains.y);
+            }
+          }
+        }
+
+        if (this._domains) {
+          const {start, end} = this._domains.x;
+          if (isFinite(+start) && isFinite(+end) && +start < +end) {
+            model.xDomain([+start, +end]);
+          } else {
+            model.xDomain(null);
+          }
         }
 
         if (model.useInteractiveGuideline) {
           model.useInteractiveGuideline(true);
         }
+
+        model.stacked && model.stacked(true);
 
         model.update && model.update();
       },

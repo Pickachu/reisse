@@ -109,6 +109,8 @@ var ocurrenceable = stampit({
 
       return Ocurrence(json);
     },
+
+    // TODO formalize ocurrence parsing! perhaps from type attribute?
     fromJSON (json) {
       json = _.cloneDeep(json);
 
@@ -123,6 +125,9 @@ var ocurrenceable = stampit({
           return Task.fromJSON(json);
         case 'jawbone':
           // Current pure activity types: sleep, meal
+          return Activity.fromJSON(json);
+        case 'rescue-time':
+          // Current pure activity categories: video
           return Activity.fromJSON(json);
         case 'i-calendar':
           if (json.status !== 'cancelled') {

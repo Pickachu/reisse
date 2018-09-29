@@ -24,27 +24,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <paper-datatable-card header="Ocurrence library" page-size="30" data-source="[[dataSource]]" id-property="__firebaseKey__">
       <div toolbar-main style="padding: 2em;">
-        <paper-tabs selected="{{providerName}}" attr-for-selected="name">
-          <paper-tab name="any">Any</paper-tab>
-          <paper-tab name="asana">Asana</paper-tab>
-          <paper-tab name="things">Things</paper-tab>
-          <paper-tab name="i-calendar">ICalendar</paper-tab>
-          <paper-tab name="reisse">Relissë</paper-tab>
-          <paper-tab name="jawbone">Jawbone</paper-tab>
-          <paper-tab name="foursquare">Foursquare</paper-tab>
-          <paper-tab name="facebook">Facebook</paper-tab>
-        </paper-tabs>
+        <paper-dropdown-menu label="Provider">
+          <paper-listbox selected="{{providerName}}" attr-for-selected="name" class="dropdown-content">
+            <paper-item name="any">Any</paper-item>
+            <paper-item name="asana">Asana</paper-item>
+            <paper-item name="things">Things</paper-item>
+            <paper-item name="i-calendar">iCalendar</paper-item>
+            <paper-item name="reisse">Relissë</paper-item>
+            <paper-item name="jawbone">Jawbone</paper-item>
+            <paper-item name="foursquare">Foursquare</paper-item>
+            <paper-item name="facebook">Facebook</paper-item>
+            <paper-item name="rescue-time">Rescue Time</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
 
-        <paper-tabs selected="{{statusName}}" attr-for-selected="name">
-          <paper-tab name="any">Any</paper-tab>
-          <paper-tab name="open">Open</paper-tab>
-          <paper-tab name="confirmed" title="status not confirmed as an status yet on data model">Confirmed</paper-tab>
-          <paper-tab name="completed">Completed</paper-tab>
-        </paper-tabs>
+        <paper-dropdown-menu label="Status">
+          <paper-listbox selected="{{statusName}}" attr-for-selected="name" class="dropdown-content">
+            <paper-item name="any">Any</paper-item>
+            <paper-item name="open">Open</paper-item>
+            <paper-item name="confirmed" title="status not confirmed as an status yet on data model">Confirmed</paper-item>
+            <paper-item name="completed">Completed</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
       </div>
 
       <paper-datatable>
-        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Firebase Key" sortable align="center" style="min-width: 40px" sorted></paper-datatable-column>
+        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Firebase Key" sortable align="center" style="min-width: 40px"></paper-datatable-column>
 
         <!-- TODO figure out why sort attribute does not work
         <paper-datatable-column header="Provider Id" property="provider" type="Object" sortable align="center" sort="{{_providerSorter}}">
@@ -54,7 +59,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-datatable-column> -->
         <paper-datatable-column header="Name" type="String" sortable property="name" ></paper-datatable-column>
         <paper-datatable-column header="Status" property="status" type="String" sortable ></paper-datatable-column>
-        <paper-datatable-column header="Created At" type="Date" sortable property="createdAt"></paper-datatable-column>
+        <paper-datatable-column header="Created At" type="Date" property="createdAt" sortable sorted format-value="[[_formatDateValue]]"></paper-datatable-column>
+        <paper-datatable-column header="Completed At" type="Date" property="completedAt" sortable format-value="[[_formatDateValue]]"></paper-datatable-column>
         <paper-datatable-column property="simplicity" header="Simplicity"></paper-datatable-column>
       </paper-datatable>
 
@@ -70,7 +76,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       properties: {
         providerName: {
           type: String,
-          value: 'i-calendar'
+          value: 'rescue-time'
         },
         statusName: {
           type: String,
@@ -84,11 +90,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         dataSource: {
           type: Object,
           computed: '_computeDataSource(ocurrences, filter, ocurrences.length)'
+        },
+
+        _formatDateValue: {
+          type: Function,
+          value() {
+            return function formatDateValue (value) { return moment(value).format('L LTS'); };
+          },
         }
       },
 
       // TODO alert full ocurrence json on row tap
       // app.ocurrences.find(({__firebaseKey__}) => __firebaseKey__ === '-LKa6nhasMyXgluXCEwB');
+
+      attached() {
+        // Forward filter
+        this.async(() => {
+
+        })
+      },
 
       _computeFilter (provider, status) {
         let matcher = {};
@@ -101,9 +121,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _compact (ocurrence) {
         ocurrence.providerName = ocurrence.provider.name;
         ocurrence.simplicity   = ocurrence.features.simplicity.actual;
-      },
-      _formatCreatedAt (value) {
-        return moment(value).valueOf();
       },
       _providerSorter(a, b) {
         debugger

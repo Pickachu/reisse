@@ -7,7 +7,7 @@ Lore.integrations.add({
   methods: {
     populate (lore) {
       return this._friendsFromEvents()
-        .then((friends) => lore.friends = friends, lore);
+        .then((friends) => lore.people = friends, lore);
     },
     _friendsFromEvents (lore) {
       let provider = document.querySelector('google-people');

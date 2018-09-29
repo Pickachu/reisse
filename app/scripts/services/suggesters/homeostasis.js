@@ -2,14 +2,14 @@
 
 Suggester.add(stampit({
   refs: {
-    name: 'activity'
+    name: 'homeostasis'
   },
   methods: {
     // TODO add when method to suggesters
     suggest (behaviors, context) {
       const suggestions = [];
 
-      this.stage();
+      this.stage(behaviors);
 
       // Suggest todays sleep activity
       suggestions.push(this.sleep(behaviors, context));
@@ -30,6 +30,8 @@ Suggester.add(stampit({
         // dayTime   : Classifier.get('dayTime/meal'),
         frequency : Classifier.get('frequency')
       };
+
+      // this.ensureClassifiers();
     },
 
     // Suggest optimal sleep and nap times

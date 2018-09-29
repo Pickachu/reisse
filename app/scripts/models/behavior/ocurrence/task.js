@@ -106,6 +106,7 @@ var taskable = stampit({
         return this.fromJSON(json);
       },
       fromJSON (json) {
+        // TODO figure out why pure composition is not solving this!
         let activity = Activity.fromJSON(json);
         activity.cancelledAt && (activity.cancelledAt = new Date(activity.cancelledAt));
         return Task(activity);

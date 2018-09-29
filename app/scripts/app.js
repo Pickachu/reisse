@@ -85,11 +85,13 @@
     };
 
     // Move to the data source service
+    app.DEFAULT_OCURRENCE_SET_SIZE = 15000;
+
     app.fetch = function () {
       console.log("app: fetch firebase records");
       if (this.ocurrences && this.ocurrences.length) return Promise.resolve(this.ocurrences);
       return Promise.resolve(new Firebase('https://boiling-fire-6466.firebaseio.com/lore/ocurrences')
-        .limitToLast(15000).once('value'))
+        .limitToLast(app.DEFAULT_OCURRENCE_SET_SIZE).once('value'))
         .then((snapshot) =>
           Promise.resolve(_.map(snapshot.val(), (ocurrence, firebaseKey) => {
               ocurrence.__firebaseKey__ = firebaseKey;

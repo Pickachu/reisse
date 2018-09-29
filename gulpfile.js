@@ -251,6 +251,18 @@ gulp.task('serve', ['styles', 'elements', 'images'], function () {
     }
   });
 
+  console.log(https.globalAgent);
+  var rescueTime = proxyMiddleware('/rescue-time', {
+    target: 'https://www.rescuetime.com',
+    agent  : https.globalAgent,
+    headers: {
+      host: 'www.rescuetime.com'
+    },
+    pathRewrite: {
+      '^/rescue-time'    : ''
+    }
+  });
+
   // https://browsersync.io/docs/options
   browserSync({
     port: 5000,
@@ -273,7 +285,7 @@ gulp.task('serve', ['styles', 'elements', 'images'], function () {
     // https: true,
     server: {
       baseDir: ['.tmp', 'app'],
-      middleware: [ historyApiFallback(), jawbone ],
+      middleware: [ historyApiFallback(), jawbone, rescueTime ],
       routes: {
         '/bower_components': 'bower_components'
       }

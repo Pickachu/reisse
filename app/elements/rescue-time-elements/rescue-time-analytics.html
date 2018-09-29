@@ -1,0 +1,215 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<!-- TODO add moment import to bower_components -->
+
+<dom-module id="rescue-time-analytics">
+  <style> :host { display: none; } </style>
+  <template>
+    <iron-ajax id="api"
+      method="get"
+      url="[[endpoint]]"
+      timeout="10000"
+      on-response="_onResponse"
+      on-error="_onError"
+      ></iron-ajax>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    //
+
+    Polymer({
+      is: 'rescue-time-analytics',
+
+      properties: {
+        model: Array,
+
+        // TODO implement and use rescue-time-signin-aware to remove this attribute
+        endpoint: {
+          type: String,
+          value: 'https://www.rescuetime.com/anapi/data'
+        },
+        key: String,
+        format: {
+          type: String,
+          value: 'json'
+        },
+
+        pagination: Object,
+        retrier: Object,
+
+        // list of parameters: https://www.rescuetime.com/anapi/setup/documentation#analytic-api-reference
+        perspective: String,
+        resolutionTime: String,
+        restrictGroup: String,
+        restrictBegin: Date,
+        restrictEnd: Date,
+        restrictKind: String,
+        restrictThing: String,
+        restrictThingy: String
+      },
+
+      fetch() {
+        this.model = [];
+        this.pagination = null;
+        this.retrier = null;
+        return this._fetch(this.key);
+      },
+
+      _fetch(key) {
+        if (!key) return;
+
+        this.debounce('_fetch', () => {
+          if (!this.pagination) { this.paginates(5); }
+          if (!this.retrier) { this._retries({method: this._fetch, args: arguments}); }
+          this.$.api.params = this._computeParams(key);
+          this.$.api.generateRequest();
+        // Give rescue time api some time to cooldown
+        }, 2000);
+      },
+
+      /**
+       * creates a internal paginator for managing request sizes
+       *
+       * @param  {number} size number of page size in days
+       */
+      paginates(size) {
+        if (!this.restrictBegin || !this.restrictEnd || !size) {
+          throw new TypeError(`${this.localName}._fetch: size, restrict begin and end are mandatory`);
+        }
+
+        // TODO implement an property observer and throw an error?
+        if (this.restrictEnd > new Date()) {
+          console.warn(`${this.localName}.paginates: end date is in the future, will override it to now.`);
+          this.restrictEnd = new Date();
+        }
+
+        const self = this,
+        pages = Math.ceil(moment(this.restrictEnd).diff(this.restrictBegin, 'days') / size);
+
+        this.pagination = {
+          page: 0,
+          pages: pages,
+          finished: false,
+          next() {
+            const step = moment(self.restrictBegin).startOf('day').add(this.page * size, 'days'),
+            end = moment.min(step.clone().add(size - 1, 'days'), moment(self.restrictEnd));
+
+            return {
+              // prevent steping into after the end range
+            begin: moment.min(step, end),
+              // prevent overlaping pages
+              end: end
+            };
+          },
+          increment() {
+            this.page += 1;
+            if (this.page === this.pages) { this.finished = true; }
+            self.fire('paged', {pagination: this});
+          }
+        };
+      },
+
+      _retries({method, args, context}) {
+        (context) || (context = this);
+        return this.retrier = {
+          maximum: 5,
+          current: 5,
+          reset() {this.current = this.maximum;},
+          retry() {
+            this.current--;
+            if (this.current <= 0) {
+              throw new TypeError(`${this.localName}.retrier: maximum retries exceeded`);
+            }
+            return method.apply(context, args);
+          }
+        };
+      },
+
+      _computeParams(key) {
+         let params = { key, format: this.format };
+
+        // this.operation
+        // this.version
+        this.perspective && (params.perspective = this.perspective)
+        this.resolutionTime && (params.resolution_time = this.resolutionTime)
+        this.restrictGroup && (params.restrict_group = this.restrictGroup)
+        this.restrictKind && (params.restrict_kind = this.restrictKind)
+        this.restrictThing && (params.restrict_thing = this.restrictThing)
+        this.restrictThingy && (params.restrict_thingy = this.restrictThingy)
+
+        const {begin, end} = this.pagination.next();
+        params.restrict_begin = begin.format('Y-MM-DD');
+        params.restrict_end = end.format('Y-MM-DD');
+
+        return params;
+      },
+      _onResponse ({detail: request}) {
+        const {response} = request
+
+        switch (request.status) {
+          case 200:
+            const attributes = response.row_headers.map(_.ary(_.snakeCase, 1));
+
+            this.model = response.rows.reduce((items, row) => {
+              return items.concat(attributes.reduce((item, name, index) => {
+                return Object.assign(item, {[name]: row[index]});
+              }, {}));
+            }, this.model.concat([]));
+
+
+            if (!this.pagination.finished) {
+              this.pagination.increment();
+              this.retrier.reset();
+              this._fetch(this.key);
+            } else {
+              this.pagination = null;
+              this.retrier = null;
+              this.fire('populated', {model: this.model});
+            }
+            break;
+          default:
+            throw new Error(`Received invalid response code: ${meta.code}.`);
+        }
+      },
+      _onError(event, detail) {
+        let request = detail.request;
+
+        // TODO treat other timeout request status besides GATEWAY_TIMEOUT
+        switch (request.status) {
+          // BAD_GATEWAY
+          // for now it just happens when rescue time api is down
+          case 502:
+            setTimeout(() => {
+              this.retrier.retry();
+              this.fire('retry', detail);
+            // cooldown time for the api
+            }, 2000);
+            break;
+          // GATEWAY_TIMEOUT
+          // this status will be generated by the intentional timeout attribute
+          // recently added on iron-ajax
+          case 504:
+            this.retrier.retry();
+            this.fire('retry', detail);
+            break;
+          default:
+            this.fire('error', detail);
+            throw Error(`Received unhandled failure status code ${request.status}.`);
+        }
+      }
+    });
+  })();
+  </script>
+</dom-module>

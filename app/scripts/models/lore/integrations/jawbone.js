@@ -11,6 +11,8 @@ Lore.integrations.push(
         let provider = document.querySelector('jawbone-element'), since = this.since,
           listener = function (event) {
             console.log('service jawbone finish', this.collectionName);
+            // TODO remove Activity.fromJawbone, map with Jawbone.normalizeType
+            // and then, convert jawbone data to an valid activity with jawbone parser
             let ocurrences  = this.data.map(Activity.fromJawbone, Activity);
             lore.ocurrences = lore.ocurrences.concat(ocurrences);
 

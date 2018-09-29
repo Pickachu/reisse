@@ -32,6 +32,15 @@ var suggestable = stampit({
       let suggester = this.suggesters.findIndex((suggester) => suggester.name == name);
       if (!this.suggestions[suggester]) throw new TypeError(`This suggester ${name} does not return a promise or does not exist.`);
       return this.suggestions[suggester];
+    },
+    ensureClassifiers () {
+      Object.keys(this.classifiers)
+        .forEach((key) => {
+          const classifier = this.classifiers[key];
+          if (!classifier.learned) {
+            console.warn(`[suggester::${this.name}::ensureClassifiers] using untrained classifier: ${classifier.name}`);
+          }
+        });
     }
   },
   static: {
