@@ -1,10 +1,52 @@
-# Think how to predict content absorpion
+# Todos
+# - Predict content absorpion (perhaps with routine? perhaps, phisiology?)
+# ➜ TODO think how to predict content absorpion
+#
+#  - Figure out why youtube videos are outperforming habitual sleep all the time
+#    - Evidences
+#     - Videos win in simplicity and lose in motivation (at 23 o'clock)
+#     - Videos win in routine (at 23 o'clock) because:
+#      - activity type uses a probability map based on timestamp instead of timeslice
+#    - Features to explore to make sleep habit more powerful:
+#     - ✖ Chance (see below)
+#     - ✖ Routine: Activity Type (see below)
+#     - ✖ Routine: Frequency (see below)
+#     - Sensation: Sleepiness
+#     - Location
+#
+#  - (ON HOLD) Figure out what i must do to use activity type as a predictor
+#    ➜ routine activity type classifier can be used inside simplicity classifier to learn activity type daytime and thereby diferentiate browsing from working activities
+#      - Audite activity type (routine) classification of habitual sleep
+#        - the problem: createProbabilityMap receives a timestamp but activityType receives a timeslice
+#  - Figure out why youtube videos are outperforming asana tasks all the time
+#    - It is because asana tasks have anticipation associated with them
 
+# Tested hypothesis
+# ✖ `Use chance feature to diferentiate habitual sleep and youtube videos` (it is more likely for me to sleep given the night context)
+#   - The next step in improving the chance predictor is adding the trigger component (probably by generate an encoding from context and passing as input)
+# ✖ `Use routine activity-type feature to diferentiate habitual sleep and youtube videos` (it is more common to have an activity type of sleep at night than to see videos)
+#   - To improve activity type prediction I need to change it's input to occurrence specie instead of activity type, because i can't generate timeslices from 'open' occurrences yet. Also when species are ready i will be able to guessing occurrence start time, duration and end time based on specie.
+# ✖ `Use routine frequency feature to diferentiate habitual sleep and youtube videos` (it is more frequent to have an sleep at night than to see videos)
+#   - Currently frequency predictor predicts only weekly frequency, and youtube videos are more frequent
+
+# Backlog
+# IDEA use an encoder decoder architeture, consider all data factors, generate an econding for the day and then a decoding (seq2seq)
+# TODO Fix chance predictor: By adding context to its learning as the trigger of behavior fogg model?
+# TODO do not let youtube videos override habitual sleep: increase brain cycles cost according sleepiness, decrease video sensation motivation according sleepiness, think one more option
+# TODO do not use video title as occurrence title
+# TODO create an event type that is called 'Aural Event' (perhaps buff?) or something like that that is for events that lasts more than one day (like Alboomização)
+
+# Thinking pool
 Current conclusion:
- • There is no need to use motivation to predict behavior as of yet, because:
-   - i don't know if motivation will be a factor in dicerning between pursuing predicted ocurrences and suggested occurrences
+
+  - To implement content absorpion predictor i must decide if it will be responsibility area or activity type that will influence anticipation of content absorption.
+    - to use responsibility area i need to map rescue time imported video documents to some responsibility area. I need to use data from my google activity or youtube api.
+    - to use activity type what must i do? routine frequency estimator must be created
+ > There is no need to use motivation to predict behavior as of yet, because:
+   > i don't know if motivation will be a factor in dicerning between pursuing predicted ocurrences and suggested occurrences
    > for now i'm implemeting the content absorption predictor to see what happens
    > and then continuous synchronization system
+
 
 Implemented Predictors:
 
@@ -21,9 +63,9 @@ Subjective motivators and motivations detected by Heitor:
 
   Motivadores?
   • sensação de ter insights ao assistir
-  • sensação antecipada de se tornrnar mais competente
+  • sensação antecipada de se tornar mais competente
 
-Involved Human Strnegth's Forças
+Involved Human Strengths
 
   Uso as forças curiosidade e love of learning para me tornar mais competente
 
@@ -47,7 +89,7 @@ Involved Human Strnegth's Forças
 # Definition 1: general individual difference
 # Definition 2: a universal but individually varying predisposition to engage particular content (e.g., Latin, videogames, music) or well-developed individual interest (Renninger, 1990, 2000).
 
-! TODO list love of learning processes, constructs and mechanisms
+
 ### Conceptual dimensions of some constructs: (how do conceptual dimensions of some constructs of love of learning relates to motivation?)
 
 Rather than list all measures that may include some items that reflect love of learning, some examples of measures are identified here in terms of the theoretical traditions in which they have emerged
@@ -91,3 +133,4 @@ Well-developed individual interest is characterized by a person’s ongoing and 
 # DONE
 
 ## TODO display behavior duration by day graph correctly
+## TODO list some love of learning processes, constructs and mechanisms

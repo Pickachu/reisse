@@ -1,7 +1,7 @@
 'use strict';
 
 
-// Estimate ocurrence duration in seconds
+// Estimate ocurrence duration in milioseconds
 Estimator.add(stampit({
   init () {
       this.durationMap.set('unknowns', []);
@@ -63,6 +63,7 @@ Estimator.add(stampit({
           .then(this.timeFromTagNames.bind(this))
           .then(this.timeFromMealWeight.bind(this))
           .then(this.timeFromRelativeDuration.bind(this))
+          .then(this.timeFromActivityDuration.bind(this))
           .then(infer);
       }
 
@@ -71,12 +72,14 @@ Estimator.add(stampit({
 
     timeFromTagNames (ocurrence) {
       if (Number.isFinite(ocurrence.features.duration.actual)) return ocurrence;
-      if (!ocurrence.tagNames && ocurrence.provider.name == 'things') {
+      if (!ocurrence.tags && ocurrence.provider.name == 'things') {
         this.badTagNames.push(ocurrence);
         return ocurrence;
       }
 
-      let aggregate = ocurrence.tagNames.reduce((total, name) => {
+      // TODO use occurrence instances, and remove optional [] by defining
+      // a default property tags on the occurrence type
+      let aggregate = (ocurrence.tags || []).reduce((total, name) => {
           return total + (this.tagsDurations[name] || 0);
       }, 0);
 
@@ -87,6 +90,8 @@ Estimator.add(stampit({
 
     // Average eating speed:
     // TODO find better eating speed estimations
+    // TODO remember to check if meal weight can predict with accuracy above 90%
+    // the duration of a meal.
     // - https://www.researchgate.net/publication/285674524_Assessment_of_eating_rate_and_food_intake_in_spoon_versus_fork_users_in_a_laboratory_setting
     // - https://www.researchgate.net/publication/301664303_Consumption_with_fork_or_spoon_Effects_on_acute_food_intake_eating_rate_and_palatability
     //   (42 + 67) / 2 = 54.5 g / min
@@ -95,7 +100,7 @@ Estimator.add(stampit({
       if (!ocurrence.activity || ocurrence.activity.type != 'meal') return ocurrence;
       if (!ocurrence.weight) return ocurrence;
 
-      ocurrence.features.duration.actual = (ocurrence.weight / 54.5) * 60;
+      ocurrence.features.duration.actual = (ocurrence.weight / 54.5) * 60 * 1000;
 
       return ocurrence;
     },
@@ -135,6 +140,22 @@ Estimator.add(stampit({
 
       return ocurrence;
     },
+
+    // Watch activities usually have a youtube video bound to them with it's duration
+    // so we can infer here, in order:
+    // TODO remember to check if watch activity duration can predict with accuracy above 90%
+    // TODO 1. video duration + average extra time user expends on video
+    // 2. video duration
+    timeFromActivityDuration (ocurrence) {
+      if (Number.isFinite(ocurrence.features.duration.actual)) return ocurrence;
+      if (!ocurrence.activity || ocurrence.activity.type != 'watch') return ocurrence;
+      if (!Number.isFinite(ocurrence.duration)) return ocurrence;
+
+      ocurrence.features.duration.actual = ocurrence.duration;
+
+      return ocurrence;
+    },
+
     _relativeDurationKnownBounds(unknowns, relativeDuration) {
       let index = unknowns.indexOf(relativeDuration), bounds = {}, i, l, cursor;
 
@@ -187,12 +208,12 @@ Estimator.add(stampit({
   refs: {
     durationMap: new Map(),
     tagsDurations: {
-      "5⃣🕐"       : 5  * 60,
-      "🍅"          : 1 * 30 * 60,
-      "🍅🍅"        : 2 * 30 * 60,
-      "🍅🍅🍅"      : 3 * 30 * 60,
-      "🍅🍅🍅🍅"    : 4 * 30 * 60,
-      "🍅🍅🍅🍅🍅"  : 5 * 30 * 60
+      "5⃣🕐"       : 5 * 60 * 1000,
+      "🍅"          : 1 * 30 * 60 * 1000,
+      "🍅🍅"        : 2 * 30 * 60 * 1000,
+      "🍅🍅🍅"      : 3 * 30 * 60 * 1000,
+      "🍅🍅🍅🍅"    : 4 * 30 * 60 * 1000,
+      "🍅🍅🍅🍅🍅"  : 5 * 30 * 60 * 1000
     },
     name: 'duration'
   }

@@ -6,7 +6,7 @@
 // • Since there are no specific devices to measure/extract belongness values from humans
 // and we are using the BJ Fogg conceptual sensation construct.
 // • The actual belongness value is a prediction based on actual measurable
-// values (visit duration (time stayed on a location) for now) for ocurrences that have happened.
+// values (visit duration (time stayed on a location) for now) for occurrences that have happened.
 Estimator.add(stampit({
   refs: {
     name: 'belongness'
@@ -14,29 +14,32 @@ Estimator.add(stampit({
   init () {},
   methods: {
     estimate() {
-      // let learnable = Re.learnableSet(ocurrences);
-      // this.contextualize(ocurrences);
+      // let learnable = Re.learnableSet(occurrences);
+      // this.contextualize(occurrences);
       return this.when('location').then(this.inferActualBelongness);
     },
 
-    // contextualize (ocurrences) {
+    // contextualize (occurrences) {
     //   let startTime = new Date();
-    //   ocurrences.forEach((ocurrence) => {
+    //   occurrences.forEach((ocurrence) => {
     //     // TODO use other property than completedAt, after infering task execution
     //     // by pomodoro duration
     //     ocurrence.context.startTime = ocurrence.completedAt || startTime;
     //   });
     // },
 
-    inferActualBelongness (ocurrences) {
-      ocurrences = Re.learnableSet(ocurrences);
+    inferActualBelongness (occurrences) {
+      // TODO do not access external method here
+      occurrences = Re.learnableSet(occurrences);
 
-      let venues = _(ocurrences).map('context.venue').uniq('name').flatten().cloneDeep(),
+      let venues = _(occurrences).map('context.venue').uniq('name').flatten().cloneDeep(),
       visits = [],
-      first  = ocurrences[0];
+      first  = occurrences[0];
 
-      _(ocurrences)
-        // Only infer actual belongness for past ocurrences
+      if (!occurrences.length) return occurrences;
+
+      _(occurrences)
+        // Only infer actual belongness for past occurrences
         .filter('completedAt')
         .sortBy('completedAt')
         .reduce((accumulator, ocurrence) => {
@@ -73,7 +76,7 @@ Estimator.add(stampit({
           return [visit, ocurrence.context.venue];
         }, [{endedAt: first.completedAt}, first.context.venue]);
 
-      return ocurrences;
+      return occurrences;
     }
   }
 }));

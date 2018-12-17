@@ -48,7 +48,7 @@ const Jawbone = {
     details.asleep_time && (json.start = json.asleepAt = details.asleep_time          * 1000);
     details.awake_time  && (json.end   = json.awakeAt  = details.awake_time           * 1000);
     // duration is in seconds
-    details.duration    && (json.features.duration     = {actual: details.duration});
+    details.duration    && (json.features.duration     = {actual: details.duration * 1000});
 
     if (json.start && json.end) {
       json.status = 'complete';

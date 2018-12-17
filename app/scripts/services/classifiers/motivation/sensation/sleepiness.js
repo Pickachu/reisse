@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 // Predicts current context sleepiness
 // http://super-memory.com/articles/sleep.htm#Borb.C3.A9ly_model
@@ -6,26 +6,22 @@
 //  Circadian Component
 //  TODO: Homeostatic Component
 Classifier.add(stampit({
+  init () { this.stage(); },
   refs: {
-    name: 'sleepiness'
-  },
-  init () {
-    this.stage();
-  },
-  methods: {
+    name: 'sleepiness',
     stage () {
       let Architect   = synaptic.Architect;
 
       // this.perceptron   = new Architect.Perceptron(1, 3, 1);
-      this.sleep = this.sleep ||  Classifier.sleep;
+      this.sleep = this.sleep || Classifier.sleep;
 
       // let twoMothsAgo = Date.now() - 2 * 30 * 24 * 60 * 60 * 1000;
       let twoMothsAgo = Date.now() - 32 * 30 * 24 * 60 * 60 * 1000;
       this.timeCap = new Date(twoMothsAgo);
+      this.learned = null
     },
     learn(behaviors) {
-      let maximumDuration = 0, aDayInSeconds = 24 * 60 * 60,
-        set, learning;
+      let maximumDuration = 0, aDayInSeconds = 24 * 60 * 60, learning;
 
       this.model = {
         durationsByPhase: new Map,
@@ -65,7 +61,7 @@ Classifier.add(stampit({
         }
       };
 
-      set = _(behaviors)
+      const set = _(behaviors)
         // TODO also use naps
         .filter({activity: {type: 'sleep'}})
         .filter((behavior) => behavior.completedAt > this.timeCap)
@@ -118,18 +114,20 @@ Classifier.add(stampit({
 
       // Train network
       // learning = this.perceptron.trainer.train(set, {iterations: 1000, log: 100});
-      learning = {}
-      learning.set = set;
-      // TODO move to _createMapper
-      learning.mapper = {maximumDuration: maximumDuration, aDayInSeconds: aDayInSeconds};
-      learning.sampleSize = set.length;
-      return learning;
+      return this.learned = Object.assign({set,
+        // TODO move to _createMapper
+        mapper: {maximumDuration: maximumDuration, aDayInSeconds: aDayInSeconds},
+        sampleSize: set.length,
+        discards: this.skips.concat([]),
+      });
     },
     // TODO train model until given context day
     // TODO create sleepiness estimator for past ocurrences
     // TODO take into account RPC's phase shifitting effects on today's wake time in relation to previous waking times
-    predict(behaviors) {
-      let now = this.context.calendar.now, sleep,
+    // TODO predict sleepiness for not opened occurrences, currently only returns sleepiness for context
+    // TODO remove this.context, and use only parameter
+    predict(behaviors, {context}) {
+      let now = (context || this.context).calendar.now, sleep,
       phase, awakeTime, pastContext, predicted;
 
       // Discover cicardian day start time
@@ -141,7 +139,7 @@ Classifier.add(stampit({
         return yesterday;
       };
 
-      this.sleep.context = previousDayContext(this.context);
+      this.sleep.context = previousDayContext(context || this.context);
       sleep = this.sleep.predict();
 
       while (sleep.awakeAt && sleep.awakeAt > now) {
@@ -152,7 +150,7 @@ Classifier.add(stampit({
       // Discover current cicardian phase
       awakeTime = (now - sleep.awakeAt) / 1000;
 
-      // - Model currenlty have 48 phases, one for each half hour of the cicardian day
+      // - Model currently have 48 phases, one for each half hour of the cicardian day
       phase     = awakeTime / (0.5 * 60 * 60); // TODO externalize phase normalization to model
 
       // Predict sleepiness for phase

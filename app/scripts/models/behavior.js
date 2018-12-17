@@ -2,12 +2,31 @@
 
 var behavioral = stampit({
     init () {
-      Object.assign(this.features, Feature.many.apply(Feature, [this].concat(behavioral.layers)));
+      Object.assign(this.features, Feature.many.apply(Feature, [this, ...behavioral.layers]));
+
+      // TODO use mobx-state-tree instead of stampit for models
+      if (!this.updatedAt) {
+        console.error(`[behavior::init] updated at attribute is mandatory for synchronization. ${this.__firebaseKey__}`);
+      }
     },
 
     props: {
         features: {},
-        context : {}
+
+        /**
+         * Only for behaviors with status 'complete'. This property holds a copy
+         * of the context instance that this behavior have occurred
+         *
+         * @type {Object}
+         */
+        context : {},
+
+        /**
+         * Array of reasons and stages that this beavior were not used
+         *
+         * @type {Array}
+         */
+        discards: [],
     },
 
     methods: {
@@ -67,6 +86,7 @@ var behavioral = stampit({
         },
 
         // TODO Save behavior specie on database
+        // TODO move to specieable
         createSpecie () {
           var hasher  = Hash.Sim;
           specie      = hasher.simhash(this.name || "");
@@ -75,6 +95,7 @@ var behavioral = stampit({
 
         // Converts feature value to an value between 0 and 1 for the neural net
         // TODO learn to use softmax
+        // TODO treat special cases (Alboomização is an occurrence with 2 week duration and normalizes all durations badly)
         _neuronized (feature, type) {
           let key = `${feature}_${type}`,
            value  = +this.features[feature][type] || 0,
@@ -105,7 +126,11 @@ var behavioral = stampit({
         let layers = [];
         layers = layers.concat(['chance']);
         layers = layers.concat(['motivation', 'simplicity']);
-        layers = layers.concat(['anticipation', 'sensation', 'belongness']);
+        layers = layers.concat([
+          'anticipation', 'sensation', 'belongness',
+          // TODO rename brainCycles to mentalEffort
+          'money', 'time', 'routine', 'brainCycles', 'physicalEffort'
+        ]);
         return layers;
       })()
     }

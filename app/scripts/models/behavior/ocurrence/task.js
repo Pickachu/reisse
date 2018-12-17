@@ -5,13 +5,13 @@ var taskable = stampit({
       // Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles'));
     },
     props: {
-      tagNames: []
+      tags: []
     },
     methods: {
       createSpecie () {
         this.specie = [
           this.name,
-          this.tagNames.join(' ')
+          this.tags.join(' ')
         ];
       }
     },
@@ -49,6 +49,7 @@ var taskable = stampit({
         json.completionDate     && (json.completedAt = json.completionDate);
         json.cancellationDate   && (json.cancelledAt = json.cancellationDate);
         json.notes              && (json.description = json.notes);
+        json.tagNames           && (json.tags        = json.tagNames);
 
 
         // Cleanup

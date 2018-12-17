@@ -85,11 +85,11 @@
     };
 
     // Move to the data source service
-    app.DEFAULT_OCURRENCE_SET_SIZE = 15000;
+    app.DEFAULT_OCURRENCE_SET_SIZE = 150;
 
     app.fetch = function () {
-      console.log("app: fetch firebase records");
-      if (this.ocurrences && this.ocurrences.length) return Promise.resolve(this.ocurrences);
+      console.log("[app] fetch firebase records");
+      if (this.ocurrences && this.ocurrences.length == this.DEFAULT_OCURRENCE_SET_SIZE) return Promise.resolve(this.ocurrences);
       return Promise.resolve(new Firebase('https://boiling-fire-6466.firebaseio.com/lore/ocurrences')
         .limitToLast(app.DEFAULT_OCURRENCE_SET_SIZE).once('value'))
         .then((snapshot) =>
@@ -99,7 +99,7 @@
             }))
         )
         .then((ocurrences) =>
-          console.log(`app: fetched ${ocurrences.length} records`) ||
+          console.log(`[app] fetched ${ocurrences.length} records`) ||
           Promise.resolve(app.ocurrences = ocurrences)
         )
     };
@@ -119,7 +119,7 @@
 
     // Move to classifier app service
     app.predict = function () {
-      Re.lisse(Re.estimators.ocurrences.concat([]))
+      Re.lisse(Re.estimators.occurrences.concat([]))
         .then((events) => {
           // this.linkEvents(this.ocurrences, events, ['predictions']);
           this.prediction = { events };
@@ -150,9 +150,9 @@
     };
 
     app.set('performance', {
-        classifiers  : ['sensation', 'hunger', 'sleep', 'sleepiness',
-          'responsibilityArea', 'simplicity', 'time', 'duration', 'frequency',
-          'dayTime', 'dayTime/meal'],
+        classifiers  : ['chance', 'sensation', 'motivation', 'hunger', 'sleep', 'sleepiness',
+          'responsibility-area', 'simplicity', 'time', 'duration', 'frequency',
+          'activityType', 'dayTime/meal'],
         habitualizers: ['sleep', 'meal']
     });
 

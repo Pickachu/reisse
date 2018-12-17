@@ -50,6 +50,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       created() {
         this._boundSearched = this.search.bind(this);
       },
+
+      ready() {
+        this.__tryAPIReady();
+      },
+
+      // FIXME google-client-loader uses google-js-api to load google js api
+      // if google js api is already loaded, google-js-api fires the js-api-load
+      // event before google-client loader listens for the event. open an
+      // issue on https://github.com/GoogleWebComponents/google-apis
+      __tryAPIReady() {
+        if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
+
+        // TODO figure out why google-js-api(IronJsonpLibraryBehavior) is not firing an event
+        if (!this.$.calendar.api) { return this.$.calendar._loadClient(); }
+      },
+
       search (params) {
         if (!this.loaded) return;
         return this.api.list(params);

@@ -5,7 +5,7 @@ var activitable = stampit({
       Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles', 'sleepiness', 'hunger'));
     },
     props: {
-      tagNames: []
+      tags: []
     },
     methods: {
 

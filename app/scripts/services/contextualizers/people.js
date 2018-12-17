@@ -13,7 +13,7 @@ Context.add(stampit({
 
       // TODO use current people from estimator instead of inferring it from ocurrences
       if (!Re.estimators || app.ocurrences) return Promise.resolve(context.people = {}, context);
-      Context.lastPeople = _(Re.estimators.ocurrences || app.ocurrences)
+      Context.lastPeople = _(Re.estimators.occurrences || app.ocurrences)
         .sort('start')
         .map('context.people')
         .compact()

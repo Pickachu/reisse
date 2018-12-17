@@ -5,28 +5,79 @@
 var classifiable = stampit({
   init () { },
   props: {
-    // skipped behaviors on prediction or learing for some reason
-    skips: []
+
+    /**
+     * A given name for this classifier. It should be closely related to what
+     * the classifiers returns as a prediction in the predict method. So if the
+     * returned predictions are activity type's, duration or sensation that is
+     * the classifier name. (at least for now :D)
+     *
+     * @type {String}
+     */
+    name: undefined,
+
+    /**
+     * List of discarded behaviors on predicatable or learnable that for some
+     * reason could not be used on the learning proccess or predicting process
+     *
+     * TODO rename to discards
+     *
+     * @type {Array}
+     */
+    skips: [],
+
+    /**
+     * An list of options for training each network related classifier with this
+     * or a short hand object
+     *
+     * @type {Object|Array}
+     */
+    training: {}
   },
-  methods: {
-    stage (ocurrences) {
+  refs: {
+    stage({training, relearn = true} = {}) {
       this.skips = [];
+      this.training = Object.assign(this.training, training);
       // TODO use objective criteria to cache and uncache learning state
-      this.learned = false;
+      this.learned = null;
     },
-    learn (ocurrences) { return Promise.resolve(ocurrences); },
-    predict (ocurrences, context) { return Promise.resolve(ocurrences); },
-    performate (ocurrences) { },
+
+    activate (input) {
+      return this.network.activate(input);
+    },
+
+    async learn (occurrences) { return {}; },
+
+    /**
+     * This method should receive an array of occurrences and a context
+     * for the given list of occurrences and it should return a list of
+     * predictions about this occurrences given this context
+     *
+     * It can base it's prediction on any of the occurrences prediction but
+     * the only it is predicting.
+     *
+     * This method should always return a prediction. If it can't predict one
+     * based on it's inputs, it should return a default prediction.
+     *
+     * @param  {Occurrence} occurrences -
+     * @param  {Object} options - a list of configuration options to the classifier
+     * @param  {Context} options.context - the context to be used for open occurrences prediction
+     *
+     * @return {Object[]} A prediction set
+     */
+    async predict (occurrences, options) { return []; },
+
+    async performate (occurrences) { },
     quality () { },
 
-    performatableSet (ocurrences) {
-      return this.learnableSet(ocurrences.map(Ocurrence.fromJSON, Ocurrence));
+    performatableSet (occurrences) {
+      return occurrences.map(Ocurrence.fromJSON, Ocurrence);
     },
 
-    learnableSet (ocurrences, options) {
-      let chainable = _(ocurrences), keys = Object.keys(options || {});
+    learnableSet (occurrences, options) {
+      let chainable = _(occurrences), keys = Object.keys(options || {});
 
-      // Only learn from past ocurrences that actualy happened
+      // Only learn from past occurrences that actualy happened
       chainable = chainable.filter({status: 'complete'});
 
       if (keys.includes('size')) {
@@ -41,31 +92,69 @@ var classifiable = stampit({
     },
 
     _validate(set) {
-      let example = _.sample(set);
+      // Perform simple validations on example
+      if (set.length === 0) {
+        console.info(`[classifier.${this.name}._train] training with an empty set.`);
+        return true;
+      }
+
+      const example = _.sample(set);
+
       // Perform simple validations on example
       if (!example || !example.input || !example.output) {
-        throw new TypeError('Classifier._train: No example, example input or example output provided');
+        throw new TypeError(`[classifier.${this.name}._train] example input or example output provided`);
       }
 
       if (_.some(example.input.concat(example.output), (activation) => activation < 0 || activation > 1)) {
-        throw new RangeError('Classifier._train: input or output activation less than 0 or greater than 1.');
+        throw new RangeError(`[classifier.${this.name}._train] input or output activation less than 0 or greater than 1.`);
       }
     },
 
-    _train (set, options) {
+    async _train (set, options) {
       this._validate(set);
 
-      let learning = this.network.trainer.train(set, options);
+      // TODO figure out why worker training is not working
+      // const learning = await this.network.trainer.trainAsync(set, options);
+      const learning = this.network.trainer.train(set, options);
 
-      learning.set = set;
-      learning.sampleSize = set.length;
-      learning.mapper     = this.mapper;
+      const activation = this.network.activate(new Array(this.network.layers.input.size).fill(0));
+      if (_.isNaN(activation[0])) throw new TypeError(`[classifier:${this.name}:_train]: NaN activation detected!`);
 
-      return Promise.resolve(learning);
+      const classifier = this.network.clone();
+
+      // TODO open issue on synaptic to fix labels
+      const labels = this.network.neurons().map(({neuron: {label}}) => label);
+      classifier.neurons().forEach(({neuron}, index) => neuron.label = labels[index]);
+
+      return this.learned = Object.assign({set,
+        classifier,
+        training: Object.assign(this.training, options),
+        sampleSize: set.length,
+        mapper: this.mapper,
+        discards: this.skips.concat([]),
+      }, learning);
+
     },
 
-    skip (ocurrence) {
-      this.skips.push(ocurrence);
+    skip (occurrence, reason) {
+      occurrence.discards.push({classifier: this.name, reason, stage: Re.stage});
+      this.skips.push([occurrence, reason]);
+    },
+
+    /**
+     * Mark behaviors as discarded (cannot be used)
+     *
+     * @param  {[type]} occurrence [description]
+     * @param  {[type]} reason    [description]
+     *
+     * @return {[type]}           [description]
+     */
+    discard (occurrence, reason) {
+      if (!reason) {
+        throw new TypeError(`[classifiar.discard] reason is mandatory`)
+      }
+      occurrence.discards.push({classifier: this.name, reason, stage: Re.stage});
+      this.skips.push([occurrence, reason]);
     }
   },
   static: {
@@ -75,12 +164,17 @@ var classifiable = stampit({
       return this.classifiers[predicate] || _.find(this.classifiers, predicate) || null;
     },
     get (name, options) {
+      if (!(name in this.stamps)) {
+        debugger
+      }
       return this[name] = this.stamps[name](options);
     },
     add (stamp) {
       this.stamps[stamp.fixed.refs.name] = classifiable.compose(stamp);
     },
     stage (options) {
+      this.classifiers = [];
+
       _.each(this.stamps, (stamp, name) => {
         let instance = this.get(name, options);
         this[instance.name] = instance;

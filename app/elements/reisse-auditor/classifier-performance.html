@@ -14,37 +14,113 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-scatter.html">
 <link rel="import" href="../nvd3-candle-stick-bar/nvd3-candle-stick-bar.html">
 
-<dom-module id="classifier-performance">
-  <style> :host { display: block; } </style>
-  <template>
-    <p>
-      <h2>[[meta.title]]</h2>
-      Sample Size: [[meta.sampleSize]]
-      Iterations: [[meta.iterations]] <br />
-      Error: [[meta.error]]
-      Training Time: [[meta.time]]
-      <span>X Domain</span>
-      <div class="horizontal layout">
-        <paper-input type="number" value="{{_domains.x.start}}" label="X Domain Start"></paper-input>
-        &nbsp;
-        <paper-input type="number" value="{{_domains.x.end}}" label="X Domain End"></paper-input>
-      </div>
-    </p>
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 
-    <p>
+<dom-module id="classifier-performance">
+  <style>
+    :host { display: block; }
+    paper-material {
+      padding: 1em;
+    }
+  </style>
+  <template>
+    <header>
+      <h2 on-tap="_collapse">[[meta.title]]</h2>
+
+      <paper-material>
+        <paper-button toggles active="{{_displayChartControls}}">Chart controls</paper-button>
+        <paper-button toggles active="{{_displayTrainingControls}}">Training controls</paper-button>
+        <iron-collapse opened="{{_displayChartControls}}">
+          <span>X Domain</span>
+          <div class="horizontal layout">
+            <paper-input type="number" value="{{_domains.x.start}}" label="X Domain Start"></paper-input>
+            &nbsp;
+            <paper-input type="number" value="{{_domains.x.end}}" label="X Domain End"></paper-input>
+            <br />
+            <paper-input type="number" value="{{_domains.y.start}}" label="Y Domain Start"></paper-input>
+            &nbsp;
+            <paper-input type="number" value="{{_domains.y.end}}" label="Y Domain End"></paper-input>
+          </div>
+        </iron-collapse>
+        <iron-collapse opened="{{_displayTrainingControls}}">
+          <template is="dom-if" if="[[meta.classifier]]">
+            <p class="horizontal layout">
+              <p>Classifier Type: [[meta.classifier.constructor.name]]</p>
+              <p>Layers:</p>
+              <p>Input: Size: [[meta.classifier.layers.input.size]]</p>
+              <template is="dom-repeat" items="[[meta.classifier.layers.hidden]]" as="layer">
+                <p>Hidden #[[index]]: Size: [[layer.size]]</p>
+              </template>
+              <p>Output: Size: [[meta.classifier.layers.output.size]]</p>
+            </p>
+          </template>
+
+          <template is="dom-if" if="[[meta.context]]" restamp>
+            <div class="context">
+              <h2> Context </h2>
+
+              <p>Now     : [[meta.context.calendar.now]]</p>
+              <p>Location: [[meta.context.location.latitude]] lat, [[meta.context.location.longitude]] lon</p>
+              <p>
+                People  :
+                <template is="dom-repeat" items="[[meta.context.people]]" as="person">
+                  <template is="dom-repeat" items="[[person.names]]" as="name">
+                    <span>[[name]]</span>
+                  </template>
+                </template>
+              </p>
+              <p>
+                Tools  :
+                <template is="dom-repeat" items="[[meta.context.tools]]" as="tool">
+                  <span>Name: [[tool.name]]</span>
+                  <span>Type: [[tool.type]]</span>
+                </template>
+              </p>
+
+            </div>
+
+          </template>
+
+          <template is="dom-if" if="[[meta.training]]">
+            <p class="layout horizontal">
+              <paper-input type="number" value="{{meta.training.iterations}}" step="25" label="Iterations"></paper-input>
+              <paper-input type="number" value="{{meta.training.rate}}" step="0.01" label="Learning rate"></paper-input>
+            </p>
+          </template>
+
+          <!-- TODO update all implementations to use meta.training -->
+          <template is="dom-if" if="[[!meta.training]]">
+            <p class="layout horizontal">
+              <paper-input type="number" value="{{meta.iterations}}" label="Iterations"></paper-input>
+              <paper-input type="number" value="{{meta.rate}}" step="0.01" label="Learning rate"></paper-input>
+            </p>
+          </template>
+
+          <template is="dom-if" if="[[meta.classifier]]">
+            <nvd3-scatter id="learning-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
+          </template>
+          <p>Error: [[meta.error]] Time: [[meta.trainingTime]] Sample Size: [[meta.sampleSize]]</p>
+          <paper-button on-tap="_retrain">Retrain</paper-button>
+        </iron-collapse>
+      </paper-material>
+    </header>
+
+    <section id="graph">
       <template is="dom-if" if="[[_eq(type, 'scatter')]]">
-        <nvd3-scatter id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
+        <nvd3-scatter id="performance-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
       </template>
       <template is="dom-if" if="[[_eq(type, 'multi-bar')]]">
-        <nvd3-multi-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
+        <nvd3-multi-bar id="performance-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar>
       </template>
       <template is="dom-if" if="[[_eq(type, 'multi-bar-horizontal')]]">
-        <nvd3-multi-bar-horizontal id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar-horizontal>
+        <nvd3-multi-bar-horizontal id="performance-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-multi-bar-horizontal>
       </template>
       <template is="dom-if" if="[[_eq(type, 'candle-stick-bar')]]">
-        <nvd3-candle-stick-bar id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-candle-stick-bar>
+        <nvd3-candle-stick-bar id="performance-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-candle-stick-bar>
       </template>
-    </p>
+    </section>
   </template>
   <script>
   (function() {
@@ -62,54 +138,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         data: Object,
         _domains: {
           type: Object,
-          value() {return {x: {}}}
+          value() {return {x: {}, y: {}}}
         },
-        _graphReady: {
+        _perfomanceGraphReady: {
           type: Boolean,
           value: false
-        }
+        },
+        _learningGraphReady: {
+          type: Boolean,
+          value: false
+        },
       },
 
-      observers: ['_redraw(data, _graphReady, _domains.*)'],
+      observers: [
+        '_redraw(data, _perfomanceGraphReady, _domains.*)',
+        '_redrawNetworkTraining(meta.classifier, meta.set, _learningGraphReady, _displayTrainingControls, _domains.*)'
+      ],
 
       listeners: {
-        'dom-change': '_handleGraphAttachement'
+        'dom-change': '_handleChartsAttachement'
       },
 
       _redraw(data, graphReady) {
         if (!graphReady) return;
 
-        let chart = this.$$('#chart'), model = chart._chart;
-        chart.data = data;
-        chart.generateChart();
+        const chart = this.$$('#performance-chart'), model = chart._chart;
 
-
-        if (this.meta && this.meta.options) {
-          let options = this.meta.options;
-
-          if (options.axis) {
-            if (options.axis.x) {
-              model.xAxis.options(options.axis.x);
-            }
-            if (options.axis.y) {
-              model.yAxis.options(options.axis.y);
-            }
-          }
-
-          if (options.domains) {
-            if (options.domains.y) {
-              model.yDomain(options.domains.y);
-            }
-          }
-        }
-
-        if (this._domains) {
-          const {start, end} = this._domains.x;
-          if (isFinite(+start) && isFinite(+end) && +start < +end) {
-            model.xDomain([+start, +end]);
-          } else {
-            model.xDomain(null);
-          }
+        if (chart.data != data) {
+          chart.data = data;
+          chart.generateChart();
         }
 
         if (model.useInteractiveGuideline) {
@@ -118,6 +175,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         model.stacked && model.stacked(true);
 
+        if (this.meta && this.meta.options) {
+          this._applyOptions(this.meta.options, model, chart)
+        }
+
+        this._applyDomain(model, this._domains, chart, 'x');
+        this._applyDomain(model, this._domains, chart, 'y');
+
         model.update && model.update();
       },
 
@@ -125,8 +189,113 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return a === b;
       },
 
-      _handleGraphAttachement() {
-        this._graphReady = !!this.$$('#chart');
+      _handleChartsAttachement() {
+        this._perfomanceGraphReady = !!this.$$('#performance-chart');
+        this._learningGraphReady = !!this.$$('#learning-chart');
+      },
+
+      _applyDomain(model, domains, chart, name, redraw = true) {
+        const {start, end} = domains[name];
+        if (isFinite(+start) && isFinite(+end) && +start < +end) {
+
+          // FIXME figure out how to use nvd3 api to filter multibar charts
+          if (this.type === 'multi-bar') {
+            chart.data = this.data.map((series) =>
+              Object.assign({}, series, {
+                values: series.values.slice(+start, +end)
+              })
+            );
+            redraw && chart.generateChart();
+          } else {
+            model[`${name}Domain`]([+start, +end]);
+          }
+        }
+      },
+
+      _applyOptions(options, model, chart) {
+        if (typeof options === 'function') return options(model, chart);
+
+        if (options.axis) {
+          if (options.axis.x) {
+            model.xAxis.options(options.axis.x);
+          }
+          if (options.axis.y) {
+            model.yAxis.options(options.axis.y);
+          }
+        }
+
+        if (options.domains) {
+          if (options.domains.y) {
+            model.yDomain(options.domains.y);
+          }
+        }
+
+        if (options.configure) {
+          options.configure(model, chart);
+        }
+      },
+
+      _retrain () {
+        if (this.meta.training) {this.meta.training.rate = parseFloat(this.meta.training.rate);}
+        this.fire('request-performance-retrain', {meta: this.meta});
+      },
+
+      _redrawNetworkTraining(classifier, set, ready, active) {
+        if (!classifier) return;
+        if (!ready) return;
+        if (!set) return;
+        if (!active) return;
+
+        this.debounce('redraw-network-training', () => {
+          const chart = this.$$('#learning-chart'), model = chart._chart;
+          const {layers} = classifier;
+
+          const series = [].concat(
+            layers.input.list.map((neuron, index) => ({
+              key: neuron.label || `Input #${index}`,
+              values: []
+            }))
+          ).concat(
+            layers.output.list.map((neuron, index) => ({
+              key: neuron.label || `Output #${index}`,
+              values: []
+            }))
+          ).concat(
+            layers.output.list.map((neuron, index) => ({
+              key: neuron.label || `Prediction #${index}`,
+              values: []
+            }))
+          );
+
+          const limit = Math.min(set.length, 1000) / series.length;
+
+          chart.data = set
+            .slice(0, limit)
+            .reduce((series, {input, output}, x) => {
+
+              const offset = input.length + output.length;
+              input.concat(output).forEach((activation, serie) => {
+                series[serie].values.push({y: activation, x});
+              });
+
+              const prediction = classifier.activate(input);
+              prediction.forEach((activation, index) => {
+                series[index + offset].values.push({y: activation, x});
+              });
+
+              return series;
+            }, series);
+
+          this._applyDomain(model, this._domains, chart, 'y', false);
+          this._applyDomain(model, this._domains, chart, 'x', false);
+
+          chart.generateChart();
+        });
+
+      },
+
+      _collapse() {
+        this.$.graph.classList.toggle('hidden');
       }
     });
   })();

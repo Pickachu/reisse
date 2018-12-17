@@ -32,19 +32,17 @@
       <paper-button toggles active="{{_factors}}">Factors</paper-button>
     </h3>
     <paper-dialog opened="{{_details}}">
-      <h2>[[event.name]][[_optionalName]] - (details)</h2>
+      <h2 title="[[__firebaseKey__]]">[[event.name]][[_optionalName]] - (details)</h2>
       <div class="layout vertical">
         <p><span>{{event.start}}</span> - <span>{{event.end}}</span></p>
-        <p>Status             : <span>{{event.status}} - {{event.completedAt}}</span></p>
-        <p>Notes              : <span>{{event.notes}}</span></p>
-        <p>Area               : <span>{{event.areaId}}</span></p>
-        <p>Tags               : <span class="emoji">{{event.tagNames}}</span></p>
-        <p>Provider           : <span>{{event.provider.name}}</span></p>
-        <section>
-          <!-- <reisse-feature key="[[event.__firebaseKey__]]" features="{{event.features}}" name="duration"></reisse-feature> -->
-        </section>
-
-        <hr />
+        <p>Provider: <span>[[event.provider.name]]</span></p>
+        <p>Area: <span>{{event.areaId}}</span></p>
+        <p>Status: <span>{{event.status}} - [[event.completedAt]]</span></p>
+        <p>Tags: <span class="emoji">{{event.tags}}</span></p>
+        <p>Notes: <span>{{event.notes}}</span></p>
+        <template is="dom-if" if="[[_computeProviderDetails(event.provider)]]" restamp="true">
+          <p>Provider Details: [[_computeProviderDetails(event.provider)]]</p>
+        </template>
       </div>
     </paper-dialog>
 
@@ -61,6 +59,7 @@
           <reisse-event-feature name="Simplicity" feature="[[event.features.simplicity]]" expanded >
             <reisse-event-feature name="Brain Cycles" feature="[[event.features.brainCycles]]" expanded > </reisse-event-feature>
             <reisse-event-feature name="Time" feature="[[event.features.time]]" expanded > </reisse-event-feature>
+            <reisse-event-feature name="Routine" feature="[[event.features.routine]]" expanded > </reisse-event-feature>
           </reisse-event-feature>
         </reisse-event-feature>
 
@@ -68,8 +67,15 @@
           <p>
             <p id="duration">Duration</p>
             <paper-tooltip animation-delay="0" position="top" for="duration">
-              <p>Actual: [[event.features.duration.actual]]s</p>
-              <p>Estimated: [[event.features.duration.estimated]]s</p>
+              <p>Actual: [[_formatDuration(event.features.duration.actual)]]</p>
+              <p>Estimated: [[_formatDuration(event.features.duration.estimated)]]</p>
+            </paper-tooltip>
+          </p>
+          <p>
+            <p id="time-range">Start & End</p>
+            <paper-tooltip animation-delay="0" position="top" for="time-range">
+              <p>Actual: [[event.features.start]]</p>
+              <p>Estimated: [[event.features.end]]</p>
             </paper-tooltip>
           </p>
         </div>
@@ -144,7 +150,7 @@
 
         _computeHeight (duration) {
           duration || (duration = 120);
-          this.style.minHeight = Math.floor(duration / (60 * 60)) + "em";
+          this.style.minHeight = Math.floor(duration / (60 * 60 * 1000)) + "em";
         },
 
         _computeOverlayMode(factors, details) {
@@ -155,7 +161,25 @@
           }
 
           this.toggleClass('overlayed', factors || details);
+        },
+
+        _formatDuration(duration) {
+          if (duration === undefined) return;
+          const formatable = moment.duration(duration);
+          return `${formatable.humanize()} (${formatable})`;
+        },
+
+
+        _computeProviderDetails(provider) {
+          if (provider === undefined) return;
+          switch (provider.name) {
+            case 'youtube':
+              return `Video URL: https://youtube.com/watch?v=${provider.videoId}`;
+            default:
+              return false;
+          }
         }
+
       });
     })();
   </script>

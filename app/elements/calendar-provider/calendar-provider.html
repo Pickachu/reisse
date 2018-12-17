@@ -57,10 +57,14 @@ that handles authentication.
       }
     },
 
-    ready: function() {
+    ready() {
       this.__tryAPIReady();
     },
 
+    // FIXME google-client-loader uses google-js-api to load google js api
+    // if google js api is already loaded, google-js-api fires the js-api-load
+    // event before google-client loader listens for the event. open an
+    // issue on https://github.com/GoogleWebComponents/google-apis
     __tryAPIReady() {
       if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
 

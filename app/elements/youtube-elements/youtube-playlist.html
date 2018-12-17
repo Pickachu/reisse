@@ -1,0 +1,313 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/google-signin/google-signin-aware.html">
+<link rel="import" href="../../bower_components/google-apis/google-client-loader.html">
+
+<dom-module id="youtube-playlist">
+  <template>
+    <style> :host { display: none; } </style>
+    <google-client-loader id="youtube" name="youtube" version="v3"
+      on-google-api-load="_apiLoaded"></google-client-loader>
+    <google-signin-aware
+      scopes="https://www.googleapis.com/auth/youtube"
+      is-authorized="{{_signedIn}}"></google-signin-aware>
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'youtube-playlist',
+
+      properties: {
+        playlistId: {
+          type: String
+        },
+
+        // TODO make this attributes read only
+        description: { type: String },
+        publishedAt: { type: Date },
+        snippet: { type: Object },
+
+        items: {
+          type: Array,
+          value() { return []; },
+          notify: true,
+          readOnly: true
+        },
+
+        paginationToken: {
+          type: String,
+          value: null
+        },
+
+        pageSize: {
+          type: Number,
+          value: 30
+        },
+
+        publishedAfter: {
+          type: Date,
+          value: null
+        },
+
+        publishedBefore: {
+          type: Date,
+          value: null
+        },
+
+        params: {
+          type: Object,
+          computed: '_computeParams(playlistId, paginationToken, pageSize)'
+        },
+
+      },
+
+      ready() {
+        this.__tryAPIReady();
+      },
+
+      // FIXME google-client-loader uses google-js-api to load google js api
+      // if google js api is already loaded, google-js-api fires the js-api-load
+      // event before google-client loader listens for the event. open an
+      // issue on https://github.com/GoogleWebComponents/google-apis
+      __tryAPIReady() {
+        if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
+
+        // TODO figure out why google-js-api(IronJsonpLibraryBehavior) is not firing an event
+        if (!this.$.youtube.api) { return this.$.youtube._loadClient(); }
+      },
+
+      _apiLoaded () {
+        this.client = this.$.youtube.api;
+      },
+
+      /**
+       * Loads this playlist content details into the element
+       *
+       * @param  {[type]} params [description]
+       *
+       * @return {[type]}        [description]
+       */
+      load(params) {
+        return this.client.playlists
+        .list(params || this.params).then((response) => {
+          if (response.error) {
+            console.error("Error with youtube.playlists.list", response.message);
+            return Promise.reject(response);
+          }
+
+          const [{snippet}] = response.result.items;
+          const {title, description, publishedAt} = snippet;
+
+          this.snippet = snippet;
+          Object.assign(this, {title, description, publishedAt: new Date(publishedAt)});
+
+          return Promise.resolve(response);
+        });
+      },
+
+      values () {
+        // Reset events array to prevent duplicated items preservation
+        if (this.items.length > 0) this._setItems([]);
+        this.paginationToken = null;
+
+        const dispatchPaged = ({resultsPerPage, totalResults}) => {
+          this.fire('paged', {
+            kind: 'playlist-items',
+            pagination: {
+              page: Math.round(this.items.length / resultsPerPage),
+              pages: Math.round(totalResults / resultsPerPage),
+            }
+          });
+        },
+        dispatchPopulated = ({resultsPerPage, totalResults}) => {
+          this.fire('populated', {
+            kind: 'playlist-items',
+            capped: this.items.length !== totalResults
+          });
+        },
+        // assumes a sorted playlist, the first item is the most recent entry
+        shouldLoadNextPage = (items, {nextPageToken: hasNextPage}) => {
+          if (!hasNextPage) return false;
+          const first = items[0], last = items[items.length - 1];
+
+          // If the playlist first item was published after the
+          // published before criteria, no item on playlist will match criteria
+          if (first.publishedAt > this.publishedBefore) return false;
+
+          // If the playlist last item was published before the
+          // published after criteria, no item on playlist will match criteria
+          // TODO improve last item loading. we only have items loaded so far
+          // so the last item is the last item of the last loaded page, and not
+          // last playlist item. probably will have to fix when having continuous
+          // synchronization
+          // if (last.publishedAt > this.publishedBefore) return false;
+
+          // While the last item publication date is before the published after
+          // criteria we should load more items
+          return last.publishedAt > this.publishedAfter;
+        },
+        validatePlaylistSorting = (response) => {
+          if (!(this.publishedAfter && this.publishedBefore)) return response;
+
+          const sorted = this.items
+            .concat([])
+            .sort((a, b) => b.publishedAt - a.publishedAt)
+            .every((item, index) => item === this.items[index]);
+
+          if (!sorted) {
+            let message = `[${this.localName}::values validatePlaylistSorting]`;
+            message += ` filtering by time range is not supported, due to youtube`;
+            message += `api limitations. Go to your playlist `;
+            message += `(https://www.youtube.com/playlist?list=${this.playlistId})`;
+            message += `ensure that it is sorted by adition date, and try again`;
+            throw new TypeError(message);
+          } else {
+            return response;
+          }
+        };
+
+        return new Promise((resolve) => {
+
+          const responded = (response) => {
+
+            const {result} = response;
+
+            // Assumes that playlist items are coming ordered by creation date
+            if (shouldLoadNextPage(this.items, result)) {
+              dispatchPaged(result.pageInfo);
+              this.next().then(responded);
+            } else {
+              // Only filters if this has publishedAfter and publishedBefore defined
+              dispatchPaged(result.pageInfo);
+              this.filterByTimeRange();
+              dispatchPopulated(result.pageInfo);
+              this.paginationToken = null;
+              resolve(this);
+            };
+          };
+
+          this.next()
+            .then(validatePlaylistSorting)
+            .then(responded);
+        });
+      },
+
+      next() {
+        return this.list(this.params).then((response) => {
+          let result = response.result;
+          this.paginationToken = result.nextPageToken || null;
+
+          if (result.items) {
+
+            const items = result.items.map(({snippet, etag, id}) =>
+              Object.assign(snippet, {
+                etag, id, publishedAt: new Date(snippet.publishedAt)
+              })
+            );
+
+            this._setItems(this.items.concat(items));
+          }
+          return response;
+        });
+      },
+
+      /**
+       * Makes a api request to youtube data api, retrieving
+       * a list of playlist items for the given parameters
+       *
+       * @param  {Object} params map of request parameters for google api, usually only {playlistId}
+       *
+       * @return {Promise} a promise that resolves to the api response
+       */
+      list (params) {
+        return this.client.playlistItems
+        .list(params).then((response) => {
+          if (response.error) {
+            console.warn(`[${this.localName}:list] Error from playlistItems.list`, response.message);
+            return Promise.reject(response);
+          } else {
+            return Promise.resolve(response);
+          }
+        });
+      },
+
+      filterByTimeRange() {
+        const {publishedAfter, publishedBefore} = this;
+        if (!publishedAfter || !publishedBefore) return this.items;
+        if (publishedAfter > publishedBefore) {
+          throw new TypeError(`[${this.localName}:filterByTimeRange]: publishedAfter must be before publishedBefore`);
+        }
+
+        this._setItems(this.items.filter(({publishedAt}) =>
+          publishedBefore > publishedAt && publishedAt > publishedAfter
+        ));
+
+        return this.items;
+      },
+
+      /**
+       * Loads all playlist items video content details, also applies time range
+       * filtering
+       *
+       * @return {Promise} resolves to the filtered list of playlist items
+       * with a video attribute, both associated with this.playlistId
+       */
+      async videos() {
+        const {items} = await this.values();
+        const ids = items.map(({resourceId: {videoId}}) => videoId),
+          part = 'snippet,contentDetails',
+          {pageSize} = this;
+
+        let populated = [];
+
+        while (ids.length) {
+          let {result} = await this.client.videos.list({id: ids.splice(0, pageSize).join(','), part});
+
+          populated = populated.concat(items.splice(0, pageSize).map((item, index) =>
+            Object.assign({}, item, {video: result.items[index]})
+          ));
+
+          this.fire('paged', {
+            kind: 'videos',
+            pagination: {
+              page: Math.round((this.items.length - (this.items.length - items.length)) / pageSize),
+              pages: Math.round(this.items.length / pageSize),
+            }
+          });
+        }
+
+        this.fire('populated', {
+          kind: 'videos',
+          capped: false
+        });
+
+        // TODO fire populated
+
+        return populated;
+      },
+
+      _computeParams(playlistId, page, maxResults) {
+        if (maxResults < 0 || maxResults > 50) {
+          throw new TypeError(`[${this.localName}::_computeParams] The maximum of results must be between 0 and 50.`)
+        }
+
+        let params = {playlistId, part: 'snippet', maxResults};
+        (page) && (params.pageToken = page);
+        return params;
+      }
+
+    });
+  })();
+  </script>
+</dom-module>

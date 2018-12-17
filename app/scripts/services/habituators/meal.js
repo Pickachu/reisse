@@ -39,7 +39,7 @@ Habit.add(stampit({
                 features      : {
                   start       : start,
                   duration: {
-                    estimated: (end - start) / 1000
+                    estimated: end - start
                   }
                 },
                 habituality   : {},

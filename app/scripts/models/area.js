@@ -1,3 +1,4 @@
+// TODO use mobx state tree to models
 var areable = stampit({
     props: {
         impact: 1,
@@ -19,7 +20,10 @@ var areable = stampit({
         return ICAL.Component.fromString(string);
       },
       toJSON () {
-        return _.omit(this, 'ocurrences', _.functionsIn(this));
+        return _.merge(
+          {responsibilities: this.responsibilities.concat([])},
+          _.omit(this, 'ocurrences', _.functionsIn(this))
+        );
       }
     },
     static: {

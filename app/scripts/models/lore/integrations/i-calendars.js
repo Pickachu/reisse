@@ -40,7 +40,7 @@ Lore.integrations.push(
           console.info('Lore.integrations[i-calendars]:', untimed.length, 'remaining.');
         }
 
-        // Actual duration already defined, does not need to inferß
+        // Actual duration already defined, does not need to infer
         // TODO infer actual duration when sincronized dates are missing
         if (ocurrence.features.duration.actual) return infer();
 
@@ -166,7 +166,7 @@ Lore.integrations.push(
       let start = Date.parse(item.start.dateTime),
         end     = Date.parse(item.end.dateTime  );
 
-      return (end - start) / 1000;
+      return end - start;
     },
     _minimunStartTimeFromCalendarItems (items) {
       return items.map((item) => Date.parse(item.start.dateTime)).sort().shift()

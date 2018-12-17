@@ -2,33 +2,25 @@
 
 // TODO use homeostasis classifier?
 // TODO use cicardian classifier?
+// TODO use anticipation classifier, why?
 Classifier.add(stampit({
+  init () { this.stage(); },
   refs: {
-    name: 'sensation'
-  },
-  init () {
-    // TODO use anticipation classifier
-    // TODO better way to reuse Sleepiness estimator classifier
-    this.sleepiness = (Estimator.find('sensation') || {}).sleepiness || Classifier.get('sleepiness');
-    // TODO better way to reuse Hunger estimator classifier
-    this.hunger     = (Estimator.find('hunger'   ) || {}).hunger     || Classifier.get('hunger');
-  },
-  methods: {
-    // Uses default learning method from Classifier stamp the learn method does nothing
-    predict(behaviors) {
-      let predictions, finite = Number.isFinite;
-
-      predictions = behaviors.map((behavior) => {
-        let features   = behavior.features,
+    name: 'sensation',
+    // learn(): Uses default learning method from Classifier stamp the learn method does nothing
+    async predict(behaviors, {context} = {}) {
+      const predictions = behaviors.reduce((predictions, behavior) => {
+        let {features}   = behavior,
           activityType = behavior.activity && behavior.activity.type,
           sleepiness   = features.sleepiness.truer,
-          hunger       = features.hunger.truer,
-          sensation;
+          hunger       = features.hunger.truer;
+
+        let sensation;
 
         // FIXME implement contextual sleepiness and hunger
         if (behavior.status === 'open') {
-          if (!finite(sleepiness)) { sleepiness = this.context.sleepiness || 0.5; }
-          if (!finite(hunger)    ) { hunger     = this.context.hunger || 0.5; }
+          if (!isFinite(sleepiness)) { sleepiness = context.sleepiness || 0.5; }
+          if (!isFinite(hunger)    ) { hunger     = context.hunger || 0.5; }
         }
 
         // TODO think how to create a rule based system to set the relationship between
@@ -47,12 +39,12 @@ Classifier.add(stampit({
         }
 
         // Explosive sensation value computed
-        if (sensation > 1) { debugger }
+        if (sensation > 1 || sensation < 0 || !isFinite(sensation)) { debugger }
 
-        return sensation;
-      });
+        return predictions.concat(sensation);
+      }, []);
 
-      return Promise.resolve(_.flatten(predictions));
+      return predictions.flat();
     },
     performate (behaviors) {
       let learnable;
@@ -69,11 +61,11 @@ Classifier.add(stampit({
           ];
 
           // FIXME better mocking of contexts
-          this.context = {sleepiness: 0.5, hunger: 0.5};
+          const context = {sleepiness: 0.5, hunger: 0.5};
 
           estimated = estimated.filter((o, i, bs) => i > (0.95 * bs.length))
 
-          return this.predict(estimated)
+          return this.predict(estimated, {context})
             .then((predictions) => {
               estimated.map((behavior, index) => {
                 let features = behavior.features,

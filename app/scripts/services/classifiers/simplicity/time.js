@@ -1,31 +1,37 @@
 'use strict';
 
 Classifier.add(stampit({
-  refs: {
-    name: 'time'
-  },
   init() {
     let Architect    = synaptic.Architect;
     this.duration    = Classifier.get('duration');
   },
-  methods: {
-    learn(behaviors) {
-      let set = [], finite = Number.isFinite;
+  refs: {
+    name: 'time',
 
-      return this.duration.learn(behaviors);
+    async learn(behaviors) {
+      // let set = [], finite = Number.isFinite;
+      return await this.duration.learn(behaviors);
     },
-    predict(behaviors) {
+    async predict(behaviors) {
       let mapper;
-      this.duration.predict(behaviors);
+
+      await this.duration.predict(behaviors);
       mapper = this.duration._createInputMapper(behaviors);
 
       behaviors.forEach((behavior) => {
-        let features = behavior.features;
-        features.time || (features.time = {});
+        const {features} = behavior;
+        if (features.duration.estimated !== undefined) {
         features.time.estimated = 1 - features.duration.estimated / mapper.maximumDuration;
+
+        // Canceled calendar events does not have name, so they can't have an estimated duration
+        // assumes that other factor will control this behavior simplicity
+        } else {
+          this.skips.push(behavior);
+          features.time.estimated = 1;
+        }
       });
 
-      return Promise.resolve(behaviors);
+      return behaviors;
     }
   }
 }));

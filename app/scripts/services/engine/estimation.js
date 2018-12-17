@@ -6,14 +6,15 @@
 Re.Estimation = stampit({
   static: {
     // Estimates actual values:
-    // - mainly for past ocurrences
-    // - for future ocurrences just do some basic normalization
-    estimate (ocurrences, areas) {
+    // - mainly for past occurrences
+    // - for future occurrences just do some basic normalization
+    estimate (occurrences, areas) {
       // Reset all classifiers
       Classifier.stage();
+      this.stage = 'past occurrences estimation';
 
-      ocurrences = ocurrences.map(Ocurrence.fromJSON, Ocurrence);
-      this.estimators = Estimators({ocurrences: ocurrences, areas: areas});
+      occurrences = occurrences.map(Ocurrence.fromJSON, Ocurrence);
+      this.estimators = Estimators({occurrences, areas});
 
       return this.estimators.estimate();
     }

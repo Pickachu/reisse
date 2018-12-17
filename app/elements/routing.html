@@ -22,23 +22,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       next();
     }
 
+    function autoFetchRecords () {
+      window.Firebase && app.fetch();
+    }
+
     // Routes
-    page('/', scrollToTop, function() {
+    page('/', scrollToTop, () => {
       app.route = 'home';
     });
 
-    page('/performance', scrollToTop, function() {
+    page('/performance', scrollToTop, () => {
       app.route = 'performance';
-      window.Firebase && app.fetch();
-    });
+    }, autoFetchRecords);
 
-    page('/suggestion', scrollToTop, function() {
+    page('/suggestion', scrollToTop, () => {
       app.route = 'suggestion';
     });
 
-    page('/synchronization', scrollToTop, function() {
+    page('/synchronization', scrollToTop, () => {
       app.route = 'synchronization';
     });
+
+    page('/microscope', scrollToTop, () => {
+      app.route = 'microscope';
+    }, autoFetchRecords);
 
     page({hashbang: true});
 

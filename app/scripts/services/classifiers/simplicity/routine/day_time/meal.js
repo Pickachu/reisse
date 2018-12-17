@@ -3,28 +3,31 @@
 'use strict';
 
 // = Day Time / Meal Classifier
+// Based on the last 9 meal times, tries to predict next meal time
+// Essentialy it classifies past time into future time
 Classifier.add(stampit({
+  init () {
+    this.stage();
+  },
+  props: {
+    training: {iterations: 20, log: 2, rate: 0.7},
+  },
   refs: {
     // TODO rename to activityTypeDaytime classifier and use it to classify
     // daytime of activities by type
     name: 'dayTime/meal',
-    SAMPLE_SIZE: 9
-  },
-  init () {
-    this.stage();
-  },
-  methods: {
+    SAMPLE_SIZE: 9,
     stage() {
       let Architect   = synaptic.Architect;
       this.SAMPLE_SIZE = 12;
 
       // TODO extract dynamically activity types from dataset
       // this.network       = new Architect.LSTM(this.SAMPLE_SIZE, 6, 5, 5, 1);
-      this.network       = new Architect.LSTM(this.SAMPLE_SIZE, 6, 5, 1);
-      this.learned       = false;
+      this.network = new Architect.LSTM(this.SAMPLE_SIZE, 6, 5, 1);
+      this.learned = null;
     },
 
-    learn(behaviors) {
+    async learn(behaviors) {
       if (this.learned) return;
 
       this.mapper = this._createMapper(behaviors);
@@ -32,7 +35,7 @@ Classifier.add(stampit({
       // Create training set
       // ! Check generate the best day meal prediction
       let set = _(this.learnableSet(behaviors, {sorted: 1, size: 0.3}))
-        .filter((b) => b.activity && b.activity.type === 'meal' )
+        .filter(({activity = {}}) => activity.type === 'meal' )
         .map((behavior, index, behaviors) => {
           if (index - this.SAMPLE_SIZE <= 0) return null;
 
@@ -51,8 +54,7 @@ Classifier.add(stampit({
       }
 
       // Train network
-      this.learned = true;
-      return this._train(set, {iterations: 20, log: 2, rate: 0.7});
+      return this._train(set, this.training);
     },
 
     // Receives an array of behaviors
@@ -62,7 +64,7 @@ Classifier.add(stampit({
       if (options.limit) {behaviors = [behaviors[behaviors.length - 1]];}
 
       return _(behaviors)
-        .filter((b) => b.activity && b.activity.type === 'meal' )
+        .filter(({activity = {}}) => activity.type === 'meal' )
         .map((behavior, index, behaviors) => {
           if (index - this.SAMPLE_SIZE < 0) return null;
 
@@ -80,7 +82,7 @@ Classifier.add(stampit({
       let limitReached = options.limitReached, trend = [];
 
       const input = _(behaviors)
-        .filter((b) => b.activity && b.activity.type === 'meal' )
+        .filter(({activity = {}}) => activity.type === 'meal' )
         .sortBy('createdAt')
         // for the first input we only need the last eight behaviors
         .slice(- this.SAMPLE_SIZE)

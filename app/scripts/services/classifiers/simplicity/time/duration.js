@@ -2,31 +2,39 @@
 
 // TODO Calculate neural net accuracy
 Classifier.add(stampit({
-  refs: {
-    name: 'duration'
-  },
   init() {
     // FIXME forwardable properties to reisse classifiers
     this.areas || (this.areas = app.areas);
     this.stage();
   },
-  methods: {
+  refs: {
+    name: 'duration',
     stage () {
       let Architect   = synaptic.Architect;
       // this.perceptron = new Architect.LSTM(35, 6, 8, 6, 1);
       this.areaIds = this.areas.map((area) => area.provider.id);
     },
     learn(behaviors) {
-      let set = [], dict = new Map(), finite = Number.isFinite;
+      let dict = new Map();
 
       _(behaviors)
-        .filter('name')
+        .filter((behavior) => {
+          if (!behavior.name) return this.skips.push(behavior), false;
+          const {duration} = behavior.features;
+          if (!isFinite(duration.actual)) return this.discard(behavior, 'invalid duration'), false;
+          if (duration.actual < 0) return this.discard(behavior, 'negative duration'), false;
+          if (duration.actual < 1000) {
+            console.warn('[classifier.duration::learn] behavior with minuscle duration detected', behavior.name, behavior.provider.name, behavior);
+          }
+          // FIXME slice ocurrence with ginormous duration on estimators?
+          if (duration.actual > 24 * 60 * 60 * 1000) {
+            console.warn('[classifier.duration::learn] behavior with ginormous duration detected', behavior.name, behavior.provider.name, behavior);
+            return this.discard(behavior, 'ginormous duration'), false;
+          }
+          return true;
+        })
         .map((behavior) => {
-          let duration = behavior.features.duration;
-
-          if (!finite(duration.actual)) return behavior;
-          if (duration.actual < 0) return behavior;
-          // if (duration.actual > 6 * 60 * 60) return;
+          const {duration} = behavior.features;
 
           mimir.tokenize(behavior.name).forEach((token) => {
             let durations;
@@ -57,93 +65,99 @@ Classifier.add(stampit({
         })
         .value();
 
-      return Promise.resolve(behaviors);
+      if (this.skips.length > 0) {
+        let message = '[classifier.duration::learn]';
+        message += ` ${this.skips.length} of ${behaviors.length} behaviors `;
+        message += 'were skip due to missing name, invalid actual duration (negative, minuscle or ginormous).'
+        console.warn(message);
+      }
+
+      return Promise.resolve({sampleSize: behaviors.length, iterations: 1});
     },
-    predict(behaviors) {
+    async predict(behaviors) {
       let total = behaviors.length;
-      behaviors.forEach((behavior, index) => {
-        if (!behavior.name) return;
-        let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
-        if (!durations.length) durations = [0];
-        if (!(index % 5000)) {
-          console.log('predicting duration', index, 'of', total, '\nSample:', behavior.name, 'Predicted Duration:', moment.duration(ss.average(durations)).humanize());
-        }
-        behavior.features.duration.estimated = ss.average(durations);
-      });
+
+      behaviors
+        .filter(({name}) => Boolean(name))
+        .forEach((behavior, index, behaviors) => {
+          let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
+          if (!durations.length) durations = [0];
+
+          if (!(index % 2500)) {
+            console.log('predicting duration', index, `of ${behaviors.length} (${total})`, '\nSample:', behavior.name, 'Predicted Duration:', moment.duration(ss.average(durations)).asSeconds());
+          }
+          behavior.features.duration.estimated = ss.average(durations);
+        });
+
+      return behaviors;
     },
-    performate (behaviors) {
-      let mapper, predicted = {key: 'Predicted Duration', values: []},
-        actual = {key: 'Actual Duration', values: []},
-        estimator = estimators.duration();
 
-      // TODO let duration prediction to 60% accuracy
-
+    // TODO let duration prediction to 60% accuracy
+    async performate (behaviors) {
       this.stage();
 
-      estimator.estimate(behaviors.map(Ocurrence.fromJSON, Ocurrence));
+      const performatable = behaviors.map(Ocurrence.fromJSON, Ocurrence);
 
-      return estimator.estimation
-        .then((learnable) => {
-          mapper = this._createInputMapper(learnable);
-          return this.learn(learnable);
-        })
-        .then((learning ) => {
+      const estimator = Estimator.get('duration');
+      const learnable = await estimator.estimate(performatable);
+      const learning = await this.learn(learnable);
+      await this.predict(performatable);
 
-          _(behaviors)
-            .map(Ocurrence.fromJSON, Ocurrence)
-            .filter('name')
-            .map((behavior, index) => {
-              let value = {}, input, output;
-              if (!(index % 1000)) console.log('predicting duration', index, 'of', behaviors.length, 'Sample:', behavior.name);
+      const graphable = _(performatable)
+        .filter(({features}) => features && isFinite(features.duration.estimated))
+        .sortBy(['status', 'features.duration.estimated', 'features.duration.actual'])
+        .value()
 
-              if (behavior.features.duration.actual < 0) return;
-              // if (behavior.features.duration.actual > 6 * 60 * 60) return;
+      const data = _(graphable)
+        .map(({name, features: {duration}, status}, index) => ({
+            predicted: duration.estimated,
+            actual: duration.actual, status
+          })
+        )
+        .reduce((columns, {predicted, actual}, index) => {
+          columns[0].values.push({
+            x: index,
+            y: predicted
+          });
 
-              let durations = _.compact(mimir.tokenize(behavior.name).map((token) => this.durationByToken.get(token)));
-              if (!durations.length) durations = [0];
-              value.predicted = ss.average(durations) / 60;
+          columns[1].values.push({
+            x: index,
+            y: actual || 0
+          });
 
-              if (!Number.isFinite(behavior.features.duration.actual)) return value;
-              value.actual = behavior.features.duration.actual / 60;
+          return columns;
+        }, [{key: 'Predicted Duration', values: []}, {key: 'Actual Duration', values: []}])
 
-              return value;
-            })
-            .compact()
-            .sort((a, b) => a.predicted - b.predicted)
-            .tap((values) => {
-              var index = 0;
+      learning.sampleSize = data[1].values.length;
 
-              for (var i = 0; i < values.length; i++) {
-                if (!values[i].actual) continue;
+      return {
+        graphs: [{
+          data,
+          meta: Object.assign({
+              title: 'Token Durations',
+              // Preseve parent scope
+              options: (model) => {
+                const toMinutes = (value) => (value / (60 * 1000)).toFixed(0) + 's';
+                model.stacked(false);
+                model.xAxis.axisLabel('Behavior Index');
+                model.yAxis.axisLabel('Behaviour Duration');
+                model.yAxis.tickFormat(toMinutes);
+                if (!model.yDomain()) model.yDomain([0, 6 * 60 * 60 * 1000]);
+                model.interactiveLayer.tooltip.headerFormatter((index) => {
+                  const behavior = graphable[index];
+                  const tokens = _.compact(mimir.tokenize(behavior.name));
 
-                index++
-                predicted.values.push({
-                  x: index,
-                  y: values[i].predicted
+                  return tokens.reduce((header, token, tokenIndex) => {
+                    if (tokenIndex % 5) header += '<br />';
+                    return `${header} ${token} (${toMinutes(this.durationByToken.get(token))}), `;
+                  }, `# ${index} - ${behavior.status} - ${behavior.name} <br /> <br /> Tokens: <br />`) + '<br />';
                 });
 
-                actual.values.push({
-                  x: index,
-                  y: values[i].actual
-                });
               }
-
-              for (var i = 0; i < values.length; i++) {
-                if (values[i].actual) continue;
-
-                index++;
-                predicted.values.push({
-                  x: index,
-                  y: values[i].predicted
-                });
-              }
-
-            })
-            .value()
-
-          learning.sampleSize = actual.values.length;
-          return {data: [predicted, actual], stats: learning, type: 'scatter'};
-        });
+            }, learning),
+          type: 'multi-bar'
+        }]
+      };
     },
     _createInputMapper (behaviors) {
       let classifier = this;
@@ -151,7 +165,7 @@ Classifier.add(stampit({
       return {
         areaIds: this.areaIds,
         areasLength: this.areas.length,
-        maximumDuration: Feature.aggregates.maximums.duration_actual,
+        maximumDuration: Feature.aggregates.maximums.duration_actual || 1,
         hasher: Hash.Sim,
         mappedSimilarityHash (string) {
           return this.hasher.createBinaryArray(this.hasher.simhash(string));

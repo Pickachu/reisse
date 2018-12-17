@@ -1,15 +1,13 @@
 'use strict'
 
 // Predicts hour of sleep by day of week
+// Input vector of length 7 representing day of week
+// Output hour of sleep and hour of awakening
 // TODO move to routine classifier
 Classifier.add(stampit({
+  init () { this.stage(); },
   refs: {
-    name: 'sleep'
-  },
-  init () {
-    this.stage();
-  },
-  methods: {
+    name: 'sleep',
     stage () {
       let Architect   = synaptic.Architect;
       this.perceptron = new Architect.LSTM(7, 5, 5, 2);
@@ -43,7 +41,7 @@ Classifier.add(stampit({
 
         // Ignore naps and segmented sleep
         // TODO figure out better way to use and ignore naps and segmented sleep
-        .filter((behavior) => behavior.features.duration.actual > 16800)
+        .filter((behavior) => behavior.features.duration.actual > 16800 * 1000)
 
         .map((behavior) => {
           let day = behavior.asleepAt.getDay(),
@@ -69,7 +67,7 @@ Classifier.add(stampit({
       learning.sampleSize = set.length;
       return learning;
     },
-    // TODO remove usage of ICAL.Time and start using JS
+    // TODO remove usage of ICAL.Time and start using moment.duration
     predict(behaviors) {
       let now = this.context.calendar.now,
         midnight = ICAL.Time.fromJSDate(now),
@@ -102,7 +100,7 @@ Classifier.add(stampit({
         data = [sleeps, awakenings, inputs], graphs = [],
         learning, input, output;
 
-      // Performance graphh
+      // Performance graph
       this.stage();
       learning = this.learn(this.performatableSet(behaviors));
 

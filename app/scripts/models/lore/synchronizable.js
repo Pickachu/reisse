@@ -18,7 +18,7 @@ Lore = Lore.static({
     static: {
       location: 'https://boiling-fire-6466.firebaseio.com/lore',
       synchronize () {
-        console.log('lore.<synchronizable>: start synchronization');
+        console.log('[lore.<synchronizable>] start synchronization');
         return this._createSyncTimeRanges()
           .then((ranges) => {
             return new Promise((synchronized) => {
@@ -66,22 +66,23 @@ Lore = Lore.static({
 
       // TODO accept start at, to allow arbritary sync date ranges
       _synchronizeBatch (endAt) {
-        console.log('lore.<synchronizable>: fetch version');
+        console.log('[lore.<synchronizable>] fetch version');
         return this._fetchVersion(endAt).then((current) => {
           this.synchronizingVersion = current;
           endAt = new Date(endAt);
-          console.log('lore.<synchronizable>: fetched version from', current.synchronizedAt, 'to', endAt);
+          console.log('[lore.<synchronizable>] fetched version from', current.synchronizedAt, 'to', endAt);
+          console.log('[lore.<synchronizable>] with ', current.ocurrences.length, 'occurrences');
           return current.integrations(endAt).then((changes) => {
             let synchronizer = this.synchronizerable({
               changes: changes,
               location: current.location
             });
 
-            console.log('lore.<synchronizable>: synchronize');
+            console.log('[lore.<synchronizable>] synchronize');
             return synchronizer.synchronize();
           });
         }, (reason) => {
-          console.log('lore.<synchronizable>: synchronization failed', reason);
+          console.log('[lore.<synchronizable>] synchronization failed', reason);
         });
       },
 
@@ -132,7 +133,7 @@ Lore = Lore.static({
                 // TODO just recurse on the _computeFirebaseChanges method
                 return _.mapValues(object, (value) => (_.isDate(value) && value.getTime()) || value );
               default:
-                throw new TypeError(`Lore._computeFirebaseChanges.<serialize> Unserializable type found ${change.value.constructor}!`);
+                throw new TypeError(`[Lore._computeFirebaseChanges.<serialize>] Unserializable type found ${change.value.constructor}!`);
             }
           } else {
             // undefined, null, false, 0, NaN

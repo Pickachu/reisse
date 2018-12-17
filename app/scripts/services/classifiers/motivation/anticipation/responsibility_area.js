@@ -1,82 +1,127 @@
 'use strict'
 
-// It currently yields:
-// - a 58% prediction success for hour
+/**
+ * Responsibility Area Classifier
+ *
+ * It should return a list of responsibility area probabilities for a given set of
+ * behaviors
+ */
 Classifier.add(stampit({
-  refs: {
-    name: 'responsibilityArea'
-  },
   init () {
     // FIXME forwardable properties to reisse classifiers
     this.areas || (this.areas = app.areas);
     this.stage();
   },
-  methods: {
+  refs: {
+    name: 'responsibility-area',
+
     stage() {
       let Architect   = synaptic.Architect;
 
-      this.perceptron = new Architect.Perceptron(24, this.areas.length * 2, this.areas.length);
+      this.network = new Architect.Perceptron(24, this.areas.length * 2, this.areas.length);
       this.areaIds = this.areas.map((area) => area.provider.id);
     },
-    learn(behaviors) {
-      if (this.learned) return;
 
-      let set, mapper = this._createMapper(behaviors);
+    learnableSet(behaviors) {
+
+      return behaviors.filter((behavior) => {
+        if (!behavior.areaId) {
+          this.discard(behavior, 'no responsibility area defined (areaId)');
+          return false;
+        }
+
+        if (!behavior.completedAt && !behavior.features.duration.truer) {
+          this.discard(behavior, 'no duration or completion time defined (completedAt || feature.durations.truer)');
+          return false;
+        }
+
+        return true;
+      });
+    },
+
+    async learn(behaviors) {
+      if (this.learned) return this.learned;
+
+      const mapper = this._createMapper(behaviors);
 
       // Create training set
-      set = _(behaviors)
+      const set = this
+        .learnableSet(behaviors)
         .map((behavior) => {
           return {
             input : mapper.input( behavior),
             output: mapper.output(behavior)
           };
-        })
-        .filter('input').filter('output')
-        .value();
+        });
 
-      if (mapper.skiped.length) {
-        console.warn('classifier.responsibilityArea:', mapper.skiped.length, 'of', set.length,' ocurrences have no responsibility area defined and were skiped.')
+      if (this.skips.length) {
+        console.warn('[classifier.responsibility-area]', this.skips.length, 'of', set.length,' ocurrences have no responsibility area defined or inferrable duration and were skiped.');
       }
 
-      // Train network
-      let learning = this.perceptron.trainer.train(set, {iterations: 200, log: 50, rate: 0.01});
-
-      this.learned = true;
-
-      learning.set = set;
-      learning.sampleSize = set.length;
-
-      return learning;
+      return this._train(set, {iterations: 200, log: 50, rate: 0.01});
     },
-    predict(behaviors) {
-      let baseInput = _.fill(Array(24), 0), ids = this.areaIds, contextualNow;
 
+    predictableBehavior(behavior, contextualNow) {
+      const context = behavior;
+      if (!(contextualNow || context.calendar && context.calendar.now)) {
+        this.discard(behavior, 'no contextual now present on behavior and none provided to predictor (context.calendar.now)');
+        return false;
+      }
+
+      if (!behavior.completedAt && !behavior.features.duration.truer) {
+        this.discard(behavior, 'no duration or completion time defined');
+        return false;
+      }
+
+      return true;
+    },
+
+    /**
+     * Generates a probability distribution of responsibility areas
+     * given a list of behaviors.
+     *
+     * Criteria in order:
+     * - Uses a duration timeslice of completed behavior inferred from completed at
+     * - Uses a duration timeslice of inferred from the given context calendar now
+     */
+    predict(behaviors, {context} = {}) {
+      (this.context) || (this.context = context);
+
+      const ids = this.areaIds,
       contextualNow = (this.context && this.context.calendar.now);
 
-      return behaviors.map((behavior) => {
-        let hour    = (contextualNow || behavior.context.calendar.now).getHours(),
-        input       = baseInput.concat([]), prediction;
-        input[hour] = 1;
-        prediction           = this.perceptron.activate(input);
-        prediction.predicted = prediction.indexOf(ss.max(prediction));
-        prediction.actual    = ids.indexOf(behavior.areaId);
-        return prediction;
-      });
+      return behaviors
+        .map((behavior) => {
+          let input;
+
+          if (this.predictableBehavior(behavior, contextualNow)) {
+            const hour    = (contextualNow || behavior.context.calendar.now).getHours();
+            input = new Array(24).fill(0);
+            input[hour] = 1;
+          } else {
+            input = new Array(24).fill(0.5);
+          }
+
+          const prediction = this.activate(input);
+
+          return Object.assign(prediction, {
+            predicted: prediction.indexOf(ss.max(prediction)),
+            actual: behavior.areaId ? ids.indexOf(behavior.areaId) : null
+          });
+        });
 
     },
     _createMapper(behaviors) {
-      let baseInput  = _.fill(Array(24), 0),
-        baseOutput   = _.fill(Array(this.areas.length), 0);
+      const baseInput  = new Array(24).fill(0),
+            baseOutput = new Array(this.areas.length).fill(0);
 
       return {
         ids: this.areaIds,
         skiped: [],
+        defaultInput: new Array(24).fill(0.5),
         input (behavior) {
-          let duration = this.duration(behavior);
-          // Only learn responsibility area timing from completed behaviors
-          if (!duration) return this.skip(behavior);
-
-          let midnight = duration.start.clone().startOf('day'),
+          let duration = this.duration(behavior),
+          midnight = duration.start.clone().startOf('day'),
           start  = moment.duration(duration.start.diff(midnight)).as('hours'),
           cursor = Math.round(start),
           end    = moment.duration(duration.end.diff(midnight)).as('hours'),
@@ -98,8 +143,6 @@ Classifier.add(stampit({
           return input;
         },
         output (behavior) {
-          if (!behavior.areaId) return this.skip(behavior);
-
           let index = this.ids.indexOf(behavior.areaId),
             output  = baseOutput.concat([]);
 
@@ -113,16 +156,16 @@ Classifier.add(stampit({
             if (behavior.start) {
               return {
                 start   : moment(behavior.start),
-                duration: duration.truer * 1000,
-                end     : moment(behavior.start.getTime() + duration.truer * 1000)
+                duration: duration.truer,
+                end     : moment(behavior.start.getTime() + duration.truer)
               };
             }
 
             // TODO estimate start time of meals in duration
             if (behavior.completedAt) {
               return {
-                start   : moment(behavior.completedAt.getTime() - duration.truer * 1000),
-                duration: duration.truer * 1000,
+                start   : moment(behavior.completedAt.getTime() - duration.truer),
+                duration: duration.truer,
                 end     : moment(behavior.completedAt)
               };
             }
@@ -136,14 +179,11 @@ Classifier.add(stampit({
             };
           }
 
-          return this.skip(behavior);
-        },
-        skip(behavior) {
-          this.skiped.push(behavior) && null;
+          return false;
         }
       };
     },
-    performate(behaviors) {
+    async performate(behaviors) {
       let baseInput = _.fill(Array(24), 0),
         hour, learning, hours = 24, fillers,
         ids, predictions = [], graphs = [],
@@ -151,6 +191,7 @@ Classifier.add(stampit({
         columns = this.areas.map((area) => {return {key: area.name, values: []}}),
         learnable = this.performatableSet(behaviors);
 
+      console.log('TODO consider responsibility area to limit amount of fun time');
       // run dependencies
       Estimator.get('weight', {areas: this.areas}).estimate(learnable);
       let p = Estimator.get('duration', {areas: this.areas}).estimate(learnable);
@@ -168,7 +209,7 @@ Classifier.add(stampit({
           .value();
 
         if (!learnable.length) {
-          console.warn(`classifiers.responsibilityArea.performance: learning set is empty!`);
+          console.warn(`[classifiers.responsibility-area] performance: learning set is empty!`);
         }
 
         let mapper = this._createMapper(learnable);
@@ -261,7 +302,7 @@ Classifier.add(stampit({
           input        = baseInput.concat([]);
           input[hours] = 1;
 
-          output      = this.perceptron.activate(input);
+          output      = this.network.activate(input);
           columns.forEach((column, index) => {
             column.values.unshift({
               x: hours,

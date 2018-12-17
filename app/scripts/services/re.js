@@ -46,7 +46,7 @@
  *
  *   - Habitual occurrences subset: Based only on past behavioral ocurrences
  *   a habituality model is generated and use to create habitual ocurrences.
- *   (Usually this is date unregistered by the user but nonetheless high
+ *   (Usually this is data unregistered by the user but nonetheless high
  *   frequency (sleep, eat, etc) occurrences are thought as habitual)
  *
  *

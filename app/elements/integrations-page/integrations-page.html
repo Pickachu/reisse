@@ -20,7 +20,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         --paper-datatable-top-toolbar: { height: auto; }
       }
     </style>
-    <content></content>
+    <paper-material elevation="1">
+      <content></content>
+    </paper-material>
+
+    <paper-textarea label="Columns" value="{{_columnMarkup}}"></paper-textarea>
 
     <paper-datatable-card header="Ocurrence library" page-size="30" data-source="[[dataSource]]" id-property="__firebaseKey__">
       <div toolbar-main style="padding: 2em;">
@@ -35,6 +39,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-item name="foursquare">Foursquare</paper-item>
             <paper-item name="facebook">Facebook</paper-item>
             <paper-item name="rescue-time">Rescue Time</paper-item>
+            <paper-item name="youtube">YouTube</paper-item>
           </paper-listbox>
         </paper-dropdown-menu>
 
@@ -44,13 +49,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-item name="open">Open</paper-item>
             <paper-item name="confirmed" title="status not confirmed as an status yet on data model">Confirmed</paper-item>
             <paper-item name="completed">Completed</paper-item>
+            <paper-item name="canceled">Canceled</paper-item>
           </paper-listbox>
         </paper-dropdown-menu>
       </div>
 
       <paper-datatable>
-        <paper-datatable-column header="ID" property="__firebaseKey__" type="String" tooltip="Firebase Key" sortable align="center" style="min-width: 40px"></paper-datatable-column>
-
         <!-- TODO figure out why sort attribute does not work
         <paper-datatable-column header="Provider Id" property="provider" type="Object" sortable align="center" sort="{{_providerSorter}}">
           <template>
@@ -58,10 +62,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </template>
         </paper-datatable-column> -->
         <paper-datatable-column header="Name" type="String" sortable property="name" ></paper-datatable-column>
-        <paper-datatable-column header="Status" property="status" type="String" sortable ></paper-datatable-column>
-        <paper-datatable-column header="Created At" type="Date" property="createdAt" sortable sorted format-value="[[_formatDateValue]]"></paper-datatable-column>
-        <paper-datatable-column header="Completed At" type="Date" property="completedAt" sortable format-value="[[_formatDateValue]]"></paper-datatable-column>
-        <paper-datatable-column property="simplicity" header="Simplicity"></paper-datatable-column>
+        <paper-datatable-column header="Features" property="features" sort="[[_featuresSorter]]">
+          <template>
+            <p>Duration: [[item.features.duration.actual]]</p>
+          </template>
+        </paper-datatable-column>
       </paper-datatable>
 
     </paper-datatable-card>
@@ -76,7 +81,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       properties: {
         providerName: {
           type: String,
-          value: 'rescue-time'
+          value: 'any'
         },
         statusName: {
           type: String,
@@ -95,20 +100,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _formatDateValue: {
           type: Function,
           value() {
-            return function formatDateValue (value) { return moment(value).format('L LTS'); };
+            return function formatDateValue (value) { return value ? moment(value).format('L LTS') : '<empty>'; };
           },
+        },
+
+        _columnMarkup: {
+          type: String,
+          value: "__firebaseKey__ string\nstatus string\ncompletedAt Date"
         }
       },
 
+      observers: [
+        '_computeDynamicColumns(_columnMarkup)'
+      ],
+
       // TODO alert full ocurrence json on row tap
       // app.ocurrences.find(({__firebaseKey__}) => __firebaseKey__ === '-LKa6nhasMyXgluXCEwB');
-
-      attached() {
-        // Forward filter
-        this.async(() => {
-
-        })
-      },
 
       _computeFilter (provider, status) {
         let matcher = {};
@@ -121,11 +128,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _compact (ocurrence) {
         ocurrence.providerName = ocurrence.provider.name;
         ocurrence.simplicity   = ocurrence.features.simplicity.actual;
+        ocurrence.duration     = ocurrence.features.duration.actual;
       },
       _providerSorter(a, b) {
-        debugger
         if (!a.provider || !b.provider) return 0;
         return a.provider.id.toString().localeCompare(b.provider.id);
+      },
+      _featuresSorter(a, b) {
+        const one   = _.get(a, 'features.duration.actual');
+        const other = _.get(b, 'features.duration.actual');
+        return one - other;
       },
       _computeDataSource (ocurrences, filter) {
         return {
@@ -144,7 +156,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             throw new Error("dataSource.set Not implemented yet.");
           }
         };
+      },
+
+      _computeDynamicColumns(markup) {
+        const table = Polymer.dom(this.querySelector('paper-datatable'));
+
+        table.querySelectorAll('.dynamic-column').forEach((column) => {
+          table.removeChild(column);
+        });
+
+        const inferType = (path) => {
+          if (path.includes('.')) return 'object';
+          else return this.typeOf(_.get(table.node.data[0], path));
+        }
+
+        markup
+          .split("\n")
+          .map((column) => {
+
+            const element = this.ownerDocument.createElement('paper-datatable-column'),
+            [property, type = inferType(property)] = column.split(' '),
+            formatter = '_' + _.camelCase(`format-${type}-value`);
+
+            formatter in this && (element.formatValue = this[formatter]);
+
+            if (type === 'object') {
+              const template = this.ownerDocument.createElement('template');
+              template.setAttribute('is', 'dom-bind');
+              template.innerHTML = `<span>[[item.${property}]]<span>`;
+              Polymer.dom(element).appendChild(template);
+              element.templatize(template);
+              element.template = true;
+            }
+
+            // TODO sortable support
+            return Object.assign(element, {
+              property, type,
+              className: 'dynamic-column',
+              header: _.startCase(property)
+            });
+
+          })
+          .forEach((element) =>
+            table.appendChild(element)
+          );
+      },
+
+      typeOf(obj) {
+        return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
       }
+
     });
   })();
   </script>

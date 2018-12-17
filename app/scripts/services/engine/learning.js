@@ -19,7 +19,7 @@ Re.Learning = stampit({
     // TODO Move lernableSet to classifier and estimators base class
     learnableSet (ocurrences) {
       // Only learn from past ocurrences that actualy happened
-      return ocurrences.filter((ocurrence) => ocurrence.status === 'complete');
+      return ocurrences.filter(({status}) => status === 'complete');
     }
 
   }

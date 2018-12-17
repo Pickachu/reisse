@@ -23,12 +23,12 @@ Suggester.add(stampit({
 
     stage (behaviors) {
       this.classifiers = {
-        sleep     : Classifier.get('sleep'),
-        hunger    : Classifier.get('hunger'),
-        dayTime   : Classifier.get('dayTime'),
+        sleep        : Classifier.get('sleep'),
+        hunger       : Classifier.get('hunger'),
+        activityType : Classifier.get('activityType'),
         // NOTE not used yet, eventually will be used as some criteria for suggestion
-        // dayTime   : Classifier.get('dayTime/meal'),
-        frequency : Classifier.get('frequency')
+        // activityType   : Classifier.get('activityType/meal'),
+        frequency    : Classifier.get('frequency')
       };
 
       // this.ensureClassifiers();
@@ -140,11 +140,12 @@ Suggester.add(stampit({
     // TODO consider meals that already happened on context
     // TODO move behavior creation to habitual behaviors / external service behaviors generation
     meal (behaviors, context) {
-      let now = new Date(), macronutrients, dayTime = this.classifiers.dayTime, frequency = this.classifiers.frequency;
+      let now = new Date(), macronutrients;
+      const {activityType, frequency} = this.classifiers;
 
       // TODO consider todays sleep
       // todaysSleep = _.findLast(behaviors, ['activity.type', 'sleep'])
-      dayTime.context = frequency.context = context;
+      activityType.context = frequency.context = context;
 
       // FIXME create suggestions by context instead of assuming an 1 day of
       // daytime period. essentialy stop assuming the same context for the whole
@@ -157,12 +158,12 @@ Suggester.add(stampit({
           // TODO increase granularity of daytime activity prediction
           // manually change context here
           cursor.calendar.now = start.add(1, 'hour').toDate();
-          dayTime.context = cursor;
-          predicts.push(dayTime.predict(behaviors, {limit: 1}));
+          activityType.context = cursor;
+          predicts.push(activityType.predict(behaviors, {limit: 1}));
         }
 
         return Promise.all(predicts).then((predictions) => {
-          let mealActivityIndex = dayTime.mapper.types.indexOf('meal').toString();
+          let mealActivityIndex = activityType.mapper.types.indexOf('meal').toString();
 
           return _(predictions).map((prediction, index) => {
             return {
@@ -183,8 +184,8 @@ Suggester.add(stampit({
         fiber: 0.1
       };
 
-      // TODO improve dayTime prediction api
-      return Promise.resolve(dayTime.learn(behaviors))
+      // TODO improve activityType prediction api
+      return Promise.resolve(activityType.learn(behaviors))
         .then(() => Promise.all([frequency.predict(behaviors), predictActivityTypeByDaytime(behaviors, context)]))
         .then(([frequencies, probabilities]) => [
           // TODO improve frequency prediction api (probably classifier api), by

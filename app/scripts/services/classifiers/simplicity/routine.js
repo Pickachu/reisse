@@ -1,31 +1,37 @@
 'use strict';
 
 Classifier.add(stampit({
-  refs: {
-    name: 'routine'
-  },
   init() {
-    let Architect    = synaptic.Architect;
-    this.dayTime    = Classifier.get('dayTime');
+    this.stage();
   },
-  methods: {
-    learn(behaviors) {
-      let set = [], finite = Number.isFinite;
-
-      return this.duration.learn(behaviors);
+  refs: {
+    name: 'routine',
+    stage() {
+      this.activityType  = Classifier.get('activityType');
     },
-    predict(behaviors) {
-      let mapper;
-      this.duration.predict(behaviors);
-      mapper = this.duration._createInputMapper(behaviors);
 
-      behaviors.forEach((behavior) => {
-        let features = behavior.features;
-        features.routine || (features.routine = {});
-        features.routine.estimated = 1 - features.duration.estimated / mapper.maximumDuration;
+    learn(behaviors) {
+      return this.activityType.learn(behaviors);
+    },
+
+    async predict(behaviors, {context}) {
+      this.activityType.context = context;
+
+      // TODO on activityType learn to predict behaviors based on species instead of
+      // only activity type
+      const mapping = await this.activityType.createProbabilityMap(behaviors, context);
+
+      // TODO on activityType learn to predict behaviors based on species instead of
+      // only activity type
+      mapping.set('watch', mapping.get('browse'))
+
+      return behaviors.map((behavior) => {
+        const {features, activity = {}} = behavior;
+        const activityTypeProbability = mapping.get(activity.type || 'unknown');
+
+        features.routine.estimated = activityTypeProbability;
+        return behavior;
       });
-
-      return Promise.resolve(behaviors);
     }
   }
 }));

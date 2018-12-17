@@ -5,7 +5,7 @@
 
 Re.Encoder = stampit({
   static: {
-    DEFAULT_OCURRENCE_DURATION: 25 * 60, // A pomodoro
+    DEFAULT_OCURRENCE_DURATION: 25 * 60 * 1000, // A pomodoro
     predictions: [],
 
     // lissë (calendarize)
@@ -13,7 +13,6 @@ Re.Encoder = stampit({
     // TODO externalize prediction, habituation and suggestion methods
     lisse(ocurrences) {
       let lisse, range;
-
       this.predictions = [];
 
       // For now, compute timslice returns only the current day range
@@ -54,12 +53,13 @@ Re.Encoder = stampit({
         // engine. Instead of just mutating the ocurrences array.
         // _habitualEventsFor(range, ocurrences).then((habitualOcurrences) =>
         _habitualEventsFor(range, ocurrences)
+        .then(() => this.stage = 'predictable occurrences prediction')
         .then(() =>
           traveler.reduce((events, context, traveler) =>
             this
               .predict(ocurrences, context)
 
-              .then((prediction) => {this.predictions.push(prediction); return prediction;})
+              .then((prediction) => {this.predictions.push([prediction, context]); return prediction;})
 
               // TODO think of how to deal with most probably behavior for each context,
               // between predictions do this to speed up prediction and fix up anticipationn
@@ -82,21 +82,21 @@ Re.Encoder = stampit({
                     // accepted as a predicition candidate
                     ocurrences.splice(ocurrences.indexOf(target), 1);
                   } else {
-                    console.error(`Re.encoder: Ocurrence not found for deduplication ${ocurrence.name || ocurrence.toJSON()}`);
+                    console.error(`[encoder] Ocurrence not found for deduplication ${ocurrence.name || ocurrence.toJSON()}`);
                   }
                 });
                 return encoded;
               })
 
               .then((encoded) => {
-                let seconds = encoded[0].features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
+                let milliseconds = encoded[0].features.duration.estimated || this.DEFAULT_OCURRENCE_DURATION;
 
                 // By fowarding all available time we stop predicting when it acquires 15 events
                 if (events.length > 15) {
                   traveler.forward(traveler.available);
                 // By default gets the next context
                 } else {
-                  traveler.forward(seconds);
+                  traveler.forward(milliseconds);
                 }
 
                 return events.concat(encoded[0]);
@@ -133,15 +133,17 @@ Re.Encoder = stampit({
           // ocurrence is sleep!
           if (ocurrence.features.start) {
             if (ocurrence.activity && ocurrence.activity.type !== 'sleep') {
-              console.warn('Re.encoder: reseting traver cursor time to non sleep ocurrence');
+              console.warn('[encoder::__encodePredictionSet] reseting traver cursor time to non sleep ocurrence');
             }
             start = traveler.cursor = moment(ocurrence.features.start);
           }
 
           ocurrence.features.start = start.toDate();
-          ocurrence.features.end   = start.clone().add(duration, 'seconds').toDate();
+          ocurrence.features.end   = start.clone().add(duration, 'milliseconds').toDate();
 
-          console.log('Predicted ocurrence:', ocurrence.name, ocurrence.features.start, ocurrence.features.end);
+          console.log('[encoder::__encodePredictionSet] predicted',
+            ocurrence.name, `\nStart: ${ocurrence.features.start}\n`, `End: ${ocurrence.features.End}`
+          );
 
           return ocurrence;
         })
@@ -149,6 +151,7 @@ Re.Encoder = stampit({
     },
 
     _pastEventsFromToday(range, ocurrences) {
+      this.stage = 'past occurrences for the day detection';
       let comparable = range[0]; // normaly range[0] === todays midnight
       return ocurrences.filter((o) => o.completedAt && o.completedAt > comparable );
     },
@@ -156,6 +159,8 @@ Re.Encoder = stampit({
     // FIXME respect range and context when suggesting
     // TODO estimate future contexts and forward to habituators
     _suggestedEventsFor (range, ocurrences) {
+      this.stage = 'optimized occurrences suggestion';
+
       return Context().for(range[0])
         .then((context) => {
           return Suggester({
@@ -180,12 +185,12 @@ Re.Encoder = stampit({
     // TODO make habituators calculate some nice range near the context (eg: sleep habituators
     // check for todays and last days nights of sleep)
     _habitualEventsFor (range, ocurrences) {
+      this.stage = 'habitual occurrences prediction';
       let yesterday = moment(range[0]).subtract(1, 'day');
 
-      console.log('predicting habits');
+
       return Context().for(yesterday.toDate())
         .then((context) =>
-          // TODO pass areas
           Habit().for(ocurrences, context)
         );
 

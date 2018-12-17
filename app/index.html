@@ -65,7 +65,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </head>
 
   <body unresolved class="fullbleed layout vertical">
-    <span id="browser-sync-binding"></span>
+    <!-- <span id="browser-sync-binding"></span> -->
 
     <template is="dom-bind" id="app">
       <iron-signals id="signaler"></iron-signals>
@@ -87,6 +87,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </a>
             <a data-route="synchronization" href="/synchronization" on-click="onDataRouteClick">
               <iron-icon icon="autorenew" title="synchronization auditing"></iron-icon>
+            </a>
+            <a data-route="microscope" href="/microscope" on-click="onDataRouteClick">
+              <iron-icon icon="receipt" title="occurrence comparison and prediction auditing"></iron-icon>
             </a>
           </paper-menu>
 
@@ -188,6 +191,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </section>
               </section>
 
+              <section data-route="microscope">
+                <section>
+                  <paper-button on-tap="fetch" disabled="[[ocurrences.length]]">Fetch</paper-button>
+                  <!-- Will be mainly used to configure suggesters -->
+                  <reisse-microscope-section occurrences="{{ocurrences}}"></reisse-microscope-section>
+                </section>
+              </section>
+
             </iron-pages>
           </div>
         </paper-scroll-header-panel>
@@ -217,12 +228,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <foursquare-checkins authorization="[[squareAuthorization]]"></foursquare-checkins>
       <!-- TODO make oauth2 authorization for rescue time (have to send email to them) -->
       <rescue-time-analytics endpoint="/rescue-time/anapi/data"></rescue-time-analytics>
-      <unplugg-element></unplugg-element>
+      <!-- <unplugg-element></unplugg-element> -->
 
       <facebook-sdk app-id="1620595611520205"></facebook-sdk>
       <facebook-graph></facebook-graph>
 
       <google-people></google-people>
+      <youtube-playlist playlist-id="WL"></youtube-playlist>
 
       <!-- consider using: http://robrez.github.io/poly-ical/components/poly-ical/index.html -->
       <calendar-provider name="google" calendars="{{calendars}}">
@@ -257,20 +269,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="scripts/models/concerns/parsers/rescue-time.js"></script>
     <script src="scripts/models/concerns/parsers/rescue-time/video-parser.js"></script>
     <script src="scripts/models/concerns/parsers/activity/jawbone.js"></script>
-    <script src="scripts/models/concerns/parsers/activity/rescue-time.js"></script>
     <script src="scripts/models/lore/synchronizable.js"></script>
     <script src="scripts/models/lore/deduplicator.js"></script>
     <script src="scripts/models/lore/synchronizerable.js"></script>
     <script src="scripts/models/lore/integrable.js"></script>
     <script src="scripts/models/lore/integrations/index.js"></script>
-    <script src="scripts/models/lore/integrations/things.js"></script>
-    <script src="scripts/models/lore/integrations/relisse.js"></script>
+    <!-- <script src="scripts/models/lore/integrations/things.js"></script> -->
+    <script src="scripts/models/lore/integrations/relisse.js" type="module"></script>
+    <script src="scripts/models/lore/integrations/relisse/rulesetable.js" type="module"></script>
     <!-- TODO reactivate when jawbone service backs up -->
     <!-- <script src="scripts/models/lore/integrations/jawbone.js"></script> -->
-    <script src="scripts/models/lore/integrations/i-calendars.js"></script>
-    <script src="scripts/models/lore/integrations/rescue-time.js"></script>
-    <script src="scripts/models/lore/integrations/google.js"></script>
-    <script src="scripts/models/lore/integrations/google/takeout/my-activity.js"></script>
+    <!-- <script src="scripts/models/lore/integrations/i-calendars.js"></script>
+    <script src="scripts/models/lore/integrations/rescue-time.js" type="module" ></script>
+    <script src="scripts/models/lore/integrations/rescue-time/activity-factory.js" type="module" ></script> -->
+    <!-- <script src="scripts/models/lore/integrations/google.js"></script>
+    <script src="scripts/models/lore/integrations/google/takeout/my-activity.js"></script> -->
+    <!-- <script src="scripts/models/lore/integrations/google/youtube/watch-later-playlist.js" type="module" ></script> -->
     <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/app.js"></script>

@@ -2,35 +2,33 @@
 
 Estimator.add(stampit({
   refs: {
-    name: 'dayTime'
+    name: 'time'
   },
   init() {
-    this.dayTime   = Classifier.get('dayTime');
-    this.frequency = Classifier.get('frequency');
+    this.time = Classifier.get('time');
   },
   methods: {
     estimate (behaviors) {
-      // return this.when('duration').then((resolve) => {
+      return this.when('duration').then((resolve) => {
         // this.inferRelativeTime(behaviors);
-      return this.inferActualDayTime(behaviors);
-      // });
+        return this.inferActualTime(behaviors, resolve);
+      });
     },
 
-    inferActualDayTime(behaviors) {
-      return Promise.all([this.dayTime.learn(behaviors), this.frequency.learn(behaviors)]).then(() => {
-        // this.time.predict(behaviors).then(finished);
-        return Promise.resolve(behaviors);
+    inferActualTime(behaviors, finished) {
+      return this.time.learn(behaviors).then(() => {
+        this.time.predict(behaviors).then(finished);
       });
     },
 
     // timeFromTagNames (ocurrence) {
     //   if (Number.isFinite(ocurrence.features.time.actual)) return ocurrence;
-    //   if (!ocurrence.tagNames) {
-    //     console.warn(`estimators.time: Invalid tag names for ocurrence ${ocurrence.name}, tag names: ${ocurrence.tagNames}. Check for sync problems.`);
+    //   if (!ocurrence.tags) {
+    //     console.warn(`estimators.time: Invalid tag names for ocurrence ${ocurrence.name}, tag names: ${ocurrence.tags}. Check for sync problems.`);
     //     return ocurrence;
     //   }
     //
-    //   let aggregate = ocurrence.tagNames.reduce((total, name) => {
+    //   let aggregate = ocurrence.tags.reduce((total, name) => {
     //       return total + (this.tagsTime[name] || 0);
     //   }, 0);
     //

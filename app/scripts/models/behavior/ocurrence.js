@@ -20,11 +20,11 @@ var ocurrenceable = stampit({
         duration = time(this.end).subtractDate(time(this.start));
 
         if (Number.isFinite(duration.toSeconds()) || duration.toSeconds() < 0) {
-          this.features.duration = {actual: duration.toSeconds()};
+          this.features.duration = {actual: duration.toSeconds() * 1000};
 
           if (duration.toSeconds() == 0) {
             console.warn(this.__firebaseKey__, 'Ocurrence.init: computed i-calendar duration is 0, falling back to one pomodoro.');
-            this.features.duration.actual = 25 * 60 * 60
+            this.features.duration.actual = 25 * 60 * 60 * 1000;
           }
         } else {
           console.warn(this.__firebaseKey__, 'Ocurrence.init: failed to compute duration with dates:', this.start, this.end);
@@ -77,12 +77,13 @@ var ocurrenceable = stampit({
 
       // FIXME this line assumes all ocurrences on a i-calendar are behaviors,
       // reisse must learn the diference between behaviors (running, eating) and events (birthday party, rock concert, etc)!
+      // FIXME use moment and calculate milisecons
       if (json.start && json.end){
         var time = ICAL.Time.fromJSDate,
         duration = time(json.end).subtractDate(time(json.start));
         json.features = {
           duration: {
-            actual: duration.toSeconds()
+            actual: duration.toSeconds() * 1000
           }
         };
       }
@@ -121,16 +122,21 @@ var ocurrenceable = stampit({
 
       switch (provider) {
         case 'asana':
+          return Task.fromJSON(json);
         case 'things':
           return Task.fromJSON(json);
         case 'jawbone':
           // Current pure activity types: sleep, meal
           return Activity.fromJSON(json);
+        case 'youtube':
+          // Current pure activity types: watch
+          return Activity.fromJSON(json);
         case 'rescue-time':
+          // Current pure activity types: browse
           // Current pure activity categories: video
           return Activity.fromJSON(json);
         case 'i-calendar':
-          if (json.status !== 'cancelled') {
+          if (json.status !== 'cancelled' && json.status !== 'cancel') {
             // TODO better checking for this
             if (json.end > Date.now()) {
               json.status = 'open';
@@ -143,6 +149,7 @@ var ocurrenceable = stampit({
 
           return Ocurrence(json);
         default:
+          console.warn(`Ocurrence: don't know how to parse provider: ${provider}, falling back to generic Ocurrence type.`);
           return Ocurrence(json);
       }
     }

@@ -3,51 +3,35 @@
 
 Context.add(stampit({
   init () {
-    this.hungerer = Classifier.get('hunger');
+    // TODO receive classifiers as parameters
+    this.sleepiness = Classifier.sleepiness;
   },
   refs: {
-    name: 'hunger'
-  },
-  methods: {
-    // TODO predict hunger at moment
-    contextualize (moment) {
+    name: 'sleepiness',
+    async contextualize (moment) {
       this.when('calendar').then((context) => {
-        let measurement = this.findNearestMeasurement(context);
-
-        let satiety = this.hungerer.mapper.denormalize(1 - measurement.hunger),
-        hunger = (satiety - (moment - measurement.when) / 1000) / this.hungerer.mapper.edges.maximumSatiety;
-
-        context.hunger = hunger;
-        if (hunger > 0) {
-          return Promise.resolve(context);
-        } else {
-          console.warn('No hunger found for contextualization.');
-          context.hunger = 0.5;
-          return Promise.resolve(context);
-
-          // TODO guessNearestMeasurement when there is no easy current hunger
-          // return this.guessNearestMeasurement(context).then((hunger) =>
-          //   context.hunger = hunger, Promise.resolve(context)
-          // );
+        if (!this.sleepiness.learned) {
+          console.error(`[context:${this.name}] using untrained sleepiness it's useless`);
         }
+        context.sleepiness = this.sleepiness.predict([], {context});
       });
     },
-    findNearestMeasurement(context) {
-      if (!Context.nearestHungerMeasurement) {
-        // TODO use current hunger from estimator instead of inferring it from ocurrences
-        let behavior = _(Re.estimators.occurrences || app.ocurrences)
-          .sort('start')
-          .findLast((b) => b.features && Number.isFinite(b.features.hunger.truer))
-          .value();
-
-        Context.nearestHungerMeasurement = {
-          hunger: behavior.features.hunger.truer,
-          when  : behavior.context.calendar.now
-        }
-      }
-
-      return Context.nearestHungerMeasurement;
-    }// ,
+    // findNearestMeasurement(context) {
+    //   if (!Context.nearestHungerMeasurement) {
+    //     // TODO use current hunger from estimator instead of inferring it from ocurrences
+    //     let behavior = _(Re.estimators.occurrences || app.ocurrences)
+    //       .sort('start')
+    //       .findLast((b) => b.features && Number.isFinite(b.features.hunger.truer))
+    //       .value();
+    //
+    //     Context.nearestHungerMeasurement = {
+    //       hunger: behavior.features.hunger.truer,
+    //       when  : behavior.context.calendar.now
+    //     }
+    //   }
+    //
+    //   return Context.nearestHungerMeasurement;
+    // },
     // guessNearestMeasurement(context) {
     //   // TODO better guessing of meal macronutrients
     //   let macronutrients = {

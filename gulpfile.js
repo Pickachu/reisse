@@ -270,6 +270,14 @@ gulp.task('serve', ['styles', 'elements', 'images'], function () {
 
     // https://browsersync.io/docs/options#option-ghostMode
     ghostMode: false,
+
+    // https://browsersync.io/docs/options#option-codeSync
+    codeSync: false,
+
+    // https://browsersync.io/docs/options#online
+    online: false,
+
+
     logPrefix: 'PSK',
     snippetOptions: {
       rule: {

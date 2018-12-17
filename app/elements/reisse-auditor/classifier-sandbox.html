@@ -15,7 +15,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <style> :host { display: block; } </style>
   <template>
     <template is="dom-repeat" items="[[performance.graphs]]" as="performance">
-      <classifier-performance type="[[performance.type]]" meta="[[performance.meta]]" data="[[performance.data]]"></classifier-performance>
+      <classifier-performance
+        type="[[performance.type]]"
+        meta="[[performance.meta]]"
+        data="[[performance.data]]"
+        on-request-performance-retrain="_onRequestPerformanceRetrain"
+        >
+      </classifier-performance>
     </template>
   </template>
   <script>
@@ -31,7 +37,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           observer: '_nameChanged'
         },
         classifier: Object,
-        stats: Object
       },
 
       _nameChanged (current) {
@@ -42,10 +47,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return a === b;
       },
 
-      perform (behaviors) {
-        let draw;
-
-        this.classifier.performate(behaviors).then((performance) => {
+      perform (behaviors, options) {
+        this.classifier.performate(behaviors, options).then((performance) => {
           if (!performance.graphs) {
             performance.meta = performance.stats;
             performance.type = 'multi-bar';
@@ -53,9 +56,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             console.warn(this.is, 'not passing `performance.graphs` is deprecated');
           }
 
-          this.performance = performance;
+          this.performance = Object.assign(performance, {behaviors});
         });
-      }
+      },
+
+      // TODO rename meta iterations and rate to meta.training
+      _onRequestPerformanceRetrain ({target}, {meta: {training}}) {
+        return this.perform(this.performance.behaviors, {stage: {training}});
+      },
     });
   })();
   </script>

@@ -4,7 +4,7 @@
 // • Since there are no specific devices to measure/extract brain cycles values from humans
 // and we are using the BJ Fogg conceptual brain cycles construct.
 // • The actual brain cycles value is a prediction based on actual measurable
-// values for ocurrences that have happened.
+// values for occurrences that have happened.
 // • For now this values are:
 // - Reading dificulty
 // - Remebering dificulty
@@ -16,28 +16,28 @@ Estimator.add(stampit({
     name: 'brainCycles'
   },
   init() {
-    // TODO set this now to ocurrence hour context
+    // TODO set this now to occurrence hour context
     this.now = Date.now();
   },
   methods: {
       // TODO use task duration to estimate brain cycles
-      estimate (ocurrences) {
+      estimate (occurrences) {
 
-        // this.inferRelativeBrainCycles(ocurrences);
-        ocurrences.forEach(this.inferActualBrainCycles, this);
+        // this.inferRelativeBrainCycles(occurrences);
+        occurrences.forEach(this.inferActualBrainCycles, this);
 
-        // ocurrences.forEach(this.inferActualDuration, this);
+        // occurrences.forEach(this.inferActualDuration, this);
       },
 
-      inferActualBrainCycles(ocurrence) {
+      inferActualBrainCycles(occurrence) {
         let cycles = 0, activityType;
 
-        switch (ocurrence.getStamp()) {
+        switch (occurrence.getStamp()) {
           case Task:
-            cycles += this.forTask(ocurrence);
+            cycles += this.forTask(occurrence);
             break;
           case Ocurrence:
-            // TODO compute brainCycles for ocurrence
+            // TODO compute brainCycles for occurrence
             cycles += 0;
             break;
           case Activity:
@@ -49,14 +49,14 @@ Estimator.add(stampit({
             break;
         }
 
-        if (ocurrence.activity && (activityType = _.capitalize(ocurrence.type || ocurrence.activity.type))) {
+        if (occurrence.activity && (activityType = _.capitalize(occurrence.type || occurrence.activity.type))) {
           if (!this[`for${activityType}`]) {
             throw new TypeError(`brainCycles estimator not implemented yet for ${activityType}.`);
           }
-          cycles += this[`for${activityType}`](ocurrence);
+          cycles += this[`for${activityType}`](occurrence);
         }
 
-        return ocurrence.features.brainCycles.actual = cycles;
+        return occurrence.features.brainCycles.actual = cycles;
       },
 
       forTask (task) {
@@ -72,12 +72,12 @@ Estimator.add(stampit({
         // For each day past from this task creation it is a tiny bit harder to remember the task
         // - 0.01 brain cycle for each day past the task creation date
         // TODO create function to better infer brain cycles outdation
-        days    = outdation.toSeconds() / (24 * 60 * 60)
+        days    = outdation.toSeconds() / (24 * 60 * 60);
         cycles += days * 0.1;
 
         // You need to interpret each tag name to help understand the task
         // - 0.5 brain cycle for each tag name interpretation
-        cycles += task.tagNames.length;
+        cycles += task.tags.length;
 
         return cycles;
       },
@@ -95,22 +95,26 @@ Estimator.add(stampit({
         return 0;
       },
 
-      forBrowse (meal) {
+      forBrowse (browse) {
         return 0;
       },
 
-      inferRelativeBrainCycles(ocurrences) {
+      forWatch (watch) {
+        return 0;
+      },
+
+      inferRelativeBrainCycles(occurrences) {
 
       },
 
-      inferActualDuration(ocurrence) {
-          let actual = 0, duration = ocurrence.features.duration;
+      inferActualDuration(occurrence) {
+          let actual = 0, duration = occurrence.features.duration;
 
           // Actual duration already define, does not need to infer
           if (duration.actual) return;
 
-          if (ocurrence.tagNames) {
-              actual = ocurrence.tagNames.reduce((total, name) => {
+          if (occurrence.tags) {
+              actual = occurrence.tags.reduce((total, name) => {
                   return total + (this.tagsDurations[name] || 0)
               }, 0);
           }

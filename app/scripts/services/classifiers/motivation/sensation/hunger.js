@@ -11,13 +11,11 @@
 // The satiety value is the amount of seconds that someone stays without hunger.
 // TODO create satiety estimator
 Classifier.add(stampit({
-  refs: {
-    name: 'hunger'
-  },
   init () {
     this.stage();
   },
-  methods: {
+  refs: {
+    name: 'hunger',
     stage () {
       let Architect   = synaptic.Architect;
 

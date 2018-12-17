@@ -9,17 +9,16 @@ Habit.add(stampit({
     this.predictor = this.estimator.sleepiness.sleep || Classifier.get('sleep');
   },
   refs: {
-    name: 'sleep'
-  },
-  methods: {
+    name: 'sleep',
+
     // TODO predict people at moment
-    habitualize (ocurrences, context) {
+    async habitualize (occurrences, context) {
       let now = new Date(), prediction, activity;
       this.predictor.context = context;
       prediction = this.predictor.predict();
 
       // TODO infer venue for the habit
-      // TODO elaborate habitual ocurrences
+      // TODO elaborate habitual occurrences
       // for now just add todays one sleep habit ocurrence ;)
       activity = Activity({
         // TODO add this properties
@@ -31,7 +30,7 @@ Habit.add(stampit({
         features    : {
           start     : prediction.asleepAt,
           duration: {
-            estimated: (prediction.awakeAt - prediction.asleepAt) / 1000
+            estimated: prediction.awakeAt - prediction.asleepAt
           }
         },
         habituality : {},
@@ -53,23 +52,21 @@ Habit.add(stampit({
       });
 
       // TODO formally guess all other features for habits
-      // this is a pseudo-hack to guess sleepiness, but i need to guess all others
-      return Promise.resolve()
-        .then(() => this.estimator.contextualize([activity]) )
-        .then((activity) => this.estimator.inferActualSleepiness(activity) )
-        .then(() => {
-          ocurrences.push(activity);
-          return ocurrences;
-        });
+      // this is a pseudo-hack to guess sleepiness, but we need to guess all others
+      [activity] = await this.estimator.contextualize([activity]);
+      await this.estimator.inferActualSleepiness([activity]);
+
+      occurrences.push(activity);
+      return occurrences;
     },
 
-    performate (ocurrences) {
+    performate (occurrences) {
       return this.estimator
-        .estimate(ocurrences.map(Ocurrence.fromJSON, Ocurrence))
+        .estimate(occurrences.map(Ocurrence.fromJSON, Ocurrence))
         .then(() => Context().for(moment().startOf('day').toDate()))
-        .then((context) => this.habitualize(ocurrences, context))
-        .then((ocurrences) => {
-          return {graphs: [{ event: ocurrences[ocurrences.length - 1] }]}
+        .then((context) => this.habitualize(occurrences, context))
+        .then((occurrences) => {
+          return {graphs: [{ event: occurrences[occurrences.length - 1] }]}
         })
     }
   }

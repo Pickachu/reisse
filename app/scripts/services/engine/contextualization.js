@@ -41,23 +41,25 @@ const Traveler = stampit({
       if (!this.needsForwarding) { throw new TypeError(`Traveler.forward: cannot be called twice`); }
 
       this.needsForwarding = false;
-      this.cursor.add(step, 'seconds');
+      this.cursor.add(step, 'milliseconds');
       return this.available -= step;
     },
 
     __logContext(context) {
       let message = ["Context"];
-      message.push("  Now     : " + context.calendar.now);
-      message.push("  Location: " + context.location.latitude + ' lat ' + context.location.longitude + ' lon');
-      message.push("  People  : " + _(context.people).map('profile.names.0').compact().value());
+      message.push("  Now       : " + context.calendar.now);
+      message.push("  Location  : " + context.location.latitude + ' lat ' + context.location.longitude + ' lon');
+      message.push("  People    : " + _(context.people).map('profile.names.0').compact().value());
+      message.push("  Sleepiness: " + context.sleepiness);
       message.push(" Meta ");
-      message.push("  Available Time: " + moment.duration(this.available) + 's');
+      message.push("  Available Time: " + moment.duration(this.available).asSeconds() + 's');
       console.log(message.join('\n'));
       return context;
     },
 
     // TODO move to context
     // TODO compute available time from past, and from already defined events
+    // TODO use moment instead of ICAL
     // For now, give 2 days of available time, later get available time from timerange param
     _computeAvailableTime (range) {
       let oneDay = ICAL.Duration.fromSeconds(2 * 24 * 60 * 60), midnight = ICAL.Time.now(), available;
@@ -66,7 +68,7 @@ const Traveler = stampit({
       midnight.addDuration(oneDay);
       available      = midnight.subtractDate(ICAL.Time.now()).toSeconds();
 
-      return available;
+      return available * 1000;
     }
   }
 })
