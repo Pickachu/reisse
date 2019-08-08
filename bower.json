@@ -17,7 +17,6 @@
     "lodash": "lodash/lodash#^4.0",
     "synaptic": "cazala/synaptic#^1.0",
     "iron-localstorage": "^1.0",
-    "nvd3-elements": "^0.14",
     "geo-location": "^1.0",
     "fullcalendar-calendar": "^0.2",
     "fullcalendar": "^2.9.0",
@@ -34,7 +33,7 @@
     "test-fixture": "PolymerElements/test-fixture#^1.0.0"
   },
   "resolutions": {
-    "polymer": "^1.6.0",
+    "polymer": "~1.2.0",
     "paper-styles": "^1.1.4",
     "lodash": "^4.0"
   }

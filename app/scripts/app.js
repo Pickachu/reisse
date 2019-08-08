@@ -108,7 +108,7 @@
     app.learning = false;
     app.learn = function () {
       this.learning = true;
-      this.fetch()
+      return this.fetch()
         .then((fetched  ) => Re.estimate(fetched, this.areas.concat([])))
         .then((estimated) => Re.learn(estimated))
         .then(()          => {this.learning = false});
@@ -119,7 +119,7 @@
 
     // Move to classifier app service
     app.predict = function () {
-      Re.lisse(Re.estimators.occurrences.concat([]))
+      return Re.lisse(Re.estimators.occurrences.concat([]))
         .then((events) => {
           // this.linkEvents(this.ocurrences, events, ['predictions']);
           this.prediction = { events };

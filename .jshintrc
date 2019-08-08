@@ -7,13 +7,18 @@
     "console": false,
     "require": false,
     "stampit": false,
-    "_": false,
-    "ICAL": false,
-    "Ocurrence": false,
     "__dirname": false,
+    "_": false,
     "mimir": false,
     "synaptic": false,
     "ss": false,
-    "emojione": false
+    "d3": false,
+    "ICAL": false,
+    "Polymer": false,
+    "Firebase": false,
+    "emojione": false,
+    "Ocurrence": false,
+    "Context": false,
+    "Re": false
   }
 }

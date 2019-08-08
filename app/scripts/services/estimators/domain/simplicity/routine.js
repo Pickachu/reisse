@@ -10,11 +10,11 @@ Estimator.add(stampit({
     estimate (behaviors) {
       // return this.when('duration').then((resolve) => {
         // this.inferRelativeTime(behaviors);
-      return this.inferActualDayTime(behaviors);
+      return this.inferActualCommonality(behaviors);
       // });
     },
 
-    inferActualDayTime(behaviors) {
+    inferActualCommonality(behaviors) {
       return Promise.all([this.activityType.learn(behaviors), this.frequency.learn(behaviors)]).then(() => {
         // TODO define actual routine value here with 90% confidence (probably only for past occurrences)
         return Promise.resolve(behaviors);

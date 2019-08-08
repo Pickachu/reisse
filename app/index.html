@@ -53,6 +53,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="bower_components/lodash/lodash.js"></script>
     <script src="bower_components/synaptic/dist/synaptic.js"></script>
     <script src="bower_components/changeset/index.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.1.2/dist/tf.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis"></script>
     <!-- endbuild -->
 
     <!-- will be replaced with elements/elements.vulcanized.html -->
@@ -248,44 +252,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     <!-- build:js scripts/app.js -->
-    <!-- move js to html imports -->
+    <!-- TODO move js to html imports -->
     <script src="bower_components/mimir/index.js"></script>
     <script src="bower_components/emojione/lib/js/emojione.js"></script>
-
-    <script src="scripts/stamps/awarable.js"></script>
-
-    <script src="scripts/models/differentiable.js"></script>
-    <script src="scripts/models/behavior.js"></script>
-    <script src="scripts/models/behavior/feature.js"></script>
-    <script src="scripts/models/behavior/ocurrence.js"></script>
-    <script src="scripts/models/behavior/ocurrence/task.js"></script>
-    <script src="scripts/models/behavior/ocurrence/activity.js"></script>
-    <script src="scripts/models/area.js"></script>
-    <script src="scripts/models/person.js"></script>
-
-
-    <!-- Lore sincronization and integration management layer -->
-    <script src="scripts/models/concerns/parsers/jawbone.js"></script>
-    <script src="scripts/models/concerns/parsers/rescue-time.js"></script>
-    <script src="scripts/models/concerns/parsers/rescue-time/video-parser.js"></script>
-    <script src="scripts/models/concerns/parsers/activity/jawbone.js"></script>
-    <script src="scripts/models/lore/synchronizable.js"></script>
-    <script src="scripts/models/lore/deduplicator.js"></script>
-    <script src="scripts/models/lore/synchronizerable.js"></script>
-    <script src="scripts/models/lore/integrable.js"></script>
-    <script src="scripts/models/lore/integrations/index.js"></script>
-    <!-- <script src="scripts/models/lore/integrations/things.js"></script> -->
-    <script src="scripts/models/lore/integrations/relisse.js" type="module"></script>
-    <script src="scripts/models/lore/integrations/relisse/rulesetable.js" type="module"></script>
-    <!-- TODO reactivate when jawbone service backs up -->
-    <!-- <script src="scripts/models/lore/integrations/jawbone.js"></script> -->
-    <!-- <script src="scripts/models/lore/integrations/i-calendars.js"></script>
-    <script src="scripts/models/lore/integrations/rescue-time.js" type="module" ></script>
-    <script src="scripts/models/lore/integrations/rescue-time/activity-factory.js" type="module" ></script> -->
-    <!-- <script src="scripts/models/lore/integrations/google.js"></script>
-    <script src="scripts/models/lore/integrations/google/takeout/my-activity.js"></script> -->
-    <!-- <script src="scripts/models/lore/integrations/google/youtube/watch-later-playlist.js" type="module" ></script> -->
-    <script src="scripts/models/lore.js"></script>
 
     <script src="scripts/app.js"></script>
   </body>

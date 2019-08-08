@@ -1,8 +1,14 @@
 'use strict';
 
-// TODO use homeostasis classifier?
-// TODO use cicardian classifier?
-// TODO use anticipation classifier, why?
+/**
+ * The sensation motivation factor is the amount of pleasure/pain that a person
+ * will immediately or nearly immediately will receive when performin the behavior
+ *
+ * TODO use homeostasis classifier?
+ * TODO use cicardian classifier?
+ * TODO use anticipation classifier? (why?)
+ * @type {Object}
+ */
 Classifier.add(stampit({
   init () { this.stage(); },
   refs: {
@@ -17,28 +23,30 @@ Classifier.add(stampit({
 
         let sensation;
 
-        // FIXME implement contextual sleepiness and hunger
         if (behavior.status === 'open') {
           if (!isFinite(sleepiness)) { sleepiness = context.sleepiness || 0.5; }
-          if (!isFinite(hunger)    ) { hunger     = context.hunger || 0.5; }
+          if (!isFinite(hunger)    ) { hunger     = context.hunger     || 0.5; }
         }
 
         // TODO think how to create a rule based system to set the relationship between
         // features and activity types or just use a perceptron here
         switch (activityType) {
+          // Sleep activities are high in pleasure when the person is sleepy
           case 'sleep':
           case 'nap':
             sensation = Math.max((0 + sleepiness + 1 - hunger) / 2, 0);
             break;
+          // Meal activities are high in pleasure when the person is hungry
           case 'meal':
             sensation = Math.max((1 - sleepiness + 0 + hunger) / 2, 0);
             break;
           default:
+          // Other activities are low in pleasure when the person is hungry or sleepy
             sensation = Math.max((1 - sleepiness + 1 - hunger) / 2, 0);
             break;
         }
 
-        // Explosive sensation value computed
+        // Explosive sensation value was computed
         if (sensation > 1 || sensation < 0 || !isFinite(sensation)) { debugger }
 
         return predictions.concat(sensation);

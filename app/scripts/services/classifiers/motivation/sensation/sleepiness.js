@@ -15,9 +15,9 @@ Classifier.add(stampit({
       // this.perceptron   = new Architect.Perceptron(1, 3, 1);
       this.sleep = this.sleep || Classifier.sleep;
 
-      // let twoMothsAgo = Date.now() - 2 * 30 * 24 * 60 * 60 * 1000;
-      let twoMothsAgo = Date.now() - 32 * 30 * 24 * 60 * 60 * 1000;
-      this.timeCap = new Date(twoMothsAgo);
+      let twoMothsAgo = Date.now() - 2 * 30 * 24 * 60 * 60 * 1000;
+      // this.timeCap = new Date(twoMothsAgo);
+      this.timeCap = new Date(0); // TODO be more explicit about missing sleep occurrences!
       this.learned = null
     },
     learn(behaviors) {
@@ -56,6 +56,13 @@ Classifier.add(stampit({
               nearestAverage = average;
             }
           });
+
+          if (distance > 4) {
+            let message = `[classifier.sleepiness.predict] Poor phase model detected.`;
+            message += `Nearest circadian phase have a distance of ${distance} from`;
+            message += `the ${phase} provided. Increase sleep records on learning step.`;
+            console.warn(message);
+          }
 
           return nearestAverage / this.maximumAverage;
         }
@@ -116,7 +123,7 @@ Classifier.add(stampit({
       // learning = this.perceptron.trainer.train(set, {iterations: 1000, log: 100});
       return this.learned = Object.assign({set,
         // TODO move to _createMapper
-        mapper: {maximumDuration: maximumDuration, aDayInSeconds: aDayInSeconds},
+        mapper: {maximumDuration, aDayInSeconds},
         sampleSize: set.length,
         discards: this.skips.concat([]),
       });

@@ -23,7 +23,10 @@ Classifier.add(stampit({
 
       // TODO on activityType learn to predict behaviors based on species instead of
       // only activity type
-      mapping.set('watch', mapping.get('browse'))
+      mapping.set('watch', mapping.get('browse'));
+
+      // Only for debugging purposes
+      this.mapping = mapping;
 
       return behaviors.map((behavior) => {
         const {features, activity = {}} = behavior;

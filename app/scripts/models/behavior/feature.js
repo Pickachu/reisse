@@ -8,7 +8,11 @@ const aggregable = function (instance, {name, feature, value: current, onWrite})
         configurable: true,
         get () {return current;},
         set (value) {
-            if (_.isNaN(value)) throw new TypeError("Feature.<aggregable>: Can't set feature value to NaN!");
+            if (_.isNaN(value)) {
+              let message = `Feature.<aggregable>.<set>(${feature}.${name}):`;
+              message += `Can't set feature value to NaN!`;
+              throw new TypeError(message);
+            }
             onWrite && onWrite.call(this, value, current);
             current = value;
             optimize(feature + '_' + name, current);

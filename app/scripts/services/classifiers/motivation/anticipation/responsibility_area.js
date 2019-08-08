@@ -199,7 +199,9 @@ Classifier.add(stampit({
         this.stage();
         ids = this.areaIds;
         this.learned = false;
-        let cap = moment().subtract(4, 'months').valueOf()
+
+        // TODO do capping in another method
+        let cap = moment().subtract(4, 'years').valueOf()
 
         learnable = _(learnable)
           .filter('completedAt')

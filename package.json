@@ -39,5 +39,8 @@
   "engines": {
     "node": ">=0.10.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@tensorflow-models/universal-sentence-encoder": "^1.0.1",
+    "@tensorflow/tfjs": "1.0.0"
+  }
 }

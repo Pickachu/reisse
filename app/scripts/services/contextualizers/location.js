@@ -13,6 +13,7 @@ Context.add(stampit({
 
       let provider, fetch = () => {
         provider = document.createElement('geo-location');
+        provider.timeout = 10000; // only works on second call
         provider.addEventListener('geo-response' , listener);
 
       }, listener = function (event, detail) {

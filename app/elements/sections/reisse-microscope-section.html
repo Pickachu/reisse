@@ -11,6 +11,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../nvd3-toolbar/nvd3-toolbar.html">
 <link rel="import" href="../reisse-event/reisse-event.html">
 
 <dom-module id="reisse-microscope-section">
@@ -19,85 +21,93 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       :host { display: block; }
       :host .pool-item .feature-summary { white-space: pre-line; padding-left: 2em; }
     </style>
-    <h1> Occurrences Microscope Analysis </h1>
+    <h1> Occurrences Predictions Analyzer </h1>
 
-    <template is="dom-if" if="[[context]]" restamp>
-      <div class="context">
-        <h2> Context </h2>
+    <div>
+      <h2>Prediction</h2>
+      <template is="dom-if" if="[[context]]" restamp>
+        <div class="context">
+          <h3> Context </h3>
 
-        <p>Now     : [[context.calendar.now]]</p>
-        <p>Location: [[context.location.latitude]] lat, [[context.location.longitude]] lon</p>
-        <p>
-          People  :
-          <template is="dom-repeat" items="[[context.people]]" as="person">
-            <template is="dom-repeat" items="[[person.names]]" as="name">
-              <span>[[name]]</span>
+          <p>Now     : [[context.calendar.now]]</p>
+          <p>Location: [[context.location.latitude]] lat, [[context.location.longitude]] lon</p>
+          <p>
+            People  :
+            <template is="dom-repeat" items="[[context.people]]" as="person">
+              <template is="dom-repeat" items="[[person.names]]" as="name">
+                <span>[[name]]</span>
+              </template>
             </template>
-          </template>
-        </p>
-        <p>Sleepiness: [[context.sleepiness]]</p>
-        <p>
-          Tools  :
-          <template is="dom-repeat" items="[[context.tools]]" as="tool">
-            <span>Name: [[tool.name]]</span>
-            <span>Type: [[tool.type]]</span>
-          </template>
-        </p>
+          </p>
+          <p>Sleepiness: [[context.sleepiness]]</p>
+          <p>
+            Tools  :
+            <template is="dom-repeat" items="[[context.tools]]" as="tool">
+              <span>Name: [[tool.name]]</span>
+              <span>Type: [[tool.type]]</span>
+            </template>
+          </p>
 
-      </div>
+        </div>
 
-    </template>
+      </template>
 
-    <h2> Prediction </h2>
+      <h3> Prediction Data </h3>
 
-    <div class="horizontal layout">
-      <paper-input label="Select prediction index" type="number" value="{{predictionIndex}}"></paper-input>
-      <paper-input step="0.1" type="number" value="{{chartOptions.domains.x.start}}" label="X Domain Start"></paper-input>
-      <paper-input step="0.1" type="number" value="{{chartOptions.domains.x.end}}" label="X Domain End"></paper-input>
-      <paper-input step="0.1" type="number" value="{{chartOptions.domains.y.start}}" label="Y Domain Start"></paper-input>
-      <paper-input step="0.1" type="number" value="{{chartOptions.domains.y.end}}" label="Y Domain End"></paper-input>
+      <nvd3-toolbar for="prediction-data-chart" data="[[_behavioralData]]" filter-logic="point.occurrences[0].provider.name">
+        <paper-input class="controls-content" label="Select prediction index" type="number" value="{{predictionIndex}}"></paper-input>
+        <paper-item class="sorting-path-option" name="occurrence.0.features.chance.actual">Actual Chance</paper-item>
+        <paper-item class="sorting-path-option" name="occurrence.0.features.chance.estimated">Estimated Chance</paper-item>
+      </nvd3-toolbar>
+      <nvd3-scatter id="prediction-data-chart" height="600" show-legend auto-resize></nvd3-scatter>
+
     </div>
 
-    <nvd3-scatter id="chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
+    <reisse-predictions-section></reisse-predictions-section>
 
-    <h2> Occurence Pool </h2>
+    <div>
 
-    <paper-material elevation="1" style="padding: 1em;">
+      <h2> Occurence Microscope </h2>
 
-      <h3> Query ocurrence from prediction </h3>
+      <paper-material elevation="1" style="padding: 1em;">
 
-      <paper-input label="Search for occurrence" type="text" value="{{query}}" on-keydown="_handleSearchInputKeyDown" title="Presse 'Enter' to add and 'Delete' to remove from pool"></paper-input>
+        <h3> Query ocurrence from prediction </h3>
 
-      <template is="dom-if" if="[[matchingOccurrence]]" restamp>
-        <span># [[matchingOccurrence.index]]</span>
-        <reisse-event event="[[matchingOccurrence]]"></reisse-event>
-      </template>
+        <paper-input label="Search for occurrence" type="text" value="{{query}}" on-keydown="_handleSearchInputKeyDown" title="Presse 'Enter' to add and 'Delete' to remove from pool"></paper-input>
 
-    </paper-material>
-
-    <paper-input id="observed-featuers-input" label="Features" type="text" value="{{observedFeatures}}" title="Comma separated list of values"></paper-input>
-
-    <table>
-      <tr>
-        <th>Occurrence</th>
-        <template is="dom-repeat" items="[[pool.observedFeatures]]" as="feature">
-          <th>[[feature]]</th>
+        <template is="dom-if" if="[[matchingOccurrence]]" restamp>
+          <span># [[matchingOccurrence.index]]</span>
+          <reisse-event event="[[matchingOccurrence]]"></reisse-event>
         </template>
-      </tr>
 
-      <template is="dom-repeat" items="[[pool]]" as="occurrence" observe="observedFeatures">
+      </paper-material>
+
+      <paper-input id="observed-features-input" label="Features" type="text" value="{{observedFeatures}}" title="Comma separated list of values"></paper-input>
+
+      <table>
         <tr>
-          <td><reisse-event event="[[occurrence]]"></reisse-event></td>
-
-          <template is="dom-repeat" items="[[occurrence.observedFeatures]]" as="feature">
-            <td>
-              <p title="Estimated">E: [[_computeFeatureAspect(occurrence, feature, 'estimated')]]</p>
-              <p title="Actual">A: [[_computeFeatureAspect(occurrence, feature, 'actual')]]</p>
-            </td>
+          <th>Occurrence</th>
+          <template is="dom-repeat" items="[[pool.observedFeatures]]" as="feature">
+            <th>[[feature]]</th>
           </template>
         </tr>
-      </template>
-    </table>
+
+        <template is="dom-repeat" items="[[pool]]" as="occurrence" observe="observedFeatures">
+          <tr>
+            <td><reisse-event event="[[occurrence]]"></reisse-event></td>
+
+            <template is="dom-repeat" items="[[occurrence.observedFeatures]]" as="feature">
+              <td>
+                <p title="Estimated">E: [[_computeFeatureAspect(occurrence, feature, 'estimated')]]</p>
+                <p title="Actual">A: [[_computeFeatureAspect(occurrence, feature, 'actual')]]</p>
+              </td>
+            </template>
+          </tr>
+        </template>
+      </table>
+
+    </div>
+
 
   </template>
   <script>
@@ -129,19 +139,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           value: 'chance, simplicity, motivation, time, duration, brainCycles'
         },
-
-        chartOptions: {
-          type: Object,
-          value() {
-            const range = {start: 0, end: 0};
-            return {domains: {x: range, y: Object.assign({}, range)}};}
-        }
       },
 
       observers: [
         '_observedFeaturesReactor(observedFeatures, pool)',
         '_applyPredictionIndex(predictionIndex)',
-        '_renderFoggModel(occurrences)'
+        '_renderBehaviorModel(occurrences)',
       ],
 
       _computeMatchingOcurrence(query, occurrences, pool) {
@@ -219,14 +222,63 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         this.occurrences = prediction[0];
         this.context = prediction[1];
-        this.$["observed-featuers-input"].placeholder = _.map(Feature.all(), 'name').join(', ');
-        this.$["observed-featuers-input"].title = _.map(Feature.all(), 'name').join(', ');
+        this.$["observed-features-input"].placeholder = _.map(Feature.all(), 'name').join(', ');
+        this.$["observed-features-input"].title = _.map(Feature.all(), 'name').join(', ');
       },
 
-      _renderFoggModel(occurrences, options) {
-        const {chart} = this.$, model = chart._chart;
-        const {xAxis, yAxis, xDomain, yDomain, tooltip} = model;
-        const data = _(occurrences)
+      _renderBehaviorModel(occurrences) {
+        const chart = this.$['prediction-data-chart'], model = chart._chart;
+        const {xAxis, yAxis, tooltip} = model;
+        const colors = _(occurrences)
+          .map('provider.name')
+          .uniq()
+          .zip(d3.scale.category20().range())
+          .fromPairs()
+          .value();
+
+        const data = this.__createBehaviorModelScatterData(occurrences, colors);
+
+        xAxis.axisLabel('Simplicity');
+        xAxis.tickFormat((x) => x.toFixed(4));
+        yAxis.axisLabel('Motivation');
+        yAxis.tickFormat((y) => y.toFixed(4));
+
+        const prediction = occurrences;
+        tooltip.contentGenerator(({point: {x, y, occurrences, color}, series: [serie]}) => {
+          let output = `<p style="border-bottom: 2px solid ${color}">
+            ${serie.key} Simplicity: ${xAxis.tickFormat()(x)} <br />
+            ${serie.key} Motivation: ${yAxis.tickFormat()(y)} <br />
+          </p>`;
+
+          app.highlightedBehaviors = occurrences;
+
+          output += occurrences
+            .slice(0, 10)
+            .reduce((accumulator, occurrence) => {
+              const {name, provider} = occurrence;
+              const index = prediction.indexOf(occurrence);
+              return accumulator + `<p>#${index} (${provider.name}) - ${name}</p>`;
+            }, '');
+
+          output += `<p><br />Total Behaviors: ${occurrences.length}</p>`;
+          return `<div style="padding: 0.5em; text-align: left;">${output}</div>`;
+        });
+
+        chart.generateChart();
+
+        this._behavioralData = data;
+
+        if (!_.isFunction(model.container)) {
+          d3.select(model.container)
+            .selectAll('.nv-point')
+            .style('fill', (d) => d[0].color)
+            .style('stroke', (d) => d[0].color);
+        }
+      },
+
+      __createBehaviorModelScatterData(occurrences, colors) {
+        return _(occurrences)
+          // Create series
           .map((occurrence, index) => {
             const {features: {simplicity, motivation}} = occurrence;
             return [{
@@ -240,49 +292,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }];
           })
           .flatten()
+          // Limits Y precision
           .map((value) => Object.assign(value, { y: parseFloat(value.y.toFixed(10)) }))
           .groupBy('kind')
           .map((group, index) => {
+
             const values = _(group)
               .groupBy('y')
               .map((subgroup) => ({
                 x: subgroup[0].x, y: parseFloat(subgroup[0].y),
                 size: subgroup.length,
-                occurrences: subgroup.map(({occurrence}) => occurrence)
+                occurrences: subgroup.map(({occurrence}) => occurrence),
+                color: colors[subgroup[0].occurrence.provider.name]
               }))
               .value()
 
             return {key: _.upperFirst(group[0].kind), values};
           })
           .value();
-
-        xAxis.axisLabel('Simplicity');
-        xAxis.tickFormat((y) => y.toFixed(4));
-        xDomain([0, 1]);
-        yAxis.axisLabel('Motivation');
-        yAxis.tickFormat((y) => y.toFixed(4));
-        yDomain([0, 1]);
-
-        tooltip.contentGenerator(({point: {x, y, occurrences}, series: [serie]}) => {
-          let output = `<p style="border-bottom: 2px solid ${serie.color}">
-            ${serie.key} Simplicity: ${xAxis.tickFormat()(x)} <br />
-            ${serie.key} Motivation: ${yAxis.tickFormat()(y)} <br />
-            Motivation + Simplicity: ${xAxis.tickFormat()(x + y)}
-          </p>`;
-
-          app.highlightedBehaviors = occurrences;
-
-          output += occurrences
-            .slice(0, 10)
-            .reduce((accumulator, {name}) =>  accumulator + `<p>${name}</p>`, '')
-
-          output += `<p><br />Total Behaviors: ${occurrences.length}</p>`;
-          return `<div style="padding: 0.5em; text-align: left;">${output}</div>`;
-        });
-        chart.data = data;
-        chart.generateChart();
       }
-
     });
   })();
   </script>

@@ -15,6 +15,15 @@
  * TODO rename to activitySpecies? or pehaps create another classifier
  * @type {Stamp}
  */
+
+// ! TODO:
+// - create world embeddings for all sentences of all occurrences using universal sentence encoder
+//  ✅ discover if USE creates similarrity by meaning inestead of just pusitioning the words on vector space (it uses)
+//  - check if it is only usable in deep learning
+// - figure out how to cluster all sentences
+// - use each cluster signature as an activity specie
+// - also think about adding more criteria to clustering (perhaps task responsibility area?)
+
 Classifier.add(stampit({
   init () {
     this.stage();
@@ -242,7 +251,6 @@ Classifier.add(stampit({
         }
       });
       graphs.push({data: columns, meta, type: 'multi-bar'});
-
 
       columns = types.map((type) => {return {key: type, values: []}});
 

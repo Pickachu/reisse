@@ -1,6 +1,17 @@
 // Implementation of https://workflowy.com/#/1866981390e0
 'use strict';
 
+/**
+ * The chance classifier predicts the chance of a trigger occurring in a given
+ * context
+ *
+ * Currently it uses:
+ * - the amount of a persons motivation
+ * - the amount of a behavior simplicity
+ * To predict the probability of a trigger occurring for a specific behavior
+ *
+ * @type {Object}
+ */
 Classifier.add(stampit({
   init () { this.stage() },
   props: {
@@ -11,9 +22,9 @@ Classifier.add(stampit({
 
     stage({training, relearn = true} = {}) {
       const {Architect}   = synaptic;
-      this.network = new Architect.Perceptron(2, 3, 1);
+      this.network = new Architect.LSTM(3, 5, 3, 1);
 
-      ['Simplicity', 'Motivation'].forEach((name, index) => {
+      ['Triggering', 'Simplicity', 'Motivation'].forEach((name, index) => {
         this.network.layers.input.list[index].label = name;
       });
       ['Chance'].forEach((name, index) => {
@@ -22,35 +33,62 @@ Classifier.add(stampit({
 
       this.simplicity = Classifier.simplicity || Classifier.get('simplicity');
       this.motivation = Classifier.motivation || Classifier.get('motivation');
+      this.sensation  = Classifier.sensation  || Classifier.get('sensation');
       this.training   = Object.assign(this.training, training);
       this.learned    = null;
+    },
+
+    _createMapper(occurrences) {
+      const {motivation} = this;
+      return {
+        input(occurrence) {
+          return [
+            occurrence.features.sensation.actual,
+            // TODO get learning from occurrence instead of simplicity prediction
+            ss.min(occurrence.simplicity(true, 'actual')),
+            // TODO get data from occurrence features, motivation method getter
+            motivation.activate(occurrence.motivation(true, 'actual'))[0]
+          ];
+        },
+        output(occurrence) {
+          return [occurrence.features.chance.actual];
+        }
+      };
+    },
+
+    // TODO Treat learning of already started behaviors but unfinished
+    learnableSet(occurrences) {
+      const statuses = ['complete', 'cancel'];
+      return occurrences.filter((occurrence) => {
+        const {features: {chance}, status} = occurrence;
+
+        if (!isFinite(chance.actual)) {
+          this.discard(occurrence, `non finite actual chance ${chance.actual}`);
+          return false;
+        }
+
+        if (!statuses.includes(status)) {
+          this.discard(occurrence, `status ${status} is not acceptable (${statuses.join(', ')})`);
+          return false;
+        }
+
+        return true;
+      });
     },
 
     async learn (occurrences) {
       await this.simplicity.learn(occurrences);
       await this.motivation.learn(occurrences);
 
-      const set = _(occurrences)
-        .filter(({features}) => isFinite(features.chance.actual))
-        // TODO Treat learning of already started behaviors but unfinished
-        .thru(this.learnableSet.bind(this))
-        .tap((occurrences) => console.log('[classifier.chance] learning from', occurrences.length, 'occurrences'))
-        .map((occurrence) => {
-          // TODO get learning from occurrence instead of simplicity prediction
-          let inputs = [
-            ss.min(occurrence.simplicity(true, 'actual')),
-            this.motivation.activate(occurrence.motivation(true, 'actual'))[0]
-          ];
+      const mapper = this._createMapper(occurrences);
 
-          // Validate actual chance distribution space
-          // (x - 1.1) ^ 2 + (y - 1.1) ^ 2 - 1 = 0
+      const set = this.learnableSet(occurrences)
+        .map((occurrence) => {
           return {
-            input: inputs,
-            output: [occurrence.features.chance.actual]
+            input : mapper.input(occurrence),
+            output: mapper.output(occurrence)
           };
-        })
-        .compact()
-        .value();
+        });
 
       return this._train(set, this.training);
     },
@@ -58,13 +96,14 @@ Classifier.add(stampit({
     async predict (behaviors, {context}) {
 
       const predictions = await Promise.all([
+        this.sensation.predict(behaviors, {context}),
         this.motivation.predict(behaviors, {context}),
         this.simplicity.predict(behaviors, {context})
       ]);
 
       behaviors.forEach( ({features}) => {
         features.chance.estimated = this.activate([
-
+          features.sensation.estimated,
           features.simplicity.estimated,
           features.motivation.estimated
 
@@ -83,6 +122,7 @@ Classifier.add(stampit({
 
       // TODO better integration of Re estimatives
       const estimated = await Re.estimate(behaviors, app.areas.concat());
+
       const performatable = this.performatableSet(estimated);
       const learning = await this.learn(performatable.filter(({status}) =>
         status === 'complete'
@@ -97,11 +137,16 @@ Classifier.add(stampit({
         .sortBy([
           'features.chance.estimated',
           'features.motivation.estimated',
-          'features.simplicity.estimated'
+          'features.simplicity.estimated',
+          'features.sensation.estimated'
         ])
         .map((occurrence, index) => {
-          const {features: {simplicity, motivation, chance}} = occurrence;
+          const {features: {sensation, simplicity, motivation, chance}} = occurrence;
           return [{
+            occurrence,
+            kind: 'predicted sensation',
+            x: index, y: sensation.estimated || 0
+          }, {
             occurrence,
             kind: 'predicted simplicity',
             x: index, y: simplicity.estimated || 0
@@ -109,10 +154,6 @@ Classifier.add(stampit({
             occurrence,
             kind: 'predicted motivation',
             x: index, y: motivation.estimated || 0
-          }, {
-            occurrence,
-            kind: 'predicted motivation + simplicity',
-            x: index, y: simplicity.estimated + motivation.estimated
           }, {
             occurrence,
             kind: 'predicted chance',
@@ -138,16 +179,17 @@ Classifier.add(stampit({
 
       const meta = Object.assign(learning, {
         context, performatable,
-        title: "Chance Estimation",
+        title: "Chance of triggering",
         options({xAxis, yAxis, yDomain, tooltip}, chart) {
           xAxis.axisLabel('Factor Index');
           yAxis.axisLabel('Intensity');
           yAxis.tickFormat((y) => y.toFixed(3));
           yDomain([0, 2]);
 
-          tooltip.contentGenerator(({point: {y, occurrences}, series: [serie]}) => {
+          tooltip.contentGenerator(({point: {x, y, occurrences}, series: [serie]}) => {
             app.highlightedBehaviors = occurrences;
-            let output = `<p style="border-bottom: 2px solid ${serie.color}">${serie.key}: ${y}</p>`;
+            let output = `<p style="border-bottom: 2px solid ${serie.color}">${serie.key}: ${y}`;
+            output += `<br /> Index: ${x}</p>`;
 
             output += occurrences
               .slice(0, 10)

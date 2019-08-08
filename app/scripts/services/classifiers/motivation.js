@@ -40,7 +40,7 @@ Classifier.add(stampit({
         .map((factors) => ({
           input: factors,
           output: [ss.average(factors)]
-        }))
+        }));
 
       return this._train(set, this.training);
     },
@@ -81,6 +81,7 @@ Classifier.add(stampit({
         }))
         .groupBy('x')
         .map((group, index) => {
+
           const values = _(group)
             .groupBy('y')
             .map((subgroup) => ({
@@ -88,7 +89,7 @@ Classifier.add(stampit({
               size: subgroup.length,
               behaviors: subgroup.map(({behavior}) => behavior)
             }))
-            .value()
+            .value();
 
           return {key: _.upperFirst(factors[+index]), values};
         })

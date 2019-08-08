@@ -119,6 +119,10 @@ Re.Encoder = stampit({
         .sort(function byChance (a, b) {
           return b.chance - a.chance;
         })
+
+        // TODO create volatile rank property
+        .map((occurrence, index) => (occurrence.rank = index, occurrence))
+
         // Slice prediction by context for only 1 ocurrence
         // TODO use a smarter filter for only more likely to happen suggestions
         .slice(0, 1)
@@ -133,7 +137,7 @@ Re.Encoder = stampit({
           // ocurrence is sleep!
           if (ocurrence.features.start) {
             if (ocurrence.activity && ocurrence.activity.type !== 'sleep') {
-              console.warn('[encoder::__encodePredictionSet] reseting traver cursor time to non sleep ocurrence');
+              console.warn('[encoder::__encodePredictionSet] reseting traveler cursor time to non sleep ocurrence');
             }
             start = traveler.cursor = moment(ocurrence.features.start);
           }
@@ -187,7 +191,6 @@ Re.Encoder = stampit({
     _habitualEventsFor (range, ocurrences) {
       this.stage = 'habitual occurrences prediction';
       let yesterday = moment(range[0]).subtract(1, 'day');
-
 
       return Context().for(yesterday.toDate())
         .then((context) =>

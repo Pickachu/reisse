@@ -16,14 +16,6 @@ var taskable = stampit({
       }
     },
     static: {
-      _chanceFromStatus(status) {
-        // On open state there is no chance
-        switch (status) {
-          case 'completed': return 1;
-          case 'canceled' : return 0;
-          default         : return null;
-        };
-      },
       statusMap: new Map([
         ['completed', 'complete'],
         ['canceled' , 'cancel'  ],
@@ -38,7 +30,6 @@ var taskable = stampit({
             id: json.id
         };
 
-        json.features.chance = {actual: this._chanceFromStatus(json.status)};
         json.status = this.statusMap.get(json.status);
 
         // Renamings
@@ -75,7 +66,14 @@ var taskable = stampit({
         };
 
         json.status = (json.completed) ? 'complete' : 'open';
-        json.features.chance = {actual: this._chanceFromStatus(json.status)};
+
+        // TODO Remember to fix parsing on next reimport
+        // start is coming as an string, it must come as a Timestamp
+        // probably using Date.parse, moment or new Date
+        // also update old asana tasks, anticipation(estimator).contextualizer
+        // and people(estimator) ocurrence.start filtering
+        console.log('will parse asana due date');
+        debugger;
 
         // Renaming
         if (json.due_at)  {

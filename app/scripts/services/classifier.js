@@ -46,14 +46,22 @@ var classifiable = stampit({
       return this.network.activate(input);
     },
 
+    /**
+     * This method should receive an array of occurrences and use the occurrence
+     * features, properties and context to train it's internal model
+     *
+     * @param  {Occurrence} occurrences -
+     *
+     * @return {Promise}             [description]
+     */
     async learn (occurrences) { return {}; },
 
     /**
      * This method should receive an array of occurrences and a context
      * for the given list of occurrences and it should return a list of
-     * predictions about this occurrences given this context
+     * predictions about this occurrences given this context.
      *
-     * It can base it's prediction on any of the occurrences prediction but
+     * It can base it's prediction on any amount of the given occurrences
      * the only it is predicting.
      *
      * This method should always return a prediction. If it can't predict one
@@ -75,16 +83,20 @@ var classifiable = stampit({
     },
 
     learnableSet (occurrences, options) {
-      let chainable = _(occurrences), keys = Object.keys(options || {});
+      let chainable = _(occurrences);
 
-      // Only learn from past occurrences that actualy happened
-      chainable = chainable.filter({status: 'complete'});
+      const defaulted = Object.assign({}, options, {
+        // Only learn from past occurrences that actualy happened
+        statuses: ['complete', 'cancel']
+      });
 
-      if (keys.includes('size')) {
+      chainable = chainable.filter(({status}) => defaulted.statuses.includes(status));
+
+      if ('size' in defaulted) {
         chainable = chainable.filter((o, i, bs) => i > (options.size * bs.length));
       }
 
-      if (keys.includes('sorted')) {
+      if ('sorted' in defaulted) {
         chainable = chainable.sortBy('completedAt');
       }
 
@@ -94,7 +106,10 @@ var classifiable = stampit({
     _validate(set) {
       // Perform simple validations on example
       if (set.length === 0) {
-        console.info(`[classifier.${this.name}._train] training with an empty set.`);
+        console.warn(`[classifier.${this.name}._train] training ignored, received an empty set.`);
+        return true;
+      } else {
+        console.info(`[classifier.${this.name}._train] training set size is ${set.length}.`);
         return true;
       }
 

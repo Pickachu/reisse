@@ -1,0 +1,285 @@
+  <!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+
+<dom-module id="nvd3-toolbar">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      paper-input {
+        padding: 0em 0.2em;
+      }
+    </style>
+
+    <div class="horizontal layout wrap around-justified">
+      <content id="content" select=".controls-content"></content>
+      <paper-input type="number" value="{{_domains.x.start}}" label="X Domain Start"></paper-input>
+      <paper-input type="number" value="{{_domains.x.end}}" label="X Domain End"></paper-input>
+      <paper-input type="number" value="{{_domains.y.start}}" label="Y Domain Start"></paper-input>
+      <paper-input type="number" value="{{_domains.y.end}}" label="Y Domain End"></paper-input>
+      <paper-input type="number" value="{{resolution}}" label="Limit of points"></paper-input>
+    </div>
+    <div class="horizontal layout around-justified">
+      <paper-dropdown-menu  label="Sorting">
+        <paper-listbox selected="{{sortingOption}}" attr-for-selected="name" class="dropdown-content">
+          <paper-item name="original-sorting">Original Sorting</paper-item>
+          <template is="dom-repeat" items="{{data}}" as="serie">
+            <paper-item name="[[serie.key]]">[[serie.key]]</paper-item>
+          </template>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-dropdown-menu label="Sorting direction">
+        <paper-listbox selected="{{sortDirection}}" attr-for-selected="name" class="dropdown-content" fallback-selection="ascending">
+          <paper-item name="ascending">Ascending</paper-item>
+          <paper-item name="descending">Descending</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-dropdown-menu  label="Sorting path">
+        <paper-listbox selected="{{sortPath}}" attr-for-selected="name" class="dropdown-content" fallback-selection="y">
+          <paper-item name="y">Y</paper-item>
+          <paper-item name="x">X</paper-item>
+          <content id="content" select=".sorting-path-option"></content>
+        </paper-listbox>
+      </paper-dropdown-menu>
+    </div>
+    <div class="horizontal layout">
+      <paper-input class="flex" type="text" value="{{filterLogic}}" label="Filter Logic"></paper-input>
+    </div>
+
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'nvd3-toolbar',
+
+      properties: {
+        for: {
+          type: Object,
+          observer: '_forChanged'
+        },
+        target: {
+          type: Object,
+        },
+
+        data: {
+          type: Array
+        },
+
+        filter: {
+          type: Function,
+          computed: '_computeFilter(filterLogic, data)'
+        },
+
+        filterLogic: {
+          type: String
+        },
+
+        sortingOption: {
+          type: String,
+          value: null
+        },
+
+        sortDirection: {
+          type: String
+        },
+
+        sortPath: {
+          type: String
+        },
+
+        processedData: {
+          type: Array,
+          computed: '_computeProcessedData(_sortedData, filter)'
+        },
+
+        resolution: {
+          type: Number,
+          value: 5000
+        },
+
+        _sortedData: {
+          type: Array,
+          computed: '_computeSortedData(data, sortingOption, sortDirection, sortPath, target)'
+        },
+
+        _domains: {
+          type: Object,
+          value() { return {x: {}, y: {}}; }
+        }
+      },
+
+      observers: [
+        '_tryUpdateChart(isAttached, target, processedData, resolution, _domains.*)'
+      ],
+
+      attached() {
+        this.async(() => {
+          this._forChanged(this.for);
+        });
+      },
+
+      _forChanged(selector) {
+        if (!this.isAttached) return;
+        this.target = Polymer.dom(this).getOwnerRoot().host.querySelector('#' + selector);
+      },
+
+      _tryUpdateChart(attached, target, data, resolution) {
+        if (!attached) return;
+
+        if (target.type === 'multi-bar') {
+          console.error('does not know how to apply domains to multibar charts');
+        }
+
+        this.debounce('update-chart', () => {
+          const {_chart: model} = target;
+          const domains = [this.__getDomain('x'), this.__getDomain('y')];
+
+          (domains[0]) && model.xDomain([domains[0].start, domains[0].end]);
+          (domains[1]) && model.yDomain([domains[1].start, domains[1].end]);
+
+          target.data = this._limitPoints(domains.filter(Boolean), data, {resolution});
+
+          target.refresh();
+        }, 200)
+
+      },
+
+      // TODO think how to use d3.scale.quantize
+
+      _limitPoints(domains, data, {resolution}) {
+        const values = data.map(({values}) => values).flat();
+
+        const scales = {
+          x: d3.scale.linear().domain(d3.extent(values, ({x}) => x)),
+          y: d3.scale.linear().domain(d3.extent(values, ({y}) => y))
+        }
+
+        // Reduce a distrution of points to a offseted domain
+        const shrink = (points, domains, amount) => (
+          domains.reduce((shrinked, {start, end, name}, index) => {
+            const scale = scales[name];
+            return shrinked.filter((point) =>
+              (scale(start) + amount) < scale(point[name]) && scale(point[name]) < (scale(end) - amount)
+            );
+          }, points.concat([]))
+        );
+
+        // Generate offsteds domain and new point distribution
+        let shrinked = values,
+        size = values.length,
+        limit = resolution / data.length,
+        factor = 0;
+
+        if (!domains.length) {
+          domains.push({start: scales.x.domain()[0], end: scales.x.domain()[1], name: 'x'});
+        }
+
+        while (size > limit && factor < 1) {
+          shrinked = shrink(values, domains, factor);
+          size = shrinked.length;
+          factor += 0.005;
+        }
+
+        if (values.length - shrinked.length) {
+          console.log(`[${this.is}::_limitPoints] removed ${values.length - shrinked.length} of ${values.length} points to respect ${limit} limit per series.`);
+        }
+
+        return data.map((serie) =>
+          Object.assign({}, serie, {
+            values: serie.values.filter((value) => shrinked.includes(value) )
+          })
+        );
+      },
+
+      _computeProcessedData(data, filter) {
+        if (data === undefined) return undefined;
+        if (filter === undefined) return data;
+
+        // Filter was set to empty
+        if (filter === null) return data;
+
+        return data.reduce((series, serie) => {
+          return series.concat(Object.assign({}, serie, {
+            values: serie.values.filter(filter)
+          }));
+        }, []);
+      },
+
+      _computeSortedData(data, name, direction, path, target) {
+        if (data === undefined) return undefined;
+        if (name === undefined) return [];
+        if (direction === undefined) return [];
+        if (path === undefined) return [];
+        if (target === undefined) return [];
+
+        const sorting = data.find(({key}) => key === name);
+        if (!sorting) return data;
+
+        // Creates an array of old and new positions to sort all series by
+        const positions = _(sorting.values)
+          .zip(_.range(sorting.values.length))
+          .sortBy(`[0].${path}`)
+          .map(([value, index]) => index)
+          .value()
+
+        if (direction === 'descending') positions.reverse();
+
+        const dimension = path === 'x' ? 'y' : 'x'
+
+        // TODO update axis label
+        // const {_chart: model} = target, axis = model[`${dimension}Axis`];
+        // axis.label
+
+        return data.reduce((series, serie) => {
+          return series.concat(Object.assign({}, serie, {
+            // position is the old position in the unsorted array
+            // index is the sorted position that this item should take place
+            values: positions.map((position, index) =>
+              Object.assign({}, serie.values[position], {[dimension]: index})
+            )
+          }));
+        }, []);
+      },
+
+      _computeFilter(logic, data) {
+        if (data === undefined) return undefined;
+        if (logic === undefined) return null;
+        try {
+          const filter = new Function('point', `return ${logic}`);
+          filter(_.sample(data[0].values)); // test filtering function
+          return filter;
+        } catch (e) {
+          return _.identity;
+        }
+      },
+
+      __getDomain(axis) {
+        const {start, end} = this._domains[axis];
+        if (isFinite(+start) && isFinite(+end) && +start < +end) {
+          return { start: +start, end: +end, name: axis};
+        } else {
+          return null;
+        }
+      }
+    });
+  })();
+  </script>
+</dom-module>

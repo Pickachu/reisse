@@ -23,163 +23,162 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
   <script>
   (function() {
-    'use strict';
-    ! Not in use yet!
-    Polymer({
-      is: 'youtube-video',
-
-      properties: {
-        videoId: {
-          type: String
-        },
-
-        // TODO make this attributes read only
-        // Snippet
-        publishedAt: { type: Date, observer: '_publishedAtChanged' },
-        title: { type: String },
-        description: { type: String },
-        thumbanails: { type: Array },
-        categoryId: { type: String },
-
-        // Content Details
-        duration: { type: String },
-        dimension: { type: String },
-        definition: { type: String },
-        caption: { type: String },
-        licensedContent: { type: String },
-        regionRestriction: { type: Object },
-        contentRating: { type: Object },
-        projection: { type: Object },
-        hasCustomThumbnail: { type: Boolean },
-
-        params: {
-          type: Object,
-          computed: '_computeParams(videoId)'
-        },
-
-      },
-
-      ready() {
-        this.__tryAPIReady();
-      },
-
-      // FIXME google-client-loader uses google-js-api to load google js api
-      // if google js api is already loaded, google-js-api fires the js-api-load
-      // event before google-client loader listens for the event. open an
-      // issue on https://github.com/GoogleWebComponents/google-apis
-      __tryAPIReady() {
-        if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
-
-        // TODO figure out why google-js-api(IronJsonpLibraryBehavior) is not firing an event
-        if (!this.$.youtube.api) { return this.$.youtube._loadClient(); }
-      },
-
-      _apiLoaded () {
-        this.client = this.$.youtube.api;
-      },
-
-      load(params) {
-        return this.client.videos
-          .list(params || this.params).then((response) => {
-            if (response.error) {
-              console.error("Error with youtube.videos.list", response.message);
-              return Promise.reject(response);
-            }
-
-            const [{snippet, contentDetails}] = response.result.items;
-
-            Object.keys(contentDetails).forEach((key) =>
-              if (key in this) this[key] = contentDetails[key]
-            );
-            Object.keys(snippet).forEach((key) =>
-              if (key in this) this[key] = snippet[key]
-            );
-
-            return Promise.resolve(response);
-          });
-      },
-
-      values () {
-        // Reset events array to prevent duplicated items preservation
-        this.paginationToken = null;
-
-        const dispatchPaged = ({resultsPerPage, totalResults}) => {
-          this.fire('paged', {
-            pagination: {
-              page: Math.round(this.items.length / resultsPerPage),
-              pages: Math.round(totalResults / resultsPerPage),
-            }
-          });
-        },
-        dispatchPopulated = ({resultsPerPage, totalResults}) => {
-          this.fire('populated', {
-            pagination: {
-              page: Math.round(this.items.length / resultsPerPage),
-              pages: Math.round(totalResults / resultsPerPage),
-            }
-          });
-        };
-
-        return new Promise((resolve) => {
-
-          const responded = (response) => {
-            // Assumes that video items are coming ordered by creation date
-            const limitReached = enforceTimeRangeLimit(this.items),
-              {result} = response;
-
-
-            if (!limitReached && result.nextPageToken) {
-              dispatchPaged(result.pageInfo);
-              this.next().then(responded);
-            } else {
-              dispatchPopulated(result.pageInfo);
-              this.paginationToken = null;
-              resolve(this);
-            };
-          };
-
-          this.next().then(responded);
-        });
-      },
-
-      next() {
-        return this.list(this.params).then((response) => {
-          let result = response.result;
-          this.paginationToken = result.nextPageToken || null;
-
-          if (result.items) {
-
-            const items = result.items.map(({snippet}) =>
-              Object.assign(snippet, {
-                publishedAt: new Date(snippet.publishedAt)
-              })
-            );
-
-            this._setItems(this.items.concat(items));
-          }
-          return response;
-        });
-      },
-
-      list (params) {
-        return this.client.videos
-        .list(params).then((response) => {
-          if (response.error) {
-            console.warn(`[${this.localName}:list] Error from videos.list`, response.message);
-            return Promise.reject(response);
-          } else {
-            return Promise.resolve(response);
-          }
-        });
-      },
-
-      _computeParams(videoId) {
-        let params = {videoId, part: 'snippet,contentDetails', maxResults};
-        (page) && (params.pageToken = page);
-        return params;
-      }
-
-    });
+    // ! Not in use yet!
+    // Polymer({
+    //   is: 'youtube-video',
+    //
+    //   properties: {
+    //     videoId: {
+    //       type: String
+    //     },
+    //
+    //     // TODO make this attributes read only
+    //     // Snippet
+    //     publishedAt: { type: Date, observer: '_publishedAtChanged' },
+    //     title: { type: String },
+    //     description: { type: String },
+    //     thumbanails: { type: Array },
+    //     categoryId: { type: String },
+    //
+    //     // Content Details
+    //     duration: { type: String },
+    //     dimension: { type: String },
+    //     definition: { type: String },
+    //     caption: { type: String },
+    //     licensedContent: { type: String },
+    //     regionRestriction: { type: Object },
+    //     contentRating: { type: Object },
+    //     projection: { type: Object },
+    //     hasCustomThumbnail: { type: Boolean },
+    //
+    //     params: {
+    //       type: Object,
+    //       computed: '_computeParams(videoId)'
+    //     },
+    //
+    //   },
+    //
+    //   ready() {
+    //     this.__tryAPIReady();
+    //   },
+    //
+    //   // FIXME google-client-loader uses google-js-api to load google js api
+    //   // if google js api is already loaded, google-js-api fires the js-api-load
+    //   // event before google-client loader listens for the event. open an
+    //   // issue on https://github.com/GoogleWebComponents/google-apis
+    //   __tryAPIReady() {
+    //     if (!window.gapi) { return this.async(this.__tryAPIReady, 300); }
+    //
+    //     // TODO figure out why google-js-api(IronJsonpLibraryBehavior) is not firing an event
+    //     if (!this.$.youtube.api) { return this.$.youtube._loadClient(); }
+    //   },
+    //
+    //   _apiLoaded () {
+    //     this.client = this.$.youtube.api;
+    //   },
+    //
+    //   load(params) {
+    //     return this.client.videos
+    //       .list(params || this.params).then((response) => {
+    //         if (response.error) {
+    //           console.error("Error with youtube.videos.list", response.message);
+    //           return Promise.reject(response);
+    //         }
+    //
+    //         const [{snippet, contentDetails}] = response.result.items;
+    //
+    //         Object.keys(contentDetails).forEach((key) =>
+    //           if (key in this) this[key] = contentDetails[key]
+    //         );
+    //         Object.keys(snippet).forEach((key) =>
+    //           if (key in this) this[key] = snippet[key]
+    //         );
+    //
+    //         return Promise.resolve(response);
+    //       });
+    //   },
+    //
+    //   values () {
+    //     // Reset events array to prevent duplicated items preservation
+    //     this.paginationToken = null;
+    //
+    //     const dispatchPaged = ({resultsPerPage, totalResults}) => {
+    //       this.fire('paged', {
+    //         pagination: {
+    //           page: Math.round(this.items.length / resultsPerPage),
+    //           pages: Math.round(totalResults / resultsPerPage),
+    //         }
+    //       });
+    //     },
+    //     dispatchPopulated = ({resultsPerPage, totalResults}) => {
+    //       this.fire('populated', {
+    //         pagination: {
+    //           page: Math.round(this.items.length / resultsPerPage),
+    //           pages: Math.round(totalResults / resultsPerPage),
+    //         }
+    //       });
+    //     };
+    //
+    //     return new Promise((resolve) => {
+    //
+    //       const responded = (response) => {
+    //         // Assumes that video items are coming ordered by creation date
+    //         const limitReached = enforceTimeRangeLimit(this.items),
+    //           {result} = response;
+    //
+    //
+    //         if (!limitReached && result.nextPageToken) {
+    //           dispatchPaged(result.pageInfo);
+    //           this.next().then(responded);
+    //         } else {
+    //           dispatchPopulated(result.pageInfo);
+    //           this.paginationToken = null;
+    //           resolve(this);
+    //         };
+    //       };
+    //
+    //       this.next().then(responded);
+    //     });
+    //   },
+    //
+    //   next() {
+    //     return this.list(this.params).then((response) => {
+    //       let result = response.result;
+    //       this.paginationToken = result.nextPageToken || null;
+    //
+    //       if (result.items) {
+    //
+    //         const items = result.items.map(({snippet}) =>
+    //           Object.assign(snippet, {
+    //             publishedAt: new Date(snippet.publishedAt)
+    //           })
+    //         );
+    //
+    //         this._setItems(this.items.concat(items));
+    //       }
+    //       return response;
+    //     });
+    //   },
+    //
+    //   list (params) {
+    //     return this.client.videos
+    //     .list(params).then((response) => {
+    //       if (response.error) {
+    //         console.warn(`[${this.localName}:list] Error from videos.list`, response.message);
+    //         return Promise.reject(response);
+    //       } else {
+    //         return Promise.resolve(response);
+    //       }
+    //     });
+    //   },
+    //
+    //   _computeParams(videoId) {
+    //     let params = {videoId, part: 'snippet,contentDetails', maxResults};
+    //     (page) && (params.pageToken = page);
+    //     return params;
+    //   }
+    //
+    // });
   })();
   </script>
 </dom-module>

@@ -50,6 +50,7 @@ var behavioral = stampit({
 
             time   = 1 - this._neuronized('duration', type);
             cycles = 1 - this._neuronized('brainCycles', type);
+            commonality = this.features.routine[type] || 1;
 
             if (time < 0 || time > 1) {
               console.warn(this.__firebaseKey__, 'Behavior.simplicity: invalid time calculated:', time)
@@ -61,13 +62,18 @@ var behavioral = stampit({
               cycles = 0.5;
             }
 
-            let factors = [money, time, cycles, effort, commonality];
-            if (factors.filter(Number.isFinite).length != factors.length) {debugger};
+            if (commonality < 0 || commonality > 1) {
+              console.warn(this.__firebaseKey__, 'Behavior.simplicity: invalid brain commonality calculated:', commonality)
+              commonality = 0.5;
+            }
+
+            let costs = [money, time, cycles, effort, commonality];
+            if (costs.filter(Number.isFinite).length != costs.length) {debugger};
 
             // console.log("name", this.name);
             // console.log("money:", money, "time:", time, "cycles:", cycles, "effort:", effort, "social:", social, "commonality:", commonality);
 
-            return factors;
+            return costs;
         },
 
         motivation (full, type) {

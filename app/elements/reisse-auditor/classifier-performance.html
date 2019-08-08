@@ -12,11 +12,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-multi-bar.html">
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-multi-bar-horizontal.html">
 <link rel="import" href="../../bower_components/nvd3-elements/nvd3-scatter.html">
-<link rel="import" href="../nvd3-candle-stick-bar/nvd3-candle-stick-bar.html">
+<link rel="import" href="../../bower_components/nvd3-elements/nvd3-candle-stick-bar.html">
 
-<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+<link rel="import" href="../nvd3-toolbar/nvd3-toolbar.html">
 
 <dom-module id="classifier-performance">
   <style>
@@ -33,7 +37,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-button toggles active="{{_displayChartControls}}">Chart controls</paper-button>
         <paper-button toggles active="{{_displayTrainingControls}}">Training controls</paper-button>
         <iron-collapse opened="{{_displayChartControls}}">
-          <span>X Domain</span>
           <div class="horizontal layout">
             <paper-input type="number" value="{{_domains.x.start}}" label="X Domain Start"></paper-input>
             &nbsp;
@@ -99,7 +102,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </template>
 
           <template is="dom-if" if="[[meta.classifier]]">
-            <nvd3-scatter id="learning-chart" height="600" show-legend auto-resize stop-auto-drawing></nvd3-scatter>
+            <nvd3-toolbar id="learning-toolbar" for="learning-chart" data="[[learningData]]">
+              <paper-dropdown-menu class="controls-content" label="Focus on neuron activations" title="Overrides default dataset to a ficticious dataset">
+                <paper-listbox selected="{{investigatedSerie}}" attr-for-selected="name" class="dropdown-content">
+                  <paper-item name="original-serie">None</paper-item>
+                  <template is="dom-repeat" items="{{investigableSeries}}" as="serie">
+                    <paper-item name="[[serie.key]]">[[serie.key]]</paper-item>
+                  </template>
+                </paper-listbox>
+              </paper-dropdown-menu>
+
+            </nvd3-toolbar>
+            <nvd3-scatter id="learning-chart" height="600" show-legend auto-resize></nvd3-scatter>
           </template>
           <p>Error: [[meta.error]] Time: [[meta.trainingTime]] Sample Size: [[meta.sampleSize]]</p>
           <paper-button on-tap="_retrain">Retrain</paper-button>
@@ -136,14 +150,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         meta: Object,
         data: Object,
+
+        // TODO remove domains, and use toolbar for default chart
         _domains: {
           type: Object,
           value() {return {x: {}, y: {}}}
         },
+
         _perfomanceGraphReady: {
           type: Boolean,
           value: false
         },
+
+        learningData: {
+          type: Object,
+          computed: '__computeLearningData(meta.classifier, meta.set, investigatedSerie)'
+        },
+
+        investigatedSerie: {
+          type: String,
+          value: 'original-serie'
+        },
+
+        investigableSeries: {
+          type: Object,
+          // ! TODO implement, and investigate chance correlations
+          computed: '__computeInvestigableSeries(meta.set)'
+        },
+
         _learningGraphReady: {
           type: Boolean,
           value: false
@@ -152,7 +186,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       observers: [
         '_redraw(data, _perfomanceGraphReady, _domains.*)',
-        '_redrawNetworkTraining(meta.classifier, meta.set, _learningGraphReady, _displayTrainingControls, _domains.*)'
+        '_redrawNetworkTraining(meta.classifier, meta.set, _learningGraphReady, _displayTrainingControls)'
       ],
 
       listeners: {
@@ -240,62 +274,88 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.fire('request-performance-retrain', {meta: this.meta});
       },
 
-      _redrawNetworkTraining(classifier, set, ready, active) {
+      __computeLearningData(classifier, set, key) {
         if (!classifier) return;
-        if (!ready) return;
         if (!set) return;
+
+        const series = this.__createSeries(classifier);
+
+        if (key == 'original-serie') {
+          return this.__createSetBasedData(set, classifier, series);
+        } else {
+          return this.__createNeuronActivationBasedData(key, classifier, series);
+        }
+      },
+
+      _redrawNetworkTraining(learningData, ready, active) {
+        if (!ready) return;
         if (!active) return;
 
         this.debounce('redraw-network-training', () => {
-          const chart = this.$$('#learning-chart'), model = chart._chart;
-          const {layers} = classifier;
+          // this.learningData = learningData;
+        });
+      },
 
-          const series = [].concat(
-            layers.input.list.map((neuron, index) => ({
-              key: neuron.label || `Input #${index}`,
-              values: []
-            }))
-          ).concat(
-            layers.output.list.map((neuron, index) => ({
-              key: neuron.label || `Output #${index}`,
-              values: []
-            }))
-          ).concat(
-            layers.output.list.map((neuron, index) => ({
-              key: neuron.label || `Prediction #${index}`,
-              values: []
-            }))
-          );
+      __createSeries({layers}) {
+        return [].concat(
+          layers.input.list.map((neuron, index) => ({
+            key: neuron.label || `Input #${index}`,
+            values: []
+          }))
+        ).concat(
+          layers.output.list.map((neuron, index) => ({
+            key: neuron.label || `Output #${index}`,
+            values: []
+          }))
+        ).concat(
+          layers.output.list.map((neuron, index) => ({
+            key: `Predicted ${neuron.label}` || `Prediction #${index}`,
+            values: []
+          }))
+        );
+      },
 
-          const limit = Math.min(set.length, 1000) / series.length;
+      __createNeuronActivationBasedData(key, classifier, series) {
+        const range = d3.range(0, 1.1, 0.1),
+        combinations = ss.combinationsReplacement(range, series.length);
 
-          chart.data = set
-            .slice(0, limit)
-            .reduce((series, {input, output}, x) => {
-
-              const offset = input.length + output.length;
-              input.concat(output).forEach((activation, serie) => {
-                series[serie].values.push({y: activation, x});
-              });
-
-              const prediction = classifier.activate(input);
-              prediction.forEach((activation, index) => {
-                series[index + offset].values.push({y: activation, x});
-              });
-
-              return series;
-            }, series);
-
-          this._applyDomain(model, this._domains, chart, 'y', false);
-          this._applyDomain(model, this._domains, chart, 'x', false);
-
-          chart.generateChart();
+        series.sort((a, b) => {
+          if (a.key === key) return -1;
+          else if (b.key === key) return 1;
+          else return 0;
         });
 
+        return series.forEach((serie, index) => {
+          return Object.assign(serie, {
+            values: combinations.map((combination, x) => ({x, y: combination[index]}))
+          });
+        });
+
+      },
+      __createSetBasedData(set, classifier, series) {
+        return set
+          .reduce((series, {input, output}, x) => {
+
+            const offset = input.length + output.length;
+            input.concat(output).forEach((activation, serie) => {
+              series[serie].values.push({y: activation, x});
+            });
+
+            const prediction = classifier.activate(input);
+            prediction.forEach((activation, index) => {
+              series[index + offset].values.push({y: activation, x});
+            });
+
+            return series;
+          }, series);
       },
 
       _collapse() {
         this.$.graph.classList.toggle('hidden');
+      },
+
+      __computeInvestigableSeries(set) {
+        return [];
       }
     });
   })();

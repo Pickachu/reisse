@@ -1,0 +1,225 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../../bower_components/paper-button/paper-button.html">
+
+<link rel="import" href="../nvd3-toolbar/nvd3-toolbar.html">
+<link rel="import" href="../reisse-event/reisse-event.html">
+
+<dom-module id="reisse-predictions-section">
+  <template>
+    <style>
+      :host { display: block; }
+      paper-input.controls-content {
+        width: 100%;
+      }
+    </style>
+    <div>
+      <h3> Predictions </h3>
+
+      <nvd3-toolbar for="predictions-chart" data="[[_predictionsData]]" >
+
+        <paper-button class="controls-content" raised on-click="_fetchPredictions">Fetch Predictions</paper-button>
+        <paper-input class="controls-content" label="Occurence Paths to Display" type="text" value="{{observedPaths}}"></paper-input>
+        <paper-input class="controls-content" label="Occurence Filtering Logic" type="text" value="{{filteringLogic}}"></paper-input>
+
+        <!-- <paper-item class="sorting-path-option" name="occurrence.0.features.chance.actual">Actual Chance</paper-item>
+        <paper-item class="sorting-path-option" name="occurrence.0.features.chance.estimated">Estimated Chance</paper-item> -->
+      </nvd3-toolbar>
+      <nvd3-scatter id="predictions-chart" height="600" show-legend auto-resize></nvd3-scatter>
+    </div>
+
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'reisse-predictions-section',
+
+      properties: {
+        predictions: Array,
+
+        observedPaths: {
+          type: String,
+          value: 'features.chance.estimated, features.motivation.estimated'
+        },
+
+        filteringLogic: {
+          type: String,
+          value: 'occurrence.provider.name == "youtube"'
+        },
+      },
+
+      observers: [
+        '_renderPredictionsEvolution(predictions, observedPaths, filteringLogic)'
+      ],
+
+      _computeFeatureAspect(occurrence, name, aspect) {
+        const feature = occurrence.features[name];
+        if (!feature) return `Invalid name or inexistent feature with name: '${name}'.`;
+        return (feature[aspect] || NaN).toFixed(8);
+      },
+
+      _fetchPredictions() {
+        this.predictions = Re.predictions.concat([]);
+      },
+
+      // i should be able to select occurrence amount
+      // i should be able to select occurrence feature
+
+      // each serie is a prediction
+      // y: occurrence selected feature, or rank
+      // x: prediction index
+
+      // especial series that is context
+      // y: context selected feature
+      // x: prediction index
+      _renderPredictionsEvolution(predictions, paths, filtering) {
+        const chart = this.$['predictions-chart'], model = chart._chart;
+
+        const filter = new Function('occurrence', `return ${filtering}`);
+        const filteredPredictions = predictions.map(([occurrences, context]) => [
+          occurrences.filter(filter),
+          context
+        ]);
+
+        const contextualizations = ['calendar.now'],
+        limit = 100,
+        features = paths.split(',').map((s) => s.trim());
+
+        const data = this.__createPredicitionsScatterData(filteredPredictions, {
+          ranking: this.__createPredicitionsRanking(predictions, limit),
+          scales: this.__createContextScales(predictions, {contextualizations, features, limit}),
+          features, contextualizations, limit
+        });
+
+        this.__configureChart(data, model);
+
+      },
+
+      __createPredicitionsRanking(predictions, size) {
+        // Creates a sorted array with occurrence keys that span all predictions
+        return predictions
+          .map(([occurrences]) => occurrences.slice(0, size))
+          .flat()
+          .reduce((keys, {__firebaseKey__}) =>
+            keys.includes(__firebaseKey__) ? keys : keys.concat(__firebaseKey__)
+          , []);
+      },
+
+      __createContextScales(predictions, {contextualizations, features, limit}) {
+        // Scale down contexts to graph space
+        const contexts = predictions.map(([_, context]) => context);
+        const occurrences = predictions.map(([occurrences]) => occurrences.slice(0, limit)).flat();
+        return new Map(contextualizations.map((path) =>
+          [path, d3.time.scale()
+            .domain(d3.extent(contexts, (context) => _.get(context, path)))
+            .range(d3.extent(occurrences, (occurrence) => _.get(occurrence, features[0])))
+          ]
+        ));
+      },
+
+      __createPredicitionsScatterData(predictions, options) {
+        const {features, contextualizations, limit, colors, ranking, scales} = _.defaults(options, {
+          colors: d3.scale.category20c(),
+        });
+
+        return _(predictions)
+          // Create series
+          .map((prediction, index) => {
+            const [occurrences, context] = prediction;
+            // Assumes occurrences are sorted by prediction rank
+            return occurrences
+              .slice(0, limit)
+              .map((occurrence) => (
+                occurrence.relativeRank = ranking.indexOf(occurrence.__firebaseKey__),
+                occurrence
+              ))
+              .map((occurrence) =>
+                features.map((path) => ({
+                  prediction, occurrence,
+                  name: _.startCase(path),
+                  y: _.get(occurrence, path, 0),
+                  x: index,
+                  color: colors(occurrence.relativeRank)
+                }))
+              )
+              .concat(
+                contextualizations.map((path) => ({
+                  prediction,
+                  name: _.startCase(path),
+                  y: scales.get(path)(_.get(context, path)),
+                  x: index
+                }))
+            );
+          })
+          .flattenDeep()
+          .groupBy('name')
+          .map((values, index) => {
+            return {key: values[0].name, values};
+          })
+          .value();
+      },
+
+      __configureChart(data, model) {
+        const {xAxis, yAxis, tooltip} = model;
+
+        xAxis.axisLabel('Prediction Index');
+        xAxis.tickFormat((x) => x);
+        yAxis.tickFormat((y) => y.toFixed ? y.toFixed(4) : y);
+
+        tooltip.contentGenerator(({point: {x, y, prediction, occurrence, color}, series: [serie]}) => {
+          const [occurrences, context] = prediction;
+          app.highlightedBehaviors = occurrences;
+
+          let output = `<p style="border-bottom: 2px solid ${color}">
+            ${serie.key}: ${yAxis.tickFormat()(y)} <br />
+            ${xAxis.axisLabel()}: ${xAxis.tickFormat()(x)} <br />
+          </p>`;
+
+          // const yPath = _.kebabCase(serie.key).replace(/[-]/g, '.');
+          // output += occurrences
+          //   .filter((occurrence) => _.get(occurrence, yPath) === y)
+          //   .slice(0, 10)
+          //   .reduce((accumulator, occurrence) => {
+          //     const {name, rank} = occurrence;
+          //     return accumulator + `<p>#${rank} - ${name} </p>`;
+          //   }, '');
+          // Contextual predictions does not have occurrence
+          if (occurrence) {
+            output += `<p>#${occurrence.relativeRank} - ${occurrence.name} </p>`;
+          }
+
+          // output += `<p><br />Total Behaviors: ${occurrences.length}</p>`;
+          return `<div style="padding: 0.5em; text-align: left;">${output}</div>`;
+        });
+
+        // chart.generateChart();
+
+        this._predictionsData = data;
+
+        if (!model.coloring) {
+          model.coloring = model.dispatch.on('renderEnd', () => {
+            d3.select(model.container)
+              .selectAll('.nv-point')
+              .style('fill', (d) => d[0].color)
+              .style('stroke', (d) => d[0].color);
+          });
+        }
+      },
+    });
+  })();
+  </script>
+</dom-module>

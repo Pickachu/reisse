@@ -11,7 +11,7 @@ Re.Learning = stampit({
       let learnable = this.learnableSet(ocurrences);
 
       this.chance = Classifier.chance;
-      this.chance.learn(learnable).then(() => alert('learned'));
+      this.chance.learn(learnable);
 
       return {amount: learnable.length};
     },

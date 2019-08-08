@@ -33,6 +33,9 @@ var ocurrenceable = stampit({
       Object.assign(this.features, Feature.many(this, 'duration', 'brainCycles', 'sleepiness', 'hunger'));
     }
 
+    typeof this.createdAt === 'number' && (this.createdAt = new Date(this.createdAt));
+    typeof this.updatedAt === 'number' && (this.updatedAt = new Date(this.updatedAt));
+
   },
 
   methods: {
@@ -51,6 +54,52 @@ var ocurrenceable = stampit({
       string += `UID:${this.provider.id}`;
       string += "END:VEVENT";
       return ICAL.Component.fromString(string);
+    },
+    toCSV() {
+      // const paths = [
+      //   'activity.type',
+      //   'activity.category',
+      //   'context.tools',
+      //   'duration',
+      //   'createdAt',
+      //   'updatedAt',
+      //   'completedAt',
+      //   'status',
+      //   'name',
+      //   'location',
+      //   'provider.name',
+      //   'provider.categoryId',
+      //   'provider.channelId',
+      //   ['people', ({context}) => context && Object.keys(context.people || {})]
+      // ];
+      const paths = [
+        ({createdAt  }) => createdAt   ? createdAt.getTime() : createdAt,
+        ({updatedAt  }) => updatedAt   ? updatedAt.getTime() : updatedAt,
+        ({completedAt}) => completedAt ? completedAt.getTime() : completedAt,
+
+        'provider.name',
+
+        'activity.type',
+        'activity.category',
+
+        'context.tools.0.name',
+        'context.tools.0.type',
+
+        'duration',
+        'status',
+        'name',
+        'location',
+
+        'provider.categoryId',
+        'provider.channelId',
+        ({context}) => context && Object.keys(context.people || {}).join(',')
+      ];
+
+      return paths.reduce((line, getter) =>
+        typeof getter !== 'function' ?
+          line.concat(_.get(this, getter)) :
+          line.concat(getter(this))
+      , []);
     }
   },
   static: {
@@ -74,6 +123,7 @@ var ocurrenceable = stampit({
       json.updated && (json.updatedAt = new Date(Date.parse(json.updated)));
       json.start   && (json.start     = new Date(Date.parse(json.start.dateTime || json.start.date)));
       json.end     && (json.end       = new Date(Date.parse(json.end.dateTime   || json.end.date)));
+
 
       // FIXME this line assumes all ocurrences on a i-calendar are behaviors,
       // reisse must learn the diference between behaviors (running, eating) and events (birthday party, rock concert, etc)!

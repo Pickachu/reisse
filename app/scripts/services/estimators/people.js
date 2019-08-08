@@ -19,6 +19,7 @@ Estimator.add(stampit({
     // TODO limit time of inferrement to 12 hours
     getUncrowed(occurrences) {
       return _(occurrences)
+        // FIXME prevent start dates from coming invalid! (by using mobx, probably)
         .filter(({start}) => start ? start.toString() !== 'Invalid Date' : true)
         .tap((filtered) => {
           const difference = occurrences.length - filtered.length;
